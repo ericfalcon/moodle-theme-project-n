@@ -1324,6 +1324,98 @@ Project N doit d'abord personnaliser les variables, classes et styles autour de 
 
 Aucune validation runtime, axe-core, clavier, NVDA, TalkBack ou smartphone n'a été réalisée sur cette tranche.
 
+## 51. Architecture fonctionnelle Iomad — plugins métier et blocs
+
+### 51.1 Principe d'architecture confirmé
+
+L'analyse du fork ericfalcon/iomad, branche IOMAD_502_STABLE, confirme que les fonctionnalités métier Iomad ne résident pas uniquement dans des modifications du cœur Moodle. Elles sont largement distribuées dans une suite de plugins dédiés, avec un plugin local central et des dépendances entre plugins.
+
+Le README de public/local/iomad décrit explicitement local_iomad comme le fournisseur principal de classes nécessaires au fonctionnement des autres plugins Iomad. Il indique également que la suite requiert des adaptations du cœur Moodle pour activer le multi-tenant. Il faut donc distinguer :
+- les adaptations ponctuelles du cœur et les API/contextes qu'elles rendent disponibles ;
+- local_iomad, socle technique et métier commun ;
+- les blocs Iomad, qui fournissent des interfaces et points d'entrée fonctionnels ;
+- les plugins locaux, notamment les rapports et pages spécialisées ;
+- les éventuelles intégrations de thèmes et autres types de plugins.
+
+Les README des plugins précisent que les composants de la suite sont interdépendants et doivent être installés ensemble. Project N ne doit donc ni traiter les blocs comme de simples gadgets facultatifs ni tenter de reproduire leur logique métier dans le thème.
+
+### 51.2 Inventaire des blocs Iomad identifiés
+
+Le répertoire public/blocks de IOMAD_502_STABLE contient les douze blocs spécifiques suivants :
+
+| Bloc | Fonction principale observée | Enjeu UX pour Project N |
+|---|---|---|
+| block_iomad_company_admin | Tableau de bord principal de gestion de l'entreprise : utilisateurs, départements, cours, licences, gestionnaires et paramètres | Espace gestionnaire Iomad, navigation métier et accès aux opérations |
+| block_iomad_company_selector | Sélection de l'entreprise selon les appartenances et capacités de l'utilisateur | Contexte d'entreprise explicite, changement de contexte sécurisé |
+| block_iomad_mycourses | Réinterprétation de l'aperçu des cours Moodle, accès par licence, cours disponibles/en cours/terminés/obligatoires et certificats | Espace apprenant, cartes/listes, filtres et états de formation |
+| block_iomad_learningpath | Parcours d'apprentissage prescrits reliant plusieurs cours | Progression et séquençage pédagogique |
+| block_iomad_reports | Point d'entrée vers les plugins de rapports Iomad | Accès aux tableaux de bord et rapports selon droits |
+| block_iomad_commerce | Boutique et vente de cours, tarification par entreprise, licences ou inscription manuelle, passerelles de paiement Moodle | Catalogue et parcours d'achat, uniquement si commerce activé |
+| block_iomad_approve_access | Validation/refus par les gestionnaires des demandes d'accès aux activités de formation événementielle | Workflow de validation, notifications et statut de demande |
+| block_iomad_microlearning | Diffusion progressive de séquences de micro-apprentissage planifiées | Vue apprenant, calendrier de diffusion et accès conditionnel |
+| block_iomad_html | Variante multi-tenant du bloc HTML Moodle | Contenu éditorial contextualisé par entreprise |
+| block_iomad_onlineusers | Variante multi-tenant du bloc utilisateurs en ligne Moodle | Présence et visibilité strictement limitée au périmètre autorisé |
+| block_iomad_link | Lien d'accès au tableau de bord Iomad | Point d'entrée de navigation |
+| block_iomad_welcome | Informations de bienvenue à l'installation | Contenu d'accueil, probablement secondaire après configuration |
+
+Cet inventaire est celui des répertoires présents dans la branche inspectée ; il ne signifie pas que chaque bloc est activé, installé, affiché ou pertinent dans toutes les configurations Iomad.
+
+### 51.3 Le bloc d'administration comme agrégateur de navigation
+
+Un point architectural important ressort de block_iomad_company_admin :
+- le bloc constitue le tableau de bord principal des opérations de gestion d'entreprise ;
+- il récupère dynamiquement les fonctions de menu déclarées par les plugins au moyen de get_plugins_with_function() sur le fichier db/iomadmenu.php ;
+- il assemble les entrées issues des plugins, puis les organise par catégories et capacités ;
+- le plugin local_iomad déclare lui-même des entrées dans public/local/iomad/db/iomadmenu.php ;
+- le bloc d'administration déclare ses propres entrées dans public/blocks/iomad_company_admin/db/iomadmenu.php.
+
+Ce mécanisme signifie que le menu de gestion Iomad est extensible par les plugins. Project N doit préserver ce mécanisme d'extension et ne pas coder en dur une liste exhaustive de pages Iomad. La navigation Project N peut réorganiser visuellement les destinations, mais doit consommer les entrées/capacités disponibles et maintenir les liens fournis par les plugins.
+
+Les catégories, icônes, libellés, URLs et capacités déclarés dans ces menus doivent être traités comme des données d'extension, pas comme un contrat figé sur les noms actuels des plugins.
+
+### 51.4 Les rapports sont des plugins locaux, pas des pages du bloc
+
+Le bloc block_iomad_reports agit comme un répertoire d'accès. Son code parcourt les répertoires local/report_* et n'affiche un rapport que si l'utilisateur possède la capacité local/<rapport>:view. Le rapport lui-même est donc porté par un plugin local autonome.
+
+Le fork inspecté contient notamment :
+- local/report_attendance ;
+- local/report_companies ;
+- local/report_completion ;
+- local/report_completion_monthly ;
+- local/report_completion_overview ;
+- local/report_emails ;
+- local/report_license_usage ;
+- local/report_user_license_allocations ;
+- local/report_user_logins ;
+- local/report_users.
+
+Conséquences pour Project N :
+1. Ne pas intégrer les rapports dans le thème ni supposer que le bloc constitue leur logique métier.
+2. Préserver les URLs et capacités de chaque plugin local.
+3. Prévoir une présentation unifiée des points d'entrée, sans fusionner les modèles de données ni les autorisations.
+4. Ne pas présumer que tous les rapports s'appliquent à Moodle standard : certains dépendent de concepts Iomad tels que l'entreprise, les licences ou l'allocation de licences.
+5. Pour les rapports Moodle-only, distinguer les rapports transposables des rapports intrinsèquement multi-entreprises.
+
+### 51.5 Conséquences architecturales pour Project N
+
+- **Ne pas remplacer les blocs Iomad par des pages maison.** Le thème doit améliorer leur enveloppe visuelle, leur intégration et leur lisibilité, tout en conservant leur logique, leurs contrôles et leurs permissions.
+- **Ne pas supposer que chaque fonction Iomad est un bloc visible.** Certains blocs servent de tableau de bord ou de point d'entrée, tandis que les pages opérationnelles et rapports sont des pages de plugins.
+- **Respecter l'extensibilité.** Les entrées de menu dynamiques déclarées via db/iomadmenu.php doivent rester découvrables et accessibles.
+- **Respecter le contexte d'entreprise.** Un changement d'entreprise active un contexte de travail qui doit être visible ; les données, listes, rapports, liens et actions doivent rester limités à l'entreprise autorisée.
+- **Ne pas lire les tables Iomad depuis le thème.** Les blocs eux-mêmes peuvent utiliser les APIs/classes Iomad et, dans certains cas, leurs propres requêtes métier ; Project N doit s'appuyer sur les APIs publiques et capacités, pas recopier leurs requêtes.
+- **Gérer les blocs absents ou désactivés.** Le thème doit rester fonctionnel si un bloc facultatif (commerce, microlearning, approbation, etc.) n'est pas installé ou activé.
+- **Conserver l'administration Moodle native.** Le tableau de bord Iomad est une surface de gestion métier, mais ne remplace pas l'administration système Moodle.
+
+### 51.6 Points à analyser dans la prochaine tranche
+
+1. Étudier les pages et formulaires du bloc iomad_company_admin par familles fonctionnelles : entreprises, départements, utilisateurs, gestionnaires, cours, licences et paramètres.
+2. Examiner les classes output, templates et modules AMD de iomad_mycourses et learningpath pour déterminer les contrats DOM et les possibilités de présentation mobile.
+3. Cartographier les plugins locaux de rapports et leurs capacités, en identifiant ceux qui reposent sur les licences ou les entreprises.
+4. Analyser le sélecteur d'entreprise : persistance du contexte, utilisateurs multi-appartenances, navigation après changement et contrôles d'accès.
+5. Vérifier comment les blocs sont placés sur les pages My, tableaux de bord personnalisés et pages Iomad custompage.
+
+Cette section est une cartographie statique de la branche IOMAD_502_STABLE et de ses README/code. Aucun test d'installation, de navigation, de changement d'entreprise, de cloisonnement inter-entreprises, de rendu mobile ou d'accessibilité n'a été exécuté.
+
 ## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
 
 ### 47.1 État actuel du dépôt
