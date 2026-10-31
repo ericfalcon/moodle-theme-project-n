@@ -1,4 +1,4 @@
-# Project N — Cartographie technique de la navigation Moodle / Iomad
+# Project N — Cartographie technique de l'interface Moodle / Iomad
 
 > Étude P0 réalisée à partir des forks personnels `ericfalcon/moodle` et `ericfalcon/iomad`. Elle documente les points d'appui techniques et les risques de compatibilité ; elle ne vaut ni validation d'installation ni test fonctionnel.
 
@@ -218,7 +218,6 @@ Stratégie retenue :
 La documentation Moodle confirme que les hooks sont prévus pour étendre le comportement standard via callbacks déclarés dans `db/hooks.php` et que le gestionnaire les distribue selon leur priorité. Cela ne dispense pas de vérifier la disponibilité exacte du hook dans chaque branche ciblée.
 
 ## 11. API Iomad repérées — usage et limites
-
 Les fichiers Iomad 5.2 inspectés exposent notamment les méthodes publiques statiques suivantes dans `local_iomad\\iomad` :
 
 | Méthode | Signature observée | Usage possible dans Project N | Précaution |
@@ -437,8 +436,7 @@ Après le déclenchement du hook `core\\hook\\navigation\\primary_extend`, Iomad
 - rapports Iomad.
 
 Le code utilise :
-- Iomad 4.5 : classe globale `iomad` et `\\core\\context\\company` ;
-- Iomad 5.1/5.2 : `local_iomad\\iomad` et `local_iomad\\custom_context\\context_company`.
+- Iomad 4.5 : classe globale `iomad` et `\\core\\context\\company` ;- Iomad 5.1/5.2 : `local_iomad\\iomad` et `local_iomad\\custom_context\\context_company`.
 
 Le hook est déclenché **avant** l'ajout du nœud Iomad. Project N peut donc ajouter ses destinations globales via le hook sans empêcher l'ajout du tableau de bord Iomad, à condition de ne pas remplacer la vue primaire ni de supprimer les nœuds inconnus.
 
@@ -659,131 +657,133 @@ Les imports directs des sous-modules Bootstrap depuis `theme_boost/bootstrap/*` 
 
 ### Décisions Project N
 
-1. Éviter d'écrire des interactions dépendant directement des attributs Bootstrap dans les templates Project N.
-2. Ne pas mélanger les attributs Bootstrap 4 et 5 dans un même composant.
-3. Ne pas utiliser `bs4-compat` pour rendre compatibles de nouveaux composants ; il s'agit d'une couche de transition.
-4. Pour les composants JS propres au thème, isoler les appels Bootstrap derrière un module Project N et choisir l'import selon la version Moodle.
-5. Pour les interactions déjà gérées par Moodle/Boost (modales, dropdowns, tabs, tiroirs), réutiliser leurs API et leur initialisation plutôt que créer un deuxième contrôleur.
-6. Tester les états clavier, focus, fermeture, échappement, scroll et annonces accessibles après chaque changement de version Bootstrap.
-7. Prévoir une matrice distincte pour Moodle 4.5, Moodle 5.3 et Iomad 5.2 : le fork Iomad 5.2 observé est encore sur les imports historiques `theme_boost/bootstrap/*` et ne doit pas être assimilé à Moodle 5.3.
+## 34. Éditeurs de texte : TinyMCE, Atto et texte brut
 
-Sources de code :
-- [Moodle 4.5 — index Bootstrap Boost](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/index.js)
-- [Moodle 4.5 — modal Bootstrap 4](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/bootstrap/modal.js)
-- [Moodle 5.3 — compatibilité Bootstrap 4/5](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/amd/src/bs4-compat.js)
-- [Iomad 5.2 — compatibilité Bootstrap](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/amd/src/bs4-compat.js)
-- [Boost 5.3 — notes de migration](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/UPGRADING.md)
+### 34.1 Moodle 4.5
 
-## 30. Personnalisation des composants React à partir de Moodle 5.2
+Le formulaire natif `MoodleQuickForm_editor` sélectionne l'éditeur préféré avec `editors_get_preferred_editor()`, lui transmet le texte, les options et les paramètres du sélecteur de fichiers, puis rend le champ via le template `core_form/editor_textarea`.
 
-La documentation développeur Moodle 5.3 décrit un mécanisme de résolution dynamique des composants React en fonction du thème actif. Un thème peut fournir un override sous :
+Le moteur d'édition n'est donc pas un composant visuel isolé : il est lié au formulaire, au format du texte, au contexte Moodle, aux fichiers brouillons et aux dépôts disponibles. L'élément prend aussi en compte les utilisateurs non connectés/invités en désactivant le téléversement.
 
-```
-public/theme/projectn/js/esm/src/overrides/<composant>/<chemin>
-```
+TinyMCE est présent dans `lib/editor/tiny/`. Atto est encore présent dans la branche 4.5 du fork (`lib/editor/atto/`) et s'appuie sur YUI et des sous-plugins `atto_*`. Il ne faut donc pas confondre la version 4.5 avec les versions 5.x.
 
-Le système cherche d'abord l'override du thème actif, puis retombe sur le composant original du cœur ou du plugin.
+### 34.2 Moodle 5.3 et Iomad 5.2
 
-Point d'attention majeur : **les overrides React ne suivent pas automatiquement la chaîne d'héritage des thèmes**. Un composant fourni par un parent Boost n'est donc pas automatiquement repris par Project N comme le sont certains templates ou fichiers hérités. Il faut fournir l'override dans le thème enfant ou utiliser explicitement les alias prévus pour charger le composant original ou celui d'un thème parent.
+Dans Moodle 5.3, TinyMCE reste l'éditeur intégré de référence. Le fichier `public/lib/editor/tiny/classes/editor.php` possède le même blob Git que celui de Moodle 4.5 et que celui d'Iomad 5.2 dans les branches consultées. Cela indique une continuité de cette classe, pas une identité de l'ensemble des réglages, plugins ou interfaces.
 
-Le mécanisme propose deux stratégies :
-- `wrap` : envelopper le composant original et conserver son comportement ;
-- `eject` : reprendre son implémentation pour la modifier plus profondément.
+Le chemin `public/lib/editor/atto/` n'existe pas dans la branche Moodle 5.3 consultée. La documentation développeur Moodle indique qu'Atto a été retiré du cœur à partir de Moodle 5.0. En conséquence :
+- Moodle 4.5 : Atto peut encore être présent dans le cœur, mais TinyMCE est l'éditeur à privilégier ;
+- Moodle 5.0 et versions ultérieures : ne pas dépendre d'Atto ni de ses sous-plugins ;
+- Moodle 5.3 / Iomad 5.2 : concevoir et valider les parcours sur TinyMCE et le champ texte brut, sans supposer la disponibilité d'Atto.
 
-Depuis Moodle 5.3, le CLI `swizzle` peut générer ces overrides. Chaque composant dispose d'un niveau de risque déclaré dans `swizzle.json` : `safe`, `risky` ou `prohibited`. Les composants non déclarés sont considérés comme risqués.
+### 34.3 Conséquences pour Project N
 
-Dans le code Moodle 5.3 inspecté, `core/nav/Nav` est déclaré `risky` en wrap comme en eject. Il ne faut donc pas considérer la navigation React comme un point d'extension stable et sans coût.
-
-### Décisions Project N
-
-1. Ne pas prévoir une réécriture globale des composants React Moodle.
-2. Privilégier CSS, tokens, configuration et points d'extension publics avant un override React.
-3. Utiliser `wrap` quand une modification d'enveloppe suffit ; réserver `eject` aux besoins démontrés et documentés.
-4. Avant chaque override, vérifier le niveau de risque du composant dans la version exacte ciblée.
-5. Garder une liste explicite des overrides Project N et des versions Moodle/Iomad pour lesquelles ils sont maintenus.
-6. Ne jamais supposer que l'héritage Boost couvre un override React ; le prévoir explicitement.
-7. Pour Moodle 4.5, qui précède ce mécanisme, utiliser les points d'extension Mustache/AMD disponibles dans cette version ; ne pas introduire un système React propre au thème qui ferait doublon avec l'évolution du cœur.
-8. Vérifier séparément Iomad 5.2 : la branche inspectée n'expose pas les mêmes fichiers React de navigation que Moodle 5.3. Ne pas appliquer automatiquement les conclusions Moodle 5.3 à Iomad 5.2.
+1. Ne pas remplacer TinyMCE par un éditeur Project N ni modifier directement son DOM après initialisation.
+2. Préserver les préférences d'éditeur, la configuration administrateur, les plugins et boutons activés, les formats supportés et les comportements d'autosauvegarde.
+3. Garder l'accès aux fonctions avancées de l'éditeur dans les parcours formateur ; le guidage pédagogique ne doit pas appauvrir les possibilités de création.
+4. Adapter le conteneur, la largeur, les espacements et le comportement responsive autour de l'éditeur, sans écraser ses propres contrôles.
+5. Ne pas supposer que TinyMCE Premium est disponible : les fonctions Premium dépendent de la licence et de la configuration de l'instance.
+6. Tester clavier, lecteur d'écran, navigation dans les menus/barres d'outils, focus, édition de tableaux, liens, images, médias, plein écran, changement de taille et affichage mobile.
+7. Contrôler le contraste et la visibilité du focus dans l'interface de l'éditeur elle-même : un audit axe-core de la page englobante ne suffit pas à garantir l'accessibilité de toutes les interactions de l'éditeur.
 
 Sources :
-- [Moodle — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming)
-- [Moodle 5.3 — manifeste swizzle du cœur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/js/esm/src/swizzle.json)
-- [Moodle 5.3 — composant Nav](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/js/esm/src/nav/Nav.tsx)
+- [Moodle 4.5 — élément de formulaire editor.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/form/editor.php)
+- [Moodle 4.5 — moteur TinyMCE](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/editor/tiny/classes/editor.php)
+- [Moodle 4.5 — intégration Atto](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/editor/atto/lib.php)
+- [Moodle 5.3 — élément de formulaire editor.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/form/editor.php)
+- [Moodle 5.3 — moteur TinyMCE](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/editor/tiny/classes/editor.php)
+- [Iomad 5.2 — moteur TinyMCE](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/editor/tiny/classes/editor.php)
+- [Documentation Moodle — Atto](https://moodledev.io/docs/5.1/apis/plugintypes/atto)
+- [Documentation Moodle — TinyMCE 5.3](https://docs.moodle.org/503/en/TinyMCE_editor)
 
-## 31. Sélecteur d'activités et de ressources : rupture entre 4.5 et 5.1+
+## 35. File picker, file manager et dépôts
 
-Le sélecteur d'activités est un point central de l'expérience formateur. Son évolution est suffisamment importante pour interdire une surcharge unique supposée compatible sur toute la plage.
+Moodle distingue plusieurs besoins, qui ne doivent pas être confondus dans les parcours Project N :
 
-### Moodle 4.5
+| Élément | Usage fonctionnel | Conséquence UX |
+|---|---|---|
+| `filepicker` | Sélectionner/téléverser un fichier unique, souvent pour le traiter puis ne pas le conserver comme pièce jointe durable | Interface de sélection ponctuelle, retour d'état et possibilité de remplacer le fichier |
+| `filemanager` | Gérer une collection de fichiers attachés à une zone de fichiers Moodle | Liste/gestion de fichiers, ajout, suppression, dossiers si autorisés |
+| `editor` | Éditer un contenu riche avec médias et fichiers intégrés | Éditeur associé à une zone brouillon et traitement des fichiers lors de l'enregistrement |
 
-Les templates sont sous `course/templates`, notamment :
-- `core_course/activitychooser` ;
-- `core_course/activitychooserbutton` ;
-- les sous-templates `core_course/local/activitychooser/*`.
+Les éléments de formulaire `MoodleQuickForm_filepicker` et `MoodleQuickForm_filemanager` s'appuient sur `repository/lib.php`, l'API des fichiers et des options de contexte, de types acceptés, de tailles et de nombre de fichiers. Le file manager 5.3 expose notamment les options `accepted_types`, `return_types` et les limites de taille de zone ; le sélecteur configure les types acceptés et initialise le sélecteur avec le contexte prévu.
 
-La logique AMD est principalement sous `course/amd/src/activitychooser.js` et `course/amd/src/local/activitychooser/*`. Le contrôleur orchestre les données, les favoris, les onglets, la modale, le pied de modale et les événements.
+Le sélecteur de dépôts est extensible : les dépôts disponibles et leurs possibilités dépendent de l'installation, de leur activation et des droits. Project N ne doit donc jamais coder en dur une liste supposée de sources (ordinateur, fichiers privés, OneDrive, etc.) ni promettre une source qui n'est pas activée.
 
-Le template du bouton utilise les conventions Bootstrap 4 (`data-toggle="dropdown"`) et des attributs spécifiques au sélecteur.
+### 35.1 Cycle des fichiers et sécurité
 
-### Moodle 5.1 et 5.3
+La documentation Moodle précise que l'éditeur utilise une zone de fichiers brouillons pendant l'édition. À la soumission, le code applicatif doit traiter le contenu, remplacer les URL temporaires par les références de fichiers attendues et déplacer les fichiers vers la zone définitive appropriée. Le file picker, à lui seul, ne signifie pas nécessairement que le fichier est conservé dans l'API File.
 
-À partir de Moodle 5.1, les templates et la logique du sélecteur sont déplacés de `core_course` vers `core_courseformat`. Les emplacements deviennent notamment :
-- `course/format/templates/activitychooser.mustache` ;
-- `course/format/templates/local/activitychooser/*` ;
-- `course/format/templates/local/content/activitychooserbutton.mustache` ;
-- `course/format/amd/src/local/activitychooser/*`.
+Pour Project N :
+- conserver les contextes, capacités, limites de taille, types acceptés, nombre maximal de fichiers et restrictions des dépôts ;
+- ne pas contourner le traitement des brouillons ni fabriquer directement des URL de fichiers ;
+- conserver les protections contre les téléversements anonymes/non autorisés ;
+- ne pas exposer un fichier en se fondant uniquement sur le fait qu'il apparaît dans une liste ou une carte ;
+- respecter les contrôles d'accès de l'API File et les permissions des dépôts ;
+- ne pas déplacer ou supprimer un fichier sans passer par les mécanismes Moodle attendus.
 
-Le pied de modale est désormais géré par le contrôleur de dialogue du format de cours. Le bouton ajoute des attributs de contexte tels que `data-section-id`, `data-returnsectionid`, `data-action` et utilise les conventions Bootstrap 5 dans la branche 5.3.
+### 35.2 Présentation et accessibilité
 
-Les formats de cours peuvent aussi fournir leurs propres sorties et templates. Le sélecteur n'est donc pas uniquement une interface globale que le thème pourrait redessiner sans tenir compte du format actif.
+Le thème peut moderniser l'habillage autour du sélecteur et du gestionnaire, mais doit conserver leur comportement natif et leurs contrats JavaScript.
 
-### Décisions Project N
+Critères de conception :
+1. libellé explicite du fichier sélectionné, type et taille lorsque disponibles ;
+2. état de téléversement, réussite et erreur perceptibles sans dépendre uniquement de la couleur ;
+3. action de remplacement/suppression identifiable et utilisable au clavier ;
+4. annonces accessibles lors des opérations asynchrones ;
+5. focus cohérent à l'ouverture/fermeture des dialogues et après une erreur ;
+6. contrôles tactiles utilisables sur smartphone, y compris dans les listes d'actions ;
+7. gestion des fichiers volumineux et des erreurs réseau sans perte silencieuse du travail ;
+8. prise en compte des lecteurs d'écran et des noms accessibles des boutons/icônes ;
+9. affichage sans débordement à 320 CSS px et zoom à 200 %.
 
-1. Le parcours de création guidée du formateur doit s'appuyer sur le sélecteur natif, pas le remplacer.
-2. Les catégories pédagogiques « transmettre / pratiquer / évaluer / collaborer » peuvent constituer une couche de présentation ou d'aide à la décision, mais le choix final doit conserver les activités et ressources réellement disponibles et autorisées.
-3. Ne jamais supprimer les favoris, recommandations, recherche, onglets, aides, résumé de sélection, pied de modale ou états de chargement.
-4. Ne pas recopier les templates 4.5 dans le thème en espérant qu'ils fonctionneront en 5.1+ : le namespace et le propriétaire fonctionnel ont changé.
-5. Toute surcharge doit être versionnée et testée avec les formats de cours natifs et tiers.
-6. Préserver les attributs `data-region`, `data-action`, identifiants uniques, associations ARIA et événements attendus par les modules.
-7. Le guidage Project N ne doit pas masquer les activités disponibles selon les capacités, les plugins installés ou les restrictions du cours.
-8. Sur smartphone, contrôler la hauteur de la modale, le scroll du contenu, la visibilité du pied d'action et le focus après ajout d'une activité.
+Le file picker est souvent affiché dans un dialogue : il faudra tester le dialogue complet (titre, description, focus initial, ordre de tabulation, fermeture, retour du focus), et pas seulement le bouton qui l'ouvre.
 
-Sources de code :
-- [Moodle 4.5 — template activité](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/templates/activitychooser.mustache)
-- [Moodle 4.5 — bouton du sélecteur](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/templates/activitychooserbutton.mustache)
-- [Moodle 4.5 — contrôleur AMD](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/amd/src/activitychooser.js)
-- [Moodle 5.3 — template activité](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/activitychooser.mustache)
-- [Moodle 5.3 — bouton du sélecteur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/activitychooserbutton.mustache)
-- [Moodle 5.3 — contrôleur de dialogue](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/local/activitychooser/dialogue.js)
-- [Moodle 5.1 — migration du sélecteur](https://moodledev.io/docs/5.1/devupdate)
+Sources :
+- [Moodle 4.5 — filemanager.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/form/filemanager.php)
+- [Moodle 4.5 — filepicker.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/form/filepicker.php)
+- [Moodle 5.3 — filemanager.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/form/filemanager.php)
+- [Moodle 5.3 — filepicker.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/form/filepicker.php)
+- [Documentation Moodle — fichiers dans les formulaires](https://moodledev.io/docs/5.3/apis/subsystems/form/usage/files)
 
-## 32. Conséquences sur l'architecture et la matrice de compatibilité
+## 36. Écarts Iomad observés sur les éditeurs et les fichiers
 
-Les relevés montrent que la plage de versions visée ne peut pas être traitée comme une seule plateforme technique homogène.
+Dans les fichiers consultés :
+- Iomad 4.5 `lib/form/editor.php` possède le même blob Git que Moodle 4.5 ;
+- Iomad 5.2 `public/lib/form/editor.php` possède le même blob Git que Moodle 5.3 ;
+- Iomad 5.2 `public/lib/editor/tiny/classes/editor.php` possède le même blob Git que Moodle 4.5 et Moodle 5.3.
 
-| Sujet | Moodle 4.5 | Iomad 5.2 (fork) | Moodle 5.3 |
-|---|---|---|---|
-| Bootstrap | 4.6.2 | Bootstrap 5, imports historiques Boost | 5.3.8, imports `bootstrap` |
-| Navigation primaire/secondaire | rendu historique | rendu historique hérité Moodle 5.2 | composants React dans les templates de navigation |
-| Overrides React par thème | non disponibles via le mécanisme 5.2+ | présence à vérifier selon composants de la branche | mécanisme d'override et swizzle |
-| Sélecteur d'activités | `core_course` | migration 5.1+ à vérifier dans le fork | `core_courseformat` |
-| Templates | racine historique | répertoire `public/` | répertoire `public/` |
+Cela ne prouve pas que tous les dépôts, plugins d'éditeur, réglages d'administration ou personnalisations d'instance Iomad sont identiques. Cela indique simplement qu'aucune divergence propre à Iomad n'a été relevée dans ces classes centrales lors de cette tranche.
 
-Cette matrice est un instantané des branches inspectées, et non une affirmation sur toutes les versions publiées d'Iomad.
+Décisions :
+1. Ne pas ajouter de logique Iomad dans le rendu des éditeurs et sélecteurs sans preuve d'un besoin fonctionnel.
+2. Les restrictions d'entreprise restent applicables aux pages, dépôts et fichiers selon les capacités/contextes et mécanismes Iomad.
+3. Ne jamais interroger les tables Iomad directement pour déterminer la visibilité d'un fichier ou d'un dépôt.
+4. Tester les fichiers avec plusieurs comptes et entreprises, y compris les cas de partage, de fichiers privés, de dépôts externes et d'accès direct URL.
+5. La présence d'un même blob dans les forks ne remplace pas les tests de cloisonnement sur une instance Iomad réelle.
 
-Conséquences :
-1. Définir une couche de compatibilité frontale interne au thème, avec des implémentations par génération lorsque nécessaire.
-2. Éviter les conditions de version dispersées dans les templates ; centraliser les différences dans les fichiers de configuration et modules ciblés.
-3. Maintenir une matrice de tests distincte Moodle 4.5, Moodle 5.3 et Iomad 4.5/5.2.
-4. Ne pas retarder la conception mobile-first en attendant les composants React : l'expérience doit être cohérente même avec le rendu historique de Moodle 4.5.
-5. Prévoir que les adaptations de composants React soient des améliorations progressives pour Moodle 5.2+, et non une dépendance nécessaire au fonctionnement du thème.
+## 37. Conséquences sur les parcours apprenant et formateur
 
-## 33. Limites et prochaines vérifications
+### Apprenant
+- Les dépôts de devoirs, pièces jointes, réponses avec éditeur et fichiers remis doivent conserver les consignes, limites et confirmations natives.
+- La progression de téléversement et le résultat de remise doivent être explicites ; éviter qu'un apprenant pense avoir remis un fichier alors qu'il est seulement présent dans une zone brouillon.
+- Les contenus riches doivent rester lisibles et navigables sur smartphone, sans imposer un éditeur complet lorsque la saisie simple suffit.
 
-Cette tranche repose sur les fichiers des branches identifiées et sur la documentation développeur. Elle n'est pas un test d'exécution. Les éléments à confirmer dans les prochaines étapes :
-- vérifier les templates et modules du sélecteur d'activités dans Iomad 4.5 et 5.2, notamment les éventuelles adaptations Iomad ;
-- cartographier les éditeurs TinyMCE/TinyMCE premium et Atto selon les versions réellement supportées ;
-- cartographier le sélecteur de fichiers, le gestionnaire de fichiers et les téléversements dans les formulaires ;
-- établir une liste des composants React réellement pertinents pour les espaces apprenant, formateur et gestionnaire ;
-- vérifier les éventuels overrides React dans les plugins tiers Iomad utilisés par les clients ;
-- définir les tests de non-régression par version et par rôle, sans présumer de la disponibilité de tous les plugins.
+### Formateur
+- La création de cours, descriptions de sections, consignes, pages, livres, feedbacks et questions peut mobiliser l'éditeur riche et les dépôts.
+- Les parcours guidés « transmettre, pratiquer, évaluer, collaborer » doivent sélectionner les activités/ressources natives, mais conserver l'accès aux paramètres avancés, aux éditeurs et à leurs plugins.
+- Les consignes et contenus doivent pouvoir intégrer images, médias, liens et documents lorsque les capacités et réglages l'autorisent.
+- Les fichiers déposés dans les zones de brouillon ne doivent pas être présentés comme publiés ou durablement attachés avant la soumission effective du formulaire.
+
+## 38. Limites et prochaines vérifications
+
+Cette tranche reste une analyse statique partielle des forks personnels. Elle n'a pas exécuté les éditeurs, dialogues, dépôts ni téléversements. Les points à approfondir avant clôture de P0 :
+- inventorier les templates et modules AMD/ESM réels du file picker, file manager et des dialogues sur chaque version cible ;
+- comparer les classes et plugins de dépôts Moodle/Iomad, y compris les éventuels dépôts spécifiques d'entreprise ;
+- vérifier le comportement mobile de TinyMCE sur appareils réels et les limites des barres d'outils ;
+- cartographier la création/modification des activités et ressources, notamment les formulaires complexes et les réglages avancés ;
+- examiner l'affichage apprenant des principales activités natives (devoir, test, forum, page, fichier, H5P) ;
+- établir une liste des plugins éditeurs/dépôts présents chez les clients et leur compatibilité ;
+- exécuter les tests clavier, NVDA/TalkBack, axe-core, zoom et reflow sur des installations réelles.
+
+Aucun résultat d'exécution ou de test utilisateur n'est revendiqué par cette mise à jour.
