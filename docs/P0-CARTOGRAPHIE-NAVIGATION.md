@@ -1358,7 +1358,7 @@ Le répertoire public/blocks de IOMAD_502_STABLE contient les douze blocs spéci
 | block_iomad_link | Lien d'accès au tableau de bord Iomad | Point d'entrée de navigation |
 | block_iomad_welcome | Informations de bienvenue à l'installation | Contenu d'accueil, probablement secondaire après configuration |
 
-Cet inventaire est celui des répertoires présents dans la branche inspectée ; il ne signifie pas que chaque bloc est activé, installé, affiché ou pertinent dans toutes les configurations Iomad.
+Cet inventaire recense les blocs fournis dans la suite de la branche inspectée. Les README Iomad indiquent que les plugins de la suite sont interdépendants et doivent être installés ensemble ; en revanche, cela ne signifie pas que chaque bloc est activé, placé sur une page, visible pour chaque rôle ou pertinent dans toutes les configurations.
 
 ### 51.3 Le bloc d'administration comme agrégateur de navigation
 
@@ -1403,7 +1403,7 @@ Conséquences pour Project N :
 - **Respecter l'extensibilité.** Les entrées de menu dynamiques déclarées via db/iomadmenu.php doivent rester découvrables et accessibles.
 - **Respecter le contexte d'entreprise.** Un changement d'entreprise active un contexte de travail qui doit être visible ; les données, listes, rapports, liens et actions doivent rester limités à l'entreprise autorisée.
 - **Ne pas lire les tables Iomad depuis le thème.** Les blocs eux-mêmes peuvent utiliser les APIs/classes Iomad et, dans certains cas, leurs propres requêtes métier ; Project N doit s'appuyer sur les APIs publiques et capacités, pas recopier leurs requêtes.
-- **Gérer les blocs absents ou désactivés.** Le thème doit rester fonctionnel si un bloc facultatif (commerce, microlearning, approbation, etc.) n'est pas installé ou activé.
+- **Gérer les blocs non affichés.** Le thème doit rester fonctionnel lorsque certains blocs ne sont pas placés sur une page ou ne sont pas visibles pour un rôle donné. Ne pas confondre cette absence d'affichage avec une installation partielle de la suite, que la documentation Iomad ne présente pas comme le mode normal de déploiement.
 - **Conserver l'administration Moodle native.** Le tableau de bord Iomad est une surface de gestion métier, mais ne remplace pas l'administration système Moodle.
 
 ### 51.6 Points à analyser dans la prochaine tranche
