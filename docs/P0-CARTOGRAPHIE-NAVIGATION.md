@@ -1476,3 +1476,64 @@ Le format mono-activité et le format social ne doivent pas être forcés dans u
 - [Iomad 5.2 — classe de format](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/base.php)
 
 Cette section décrit une analyse statique de fichiers identifiés et comparés dans les forks. Elle ne constitue pas un test d'installation, un test des interactions AJAX/éditeur de cours, ni une validation axe-core, clavier, NVDA ou TalkBack.
+
+
+## 49. Éditeur de cours et sélecteur d'activités — événements, clavier et hooks
+
+### 49.1 Éditeur de cours : un contrat JavaScript commun
+
+Le fichier course/format/amd/src/courseeditor.js a le même SHA dans les quatre branches consultées : Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2 (6560c35e). Le module expose notamment dispatchStateChangedEvent() et émet l'événement core_course/state_changed.
+
+Ce constat établit que ce fichier précis est commun aux quatre branches. Il ne prouve pas que tous les modules de l'éditeur, ses dépendances ou ses consommateurs sont identiques. Project N doit éviter de détourner ou de remplacer cet événement : il sert de contrat de notification de changement d'état du cours.
+
+### 49.2 Sélecteur d'activités : composant natif à conserver
+
+Dans Moodle 5.3 et Iomad 5.2, le sélecteur d'activités est porté par core_courseformat :
+
+- module AMD activitychooser.js ;
+- classe output activitychooserbutton ;
+- template activitychooserbutton.mustache ;
+- dialogue, dépôt et sélecteurs associés dans core_courseformat/local/activitychooser.
+
+Le module écoute les événements d'activation standard et clavier (activate et keyboardActivate), repère le bouton de sélection d'activité, puis détermine la position dans le cours à partir des données de section. Le code signale explicitement que l'usage du seul numéro de section est déprécié et demande l'attribut data-section-id. Le bouton et le conteneur de section restent donc liés par un contrat de données.
+
+La classe output activitychooserbutton déclenche aussi le hook public before_activitychooserbutton_exported avant l'export des données. Ce hook est un point d'extension à privilégier pour ajouter une action complémentaire au sélecteur, plutôt que de recopier le template ou de remplacer son JavaScript, sous réserve de vérifier son enregistrement dans chaque version ciblée.
+
+### 49.3 Comparaison Moodle 5.3 / Iomad 5.2
+
+| Fichier | Moodle 5.3 | Iomad 5.2 | Conclusion |
+|---|---|---|---|
+| courseeditor.js | 6560c35e | 6560c35e | Identique ; également identique dans les deux branches 4.5 |
+| activitychooser.js | a71fd94e | 90029a00 | Différent |
+| activitychooserbutton.php | 2e23bb5b | 6cc02422 | Différent |
+| activitychooserbutton.mustache | c85e1b0e | 07c65be9 | Différent |
+
+Les différences constatées sont ciblées :
+
+- le JavaScript des deux branches utilise les événements activate et keyboardActivate et le même modèle de dialogue ; des différences de code subsistent dans le calcul de position et les éléments de compatibilité ;
+- la classe PHP Moodle 5.3 déprécie l'utilisation d'un entier pour sectionreturn et demande null, tandis que le message de dépréciation Iomad 5.2 demande une instance section_info plutôt qu'un entier ;
+- le template Iomad 5.2 ajoute notamment la classe utilitaire p-1 sur le bouton ; le template Moodle 5.3 ne l'ajoute pas ;
+- les deux templates conservent un véritable bouton, un data-action, un aria-label contextualisé, aria-haspopup, aria-expanded et tabindex.
+
+Ces différences ne justifient pas de réécrire le sélecteur. Elles imposent de conserver les contrats natifs et de vérifier les templates exacts avant toute surcharge.
+
+### 49.4 Conséquences pour Project N
+
+1. Ne pas remplacer le sélecteur natif par un composant Project N : le sélecteur gère les plugins, les dépôts d'activités, les actions complémentaires et les événements clavier.
+2. Utiliser le hook before_activitychooserbutton_exported lorsqu'une action additionnelle est nécessaire et lorsque sa disponibilité est confirmée sur la version concernée.
+3. Ne pas dépendre du seul numéro de section : préserver les identifiants de section et les attributs attendus par le module.
+4. Ne pas intercepter ou neutraliser les événements activate, keyboardActivate et core_course/state_changed.
+5. Préserver les boutons natifs, leurs noms accessibles, leur état développé/replié et leur activation clavier.
+6. Tester l'ajout d'activité en mode édition, l'ajout avant une activité existante, l'ajout en fin de section, les formats de cours différents et les extensions qui ajoutent des actions au sélecteur.
+
+### 49.5 Sources comparées
+
+- [Moodle 4.5 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/amd/src/courseeditor.js)
+- [Moodle 5.3 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/courseeditor.js)
+- [Iomad 5.2 — courseeditor.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/courseeditor.js)
+- [Moodle 5.3 — activitychooser.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/activitychooser.js)
+- [Iomad 5.2 — activitychooser.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/activitychooser.js)
+- [Moodle 5.3 — activitychooserbutton.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
+- [Iomad 5.2 — activitychooserbutton.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
+
+Analyse statique des fichiers cités uniquement. Les interactions du sélecteur, la gestion réelle du focus, l'accessibilité du dialogue et les extensions tierces restent à tester en environnement Moodle/Iomad.
