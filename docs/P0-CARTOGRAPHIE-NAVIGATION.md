@@ -287,3 +287,133 @@ Le fichier `iomad.php` a le même contenu/blob dans les branches 5.1 et 5.2 exam
 **Conséquence pour l'adaptateur :** le point de compatibilité à isoler est d'abord le chargement et le nom de classe (`iomad` global en 4.5, `\\local_iomad\\iomad` en 5.x). Ne pas multiplier les adaptations métier. Les fonctions de capacité ont une continuité de comportement apparente, mais les appels doivent être testés sur les versions réelles et avec des contextes/entreprises variés.
 
 En Iomad 4.5, les anciennes tables portent notamment les noms `company` et `company_users`; en 5.x, l'organisation est sous `local_iomad` et les noms de tables ont évolué. Cette différence renforce la règle : Project N ne doit faire aucune requête directe sur le schéma Iomad.
+
+
+## 14. Cartographie approfondie des layouts et des renderers
+
+### 14.1 Déclaration des layouts Boost
+
+Les fichiers `theme/boost/config.php` de Moodle 4.5 et 5.3 examinés ont le même contenu (même blob Git). La liste des layouts et leur répartition n'ont donc pas changé entre ces deux branches dans le fork.
+
+Layouts utilisant `drawers.php` :
+- `base`, `standard`, `course`, `coursecategory`, `incourse` ;
+- `frontpage`, `admin`, `mycourses`, `mydashboard`, `mypublic` ;
+- `report`.
+
+Layouts particuliers :
+- `login` → `login.php` ;
+- `popup` et `frametop` → `columns1.php` ;
+- `embedded` et `redirect` → `embedded.php` ;
+- `maintenance` → `maintenance.php` ;
+- `print` → `columns1.php` ;
+- `secure` → `secure.php`.
+
+Les régions de blocs et options diffèrent selon le layout : certains masquent la navbar, d'autres le pied de page ou l'en-tête d'activité. Le layout maintenance est explicitement sensible : il ne doit déclencher ni accès base de données, ni cache, ni liens susceptibles de rendre l'installation ou la mise à niveau indisponible.
+
+**Décision :** Project N doit conserver une couverture explicite de tous les layouts, y compris login, maintenance, popup, embedded, print, redirect et secure. Le nouveau shell ne doit pas être imposé à des pages qui nécessitent volontairement une sortie minimale ou isolée.
+
+### 14.2 Différences du layout drawers.php entre 4.5 et 5.3
+
+Le squelette reste le même : il prépare les tiroirs, blocs, index de cours, navigation primaire et secondaire, puis transmet le contexte à `theme_boost/drawers`.
+
+Différences relevées :
+- Moodle 5.3 ajoute `coursefullname` et `courseurl` au contexte du template ;
+- le menu de débordement secondaire est rendu avec `core/url_select` en 4.5, puis avec un objet `core\\output\\select_menu` et le template `core/url_select` en 5.3 ;
+- les données primaire/secondaire continuent d'être préparées par les objets de sortie Moodle.
+
+Le template Mustache `drawers` contient directement la structure principale de page, les toggles des tiroirs, les points d'insertion du contenu, l'en-tête d'activité et le footer. Une surcharge complète aurait donc un impact transversal sur presque toutes les pages.
+
+**Conséquence :** ne pas copier le layout `drawers.php` ni le template `drawers.mustache` pour une simple modification de navigation. Si une structure Project N nécessite un shell distinct, créer un layout enfant minimal et maintenir la compatibilité des variables/points d'insertion du parent. La décision doit être prise après les maquettes et les parcours P0.
+
+### 14.3 Renderers Boost
+
+La classe `theme_boost\\output\\core_renderer` étend `\\core_renderer`. Dans Moodle 4.5, ses méthodes publiques spécifiques observées sont notamment :
+- `edit_button()` ;
+- `navbar()` ;
+- `context_header()` ;
+- `firstview_fakeblocks()`.
+
+Moodle 5.3 ajoute notamment :
+- `search_box()` ;
+- `colour_mode_menu()`.
+
+La classe Boost reste une couche de rendu, pas un gestionnaire de droits ni un moteur de navigation. Project N pourra étendre les renderers ciblés, mais devra éviter de remplacer les méthodes cœur sans nécessité démontrée.
+
+### 14.4 Factory et résolution des renderers
+
+Boost déclare `theme_overridden_renderer_factory`. Moodle résout les renderers en fonction du thème courant et des composants demandés. La documentation Output API confirme qu'un thème peut fournir une classe renderer personnalisée pour un composant, afin d'adapter le rendu de ses renderables.
+
+Règles Project N :
+- activer la factory de surcharge ;
+- placer les surcharges dans les espaces de noms et emplacements attendus par Moodle ;
+- surcharger uniquement les méthodes utiles, avec signatures compatibles ;
+- tester les renderers des plugins tiers et les renderables React/Mustache ;
+- ne pas supposer qu'une surcharge de `core_renderer` contrôle les composants React qui rendent leur propre interface.
+
+### 14.5 Compatibilité du shell Iomad
+
+Les fichiers `theme/boost/layout/drawers.php` de Moodle 5.3 et Iomad 5.2 ont le même blob Git. Le template `theme/boost/templates/drawers.mustache` est également identique entre ces deux branches. La même identité avait été constatée pour le layout 4.5 Moodle/Iomad.
+
+Cela indique que le shell Boost lui-même n'est pas le lieu principal des adaptations Iomad dans les branches comparées. Les différences se situent dans le cœur Iomad et les renderers.
+
+## 15. Hooks Moodle : disponibilité depuis un thème confirmée
+
+Un point important peut maintenant être tranché : **un thème peut enregistrer des callbacks de hooks dans son propre fichier `db/hooks.php`**.
+
+Dans Moodle 4.5 et 5.3, le gestionnaire de hooks :
+1. récupère tous les types de plugins via `core_component::get_plugin_types()` ;
+2. parcourt les plugins de chaque type via `get_plugin_list()` ;
+3. recherche un fichier `db/hooks.php` pour chaque composant ;
+4. charge et met en cache les callbacks déclarés.
+
+Le type `theme` fait partie des types de plugins Moodle. Il n'est donc pas nécessaire de créer systématiquement `local_projectn` uniquement pour enregistrer le hook de navigation primaire.
+
+Le hook `core\\hook\\navigation\\primary_extend` est présent et déclenché dans la classe primaire en Moodle 4.5 et 5.3. Son objet expose la vue primaire par `$hook->primaryview` et `get_primaryview()`. La vue est un objet de navigation ; le callback peut y ajouter des nœuds via l'API de navigation, sans remplacer la classe core.
+
+**Décision affinée :** Project N pourra enregistrer directement son callback dans `theme/projectn/db/hooks.php` (ou `public/theme/projectn/db/hooks.php` selon l'arborescence de l'installation) et le traiter dans une classe du thème. Cette option devra être testée lors de la première installation. Un plugin compagnon ne sera requis que pour les traitements métier/serveur ou les points d'extension non accessibles au thème.
+
+Attention : les callbacks sont mis en cache. Les modifications de `db/hooks.php` pendant le développement nécessitent une purge de caches ou une évolution de version du composant pour rafraîchir les enregistrements.
+
+## 16. Différences Iomad dans le renderer cœur
+
+La comparaison des classes `core_renderer` Moodle 5.3 et Iomad 5.2 montre que les méthodes publiques sont quasiment identiques (Iomad n'ajoute pas de méthode publique dans le relevé), mais le fichier Iomad contient des adaptations internes.
+
+Deux adaptations notables :
+
+1. **Menu personnalisé :** Iomad surcharge le comportement de `custom_menu()` pour sélectionner le contexte entreprise, vérifier plusieurs capacités de gestion, ajouter un lien vers le tableau de bord entreprise, charger les éléments de menu personnalisés de l'entreprise et éventuellement le lien boutique/e-commerce.
+2. **Favicon :** Iomad peut servir le favicon propre à l'entreprise courante, avant de revenir au favicon global.
+
+Le layout Boost ne porte donc pas ces adaptations : elles se trouvent dans le renderer du cœur Iomad.
+
+**Conséquence Project N :** ne pas neutraliser `custom_menu()`, les sorties de menu personnalisées ni le mécanisme de favicon. Si le menu global Project N remplace visuellement le menu Boost, il doit préserver les entrées personnalisées Iomad et le lien de gestion entreprise lorsque les capacités le permettent. L'intégration doit utiliser les API Iomad ou les sorties déjà produites par Iomad, sans lire ses tables depuis le thème.
+
+## 17. Synthèse des décisions après cette étape
+
+| Sujet | Décision |
+|---|---|
+| Layouts Boost | Conserver l'ensemble des layouts et leurs cas particuliers |
+| Shell global | Ne pas copier `drawers.php` / `drawers.mustache` avant validation des maquettes |
+| Navigation primaire | Utiliser `primary_extend` depuis le thème via `db/hooks.php` |
+| Navigation secondaire | Laisser Moodle la construire et la rendre |
+| Renderers | Surcharges ciblées via la factory Boost |
+| Hooks | Le thème peut enregistrer ses callbacks ; compagnon local non systématique |
+| Iomad custom menu | Préserver menu entreprise, lien de gestion, boutique et favicon |
+| Sécurité | L'affichage des liens ne remplace jamais le contrôle serveur |
+
+## 18. Sources de code ajoutées
+
+- [Moodle 4.5 — Boost config](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/config.php)
+- [Moodle 5.3 — Boost config](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/config.php)
+- [Moodle 4.5 — layout drawers](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/layout/drawers.php)
+- [Moodle 5.3 — layout drawers](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/layout/drawers.php)
+- [Moodle 4.5 — template drawers](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/templates/drawers.mustache)
+- [Moodle 5.3 — template drawers](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/templates/drawers.mustache)
+- [Moodle 4.5 — Boost renderer](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/classes/output/core_renderer.php)
+- [Moodle 5.3 — Boost renderer](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/classes/output/core_renderer.php)
+- [Moodle 4.5 — primary navigation](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/classes/navigation/views/primary.php)
+- [Moodle 5.3 — hook manager](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/hook/manager.php)
+- [Moodle 5.3 — primary_extend hook](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/hook/navigation/primary_extend.php)
+- [Iomad 5.2 — Boost renderer](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/classes/output/core_renderer.php)
+- [Iomad 5.2 — core renderer](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/output/core_renderer.php)
+- [Iomad 5.2 — layout drawers](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/layout/drawers.php)
+- [Iomad 5.2 — template drawers](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/templates/drawers.mustache)
