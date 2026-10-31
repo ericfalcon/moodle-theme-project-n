@@ -1157,7 +1157,7 @@ La comparaison des branches de même génération a été reprise sur les forks 
 | mod/quiz/templates/attempt_summary_information.mustache | d13a4adf531ef7d299e8fee4e553b1980e295344 | Résumé de tentative identique |
 | mod/quiz/templates/question_slot.mustache | fe24e3ccc3059187087bfed7da635f9c23750b6c | Emplacement de question identique |
 
-Pour ce périmètre, aucune divergence Iomad n'est donc observée dans ces cinq fichiers entre Moodle 5.2 et Iomad 5.2. Les constats précédents reposant sur Moodle 5.3 face à Iomad 5.2 (notamment le template de correction et le module AMD) décrivaient un écart de génération et ne doivent pas être interprétés comme des adaptations propres à Iomad.
+Pour ce périmètre, aucune divergence Iomad n'est donc observée dans ces onze fichiers entre Moodle 5.2 et Iomad 5.2. Les constats précédents reposant sur Moodle 5.3 face à Iomad 5.2 (notamment le template de correction et le module AMD) décrivaient un écart de génération et ne doivent pas être interprétés comme des adaptations propres à Iomad.
 
 Cela ne prouve pas que tout le module assign/quiz est identique : les autres templates, bibliothèques, contrôleurs, services, événements, APIs et éventuels ajouts Iomad doivent être examinés séparément.
 
