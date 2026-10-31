@@ -331,7 +331,9 @@ Le choix d'un département dans ce formulaire ne suffit pas à cartographier tou
 
 Lorsque la capacité `allocate_licenses` est disponible, le formulaire affiche une zone de gestion des licences. La sélection est filtrée sur l'entreprise concernée et sur des licences non expirées disposant encore de capacité. Le formulaire associe ensuite les licences aux cours correspondants.
 
-Cela confirme que l'ajout d'un utilisateur Iomad peut combiner identité, rattachement organisationnel, fonction de gestion et droit d'accès à la formation. Ces dimensions doivent rester séparées dans la présentation Project N :
+Cela confirme que l'ajout d'un utilisateur Iomad peut combiner identité, rattachement organisationnel, fonction de gestion et droit d'accès à la formation.
+
+Point de version à intégrer aux scénarios de test : les notes de version Iomad 5.2 précisent que les licences achetées par un gestionnaire de département ne sont disponibles que pour ce département. Il faudra vérifier cette restriction dans les parcours d'achat, d'attribution et de consommation, et ne pas la généraliser aux branches 4.5/5.0/5.1 sans contrôle de leurs sources. Ces dimensions doivent rester séparées dans la présentation Project N :
 - l'identité et le compte Moodle ;
 - l'appartenance à l'entreprise et aux départements ;
 - les fonctions de gestion/formation ;
