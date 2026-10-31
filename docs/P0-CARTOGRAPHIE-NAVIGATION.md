@@ -352,9 +352,12 @@ Règles Project N :
 
 ### 14.5 Compatibilité du shell Iomad
 
-Les fichiers `theme/boost/layout/drawers.php` de Moodle 5.3 et Iomad 5.2 ont le même blob Git. Le template `theme/boost/templates/drawers.mustache` est également identique entre ces deux branches. La même identité avait été constatée pour le layout 4.5 Moodle/Iomad.
+Vérifié sur les branches inspectées :
+- le fichier `public/theme/boost/layout/drawers.php` de Moodle 5.3 et d'Iomad 5.2 a le même blob Git ;
+- le fichier `public/theme/boost/amd/src/drawers.js` de Moodle 5.2 et d'Iomad 5.2 a le même blob Git ;
+- le template `public/theme/boost/templates/drawers.mustache` **diffère** entre Moodle 5.3 et Iomad 5.2 : l'identité n'est pas acquise pour ce template et doit être examinée avant toute surcharge.
 
-Cela indique que le shell Boost lui-même n'est pas le lieu principal des adaptations Iomad dans les branches comparées. Les différences se situent dans le cœur Iomad et les renderers.
+Le shell Boost n'est donc pas identique partout : il faut vérifier chaque surcharge de `drawers.mustache` contre la branche Iomad ciblée. Les adaptations Iomad propres restent principalement dans le cœur Iomad et les renderers.
 
 ## 15. Hooks Moodle : disponibilité depuis un thème confirmée
 
