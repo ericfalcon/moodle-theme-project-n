@@ -49,7 +49,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 
 ## P0 — Cadrage, spécifications et décisions
 
-Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser.
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : il sert à identifier les mécanismes réutilisables et les dépendances à vérifier, sans lancer le développement avant la clôture de la cartographie P0.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
