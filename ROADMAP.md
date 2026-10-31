@@ -8,7 +8,7 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 
 | Phase | Objet | Périmètre cible | État |
 |---|---|---|---|
-| P0 | Cadrage, spécifications et décisions | MVP | À réaliser |
+| P0 | Cadrage, spécifications et décisions | MVP | En cours |
 | P1 | Socle Boost et design system responsive | MVP | À réaliser |
 | P2 | Espace apprenant | MVP | À réaliser |
 | P3 | Espace formateur | MVP progressif | À réaliser |
@@ -47,6 +47,8 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 ---
 
 ## P0 — Cadrage, spécifications et décisions
+
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. Il ne vaut pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
