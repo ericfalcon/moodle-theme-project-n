@@ -40,7 +40,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 | Accessibilité | WCAG 2.2 AA, RGAA et EN 301 549 applicables ; validation continue | Retenu |
 | CI | CI envisageable et à définir en P0 ; elle n'est pas exclue | À définir |
 | Licence | GPL v3 ou ultérieure envisagée, à confirmer | À confirmer |
-| Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5–5.2 selon disponibilité et tests | À vérifier |
+| Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5 LTS, 5.0 et 5.1 publiés ; 5.2 dès publication et disponibilité d'un environnement | À vérifier |
 | Points d'extension | Inventaire des API, composants, renderers, layouts et templates nécessaires | À documenter |
 | Tests utilisateurs | Tâches types et profils apprenant, formateur, administrateur ; inclure autant que possible des personnes en situation de handicap | À définir |
 
@@ -193,7 +193,7 @@ Version 1.x :
 - couverture élargie des fonctions spécifiques Iomad.
 
 Critères d'acceptation :
-- tests sur les versions Iomad réellement disponibles dans la plage 4.5–5.2 ;
+- tests sur Iomad 4.5 LTS, 5.0 et 5.1 ; extension à Iomad 5.2 dès publication et disponibilité d'un environnement ; distinguer la branche expérimentale Iomad 4.5 de la branche LTS ;
 - absence de fuite de données entre entreprises, vérifiée par des tests dédiés ;
 - rôles, capacités et contextes contrôlés ;
 - aucune dépendance Iomad dans le chemin d'exécution Moodle standard ;
