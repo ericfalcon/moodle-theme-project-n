@@ -143,3 +143,47 @@ Ce document complète, sans remplacer :
 - [P0-ROLES-MOODLE-IOMAD.md](P0-ROLES-MOODLE-IOMAD.md) — rôles et capacités.
 
 **Critère de clôture :** le retour d’expérience Épure ne sera considéré comme intégré au P0 qu’après achèvement de l’inventaire Iomad et des points d’extension, puis inscription des décisions retenues dans l’architecture et la matrice de tests. Aucun développement de l’interface ne doit commencer avant la clôture de la cartographie P0.
+
+
+## 7. Résultat de l’inventaire complémentaire des classes Iomad d’Épure
+
+L’inspection des classes spécialisées affine la conclusion : Épure ne se contente pas d’un test de présence d’Iomad. Il possède une couche de compatibilité dédiée et des adaptations de rendu pour des blocs Iomad.
+
+### 7.1 Adaptateur `theme_epure\\iomad`
+
+Le fichier `theme/epure/classes/iomad.php` documente explicitement la transition Iomad 5.1 :
+- les tables historiques deviennent notamment `local_iomad_companies`, `local_iomad_company_users`, `local_iomad_company_departments` et `local_iomad_company_courses` ;
+- l’ancienne classe `iomad` est remplacée par `local_iomad\\iomad` ;
+- le contexte entreprise passe à `local_iomad\\custom_context\\context_company`.
+
+L’adaptateur centralise les noms de tables, détecte l’installation, choisit la classe API, fournit le contexte entreprise et expose quelques opérations de domaine. **Il contient aussi des accès SQL directs** aux tables Iomad, y compris pour déterminer la société liée à un cours ou les appartenances d’un utilisateur.
+
+**Décision Project N :** reprendre l’idée d’un adaptateur versionné et localisé, mais ne pas reproduire automatiquement les requêtes SQL d’Épure. Priorité aux API publiques/supportées disponibles dans la version cible ; lorsqu’une requête directe est inévitable, elle doit être isolée, documentée, comparée entre les branches correspondantes et couverte par des tests. L’adaptateur ne doit pas devenir une copie du modèle de données Iomad.
+
+### 7.2 Hooks et changement de thème par entreprise
+
+Le fichier `theme/epure/classes/hook_callbacks.php` utilise notamment le hook `after_config` pour :
+- déterminer l’entreprise associée au cours consulté par un utilisateur ;
+- ajuster le contexte de session pour certains parcours Iomad ;
+- suivre le thème de l’entreprise ;
+- contribuer à la présentation des couleurs et aux champs d’apparence du formulaire entreprise.
+
+Le code touche donc à la session et à la sélection du thème avant le rendu ordinaire de certaines pages. C’est un mécanisme puissant, mais plus sensible qu’un simple rendu conditionnel.
+
+**Décision Project N :** ne pas reprendre le changement de thème en session ni la logique de sélection d’entreprise sans besoin fonctionnel démontré. Project N doit d’abord utiliser le contexte que Moodle/Iomad a établi ; toute intervention sur la session ou le thème doit avoir une justification documentée et des scénarios de non-régression dédiés.
+
+### 7.3 Rendus des blocs Iomad
+
+Les classes `block_iomad_company_admin_renderer` et `block_iomad_mycourses_renderer` spécialisent le rendu de blocs Iomad. Le commentaire du renderer d’administration indique que les données (actions, capacités, onglets et sélecteur d’entreprise) restent produites par Iomad, tandis qu’Épure adapte leur présentation.
+
+C’est un pattern pertinent pour Project N : **conserver la construction des données et les permissions dans le composant métier**, et ne transformer que leur présentation. Il faut cependant vérifier les contrats du renderer parent dans chaque version Iomad cible avant de déclarer une compatibilité.
+
+### 7.4 Vocabulaire par entreprise
+
+La classe `theme_epure\\vocabulary\\company` conserve des termes personnalisés par entreprise dans les réglages du thème et met en cache les réécritures par entreprise et langue. Cela montre un autre usage tenant de la configuration et du cache.
+
+**Décision Project N :** ne pas introduire de changement de vocabulaire tenant par défaut. Si ce besoin est retenu ultérieurement, les clés de cache doivent inclure toutes les dimensions pertinentes (au minimum entreprise et langue), avec invalidation lors des modifications et tests entre entreprises.
+
+### 7.5 Statut de l’analyse
+
+Cette lecture confirme l’existence d’une couche d’adaptation utile, mais ne valide pas à elle seule toutes ses branches conditionnelles. Les fichiers ont été lus dans la branche `main` d’Épure ; il reste à comparer précisément les appels aux classes Iomad et les contrats de rendu dans les couples de versions Moodle/Iomad correspondants. Les résultats ne constituent pas des tests runtime.
