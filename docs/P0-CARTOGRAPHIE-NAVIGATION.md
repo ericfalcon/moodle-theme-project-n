@@ -269,3 +269,21 @@ Les signatures ci-dessus ont été relevées dans Iomad 5.2. Elles doivent être
 - [Moodle Developer — Hooks API](https://moodledev.io/docs/5.3/apis/core/hooks)
 - [Moodle Developer — Navigation API](https://moodledev.io/docs/5.1/apis/core/navigation)
 - [Moodle Developer — Output API](https://docs.moodle.org/dev/Output_API)
+
+
+### 11.2 Compatibilité de l'API entreprise entre Iomad 4.5 et 5.x
+
+La comparaison du code confirme une continuité fonctionnelle intéressante, mais avec une rupture d'organisation PHP :
+
+| Version | Emplacement | Classe | Capacités |
+|---|---|---|---|
+| Iomad 4.5 | `local/iomad/lib/iomad.php` | `iomad` (globale, chargée par require_once) | `iomad::has_capability(string, context, int $companyid = 0)` |
+| Iomad 5.1 / 5.2 | `public/local/iomad/classes/iomad.php` | `local_iomad\\iomad` (autoloadée) | `\\local_iomad\\iomad::has_capability(string, bool|context, int $companyid = 0)` |
+
+Les méthodes `get_my_companyid`, `is_company_user`, `is_company_admin`, `companyid`, `has_capability` et `require_capability` existent dans les deux organisations. Les signatures de `get_my_companyid`, `is_company_user`, `is_company_admin` et `companyid` sont identiques dans les fichiers examinés. La signature de `has_capability` est plus permissive en 5.x (`bool|context`) qu'en 4.5 (`context`).
+
+Le fichier `iomad.php` a le même contenu/blob dans les branches 5.1 et 5.2 examinées ; cela ne prouve pas que tous les composants Iomad sont identiques entre ces versions.
+
+**Conséquence pour l'adaptateur :** le point de compatibilité à isoler est d'abord le chargement et le nom de classe (`iomad` global en 4.5, `\\local_iomad\\iomad` en 5.x). Ne pas multiplier les adaptations métier. Les fonctions de capacité ont une continuité de comportement apparente, mais les appels doivent être testés sur les versions réelles et avec des contextes/entreprises variés.
+
+En Iomad 4.5, les anciennes tables portent notamment les noms `company` et `company_users`; en 5.x, l'organisation est sous `local_iomad` et les noms de tables ont évolué. Cette différence renforce la règle : Project N ne doit faire aucune requête directe sur le schéma Iomad.
