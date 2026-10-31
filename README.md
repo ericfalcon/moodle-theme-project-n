@@ -1,116 +1,115 @@
 # Project N — Thème Moodle
 
-> Nom de travail. Le nom définitif sera choisi après vérification de disponibilité dans le répertoire des plugins Moodle et d'antériorité de marque.
+> Nom de travail du projet. Le nom définitif sera choisi après vérification de sa disponibilité dans le répertoire des plugins Moodle et de l'antériorité des marques.
 
-**Identifiant technique provisoire :** `theme_projectn`
-**Dépôt :** [ericfalcon/moodle-theme-project-n](https://github.com/ericfalcon/moodle-theme-project-n)
-**Licence visée :** GNU GPL v3 ou ultérieure (à confirmer en P0, voir [ROADMAP.md](ROADMAP.md))
+**Composant Moodle :** `theme_projectn`  
+**Dépôt :** [ericfalcon/moodle-theme-project-n](https://github.com/ericfalcon/moodle-theme-project-n)  
+**Thème parent retenu :** Boost  
+**Licence envisagée :** GNU GPL v3 ou ultérieure, à confirmer en P0.
 
 ## Vision
 
-Project N vise à proposer une expérience Moodle plus claire, moderne et cohérente. Le thème s'inspire de la simplicité d'usage de Chamilo (cours lisibles, navigation peu profonde, tableau de bord orienté actions), sans reproduire son interface ni ses limites.
+Project N vise à proposer une expérience Moodle plus claire, moderne et cohérente, inspirée de certains principes ergonomiques de Chamilo : cours lisibles, navigation peu profonde et interfaces orientées vers les actions. Il ne s'agit ni de reproduire son apparence ni de reprendre son modèle pédagogique.
 
-Moodle reste le moteur pédagogique : cours, activités, ressources, rôles, capacités, formulaires et mécanismes natifs sont conservés. Le projet repense en priorité la navigation, la présentation et les parcours des trois profils : apprenant, formateur et administrateur.
+Moodle reste le moteur pédagogique : cours, sections, activités, ressources, rôles, capacités, formulaires et mécanismes natifs sont conservés. Project N repense prioritairement la navigation, la présentation et les parcours des trois profils : apprenant, formateur et administrateur.
 
-Le thème est conçu pour **Moodle** et **Iomad**, avec une prise en compte d'Iomad dès l'architecture. Il est autonome et indépendant du thème Épure, et destiné à être publié dans le répertoire des plugins Moodle.
+Le projet est **mobile-first** : les parcours et composants sont conçus d'abord pour les smartphones, puis adaptés aux tablettes et ordinateurs. Le responsive n'est pas une simple adaptation tardive du desktop.
 
-## Inspiration Chamilo : ce qu'on retient, ce qu'on évite
+Le thème cible Moodle en priorité et prend en compte Iomad dès l'architecture. Il est autonome et indépendant du thème Épure.
 
-**Retenu comme principes :**
-- une page d'accueil apprenant centrée sur « mes formations » et « ce que je dois faire maintenant » ;
-- une page de cours lisible, avec peu de niveaux de navigation ;
-- des actions principales visibles sans chercher dans les menus.
+## Principes directeurs
 
-**Évité :**
-- copier l'apparence ou les composants visuels de Chamilo (risque de confusion et de propriété intellectuelle) ;
-- importer du code ou des assets Chamilo sans vérification de licence ;
-- transposer le modèle de cours de Chamilo : on reste sur le modèle Moodle (sections, activités, ressources).
-
-L'inspiration est donc sur les **parcours et la hiérarchie de l'information**, validée par des tests utilisateurs, et non sur le rendu graphique.
-
-## Objectifs
-
-- Simplifier l'accès aux fonctions utiles sans appauvrir les possibilités de Moodle.
-- Donner à l'apprenant une vision lisible de ses formations, de sa progression et de ses prochaines actions.
-- Guider le formateur dans la construction d'un cours tout en gardant un accès permanent aux réglages et fonctions avancés natifs.
-- Regrouper les fonctions d'administration par domaines et faciliter le repérage des réglages.
-- Garantir une expérience responsive et accessible.
-- Préserver la compatibilité avec les mécanismes natifs Moodle et prendre en compte les spécificités d'Iomad.
-
-## Principes de conception
-
-1. **Moodle natif en priorité** : pas de moteur pédagogique parallèle ni de format de cours propriétaire.
-2. **Guidage sans enfermement** : les parcours simplifiés ne masquent pas durablement les fonctions avancées.
-3. **Accessibilité dès la conception** : chaque fonctionnalité est spécifiée, développée et validée avec des critères d'accessibilité.
-4. **Sécurité et capacités natives** : les contrôles d'accès reposent sur les rôles, capacités et contextes Moodle ; aucune permission parallèle.
-5. **Iomad pris en compte explicitement** : les adaptations multi-entreprises ne doivent jamais compromettre l'isolation des données.
-6. **Progressivité** : préférer les composants et API stables de Moodle aux surcharges massives de templates.
-7. **Autonomie** : le thème fonctionne sans plugin compagnon obligatoire.
-8. **Sobriété** : limiter les dépendances, options et personnalisations à celles qui apportent une réelle valeur.
-9. **Mesure par l'usage** : une simplification n'est retenue que si des utilisateurs réels la trouvent meilleure.
+1. **Mobile-first et responsive** : chaque fonctionnalité est pensée et validée sur smartphone, tablette et ordinateur.
+2. **Boost comme socle technique** : le thème hérite de Boost et construit sa propre identité visuelle et son expérience utilisateur. Boost est une base technique, pas un modèle graphique à simplement recolorer.
+3. **Moodle natif en priorité** : pas de moteur pédagogique parallèle ni de format de cours propriétaire.
+4. **Guidage sans enfermement** : les parcours simplifiés n'empêchent jamais l'accès aux fonctions avancées natives.
+5. **Accessibilité dès la conception** : elle fait partie des critères d'acceptation de chaque étape et fonctionnalité.
+6. **Sécurité et capacités natives** : les contrôles d'accès reposent sur les rôles, capacités et contextes Moodle ; aucune permission parallèle.
+7. **Iomad dès l'architecture** : les adaptations multi-entreprises et l'isolation des données sont conçues et testées sans compromettre Moodle standard.
+8. **Progressivité et maintenabilité** : privilégier les API et composants stables, limiter les surcharges de templates et documenter celles qui sont nécessaires.
+9. **Autonomie** : le thème fonctionne sans plugin compagnon obligatoire.
+10. **Mesure par l'usage** : les choix ergonomiques sont confrontés à des tests utilisateurs.
 
 ## Les trois espaces
 
 ### Apprenant
-- Tableau de bord centré sur les formations suivies.
-- Accès lisible aux cours et aux parcours.
-- Progression, prochaines activités et échéances.
+
+- Tableau de bord centré sur les formations suivies et les actions à réaliser.
+- Accès lisible aux cours et parcours.
+- Progression, prochaines activités, échéances et notifications.
 - Navigation cohérente entre sections, ressources et activités.
-- Notifications et états vides compréhensibles.
+- Consultation confortable des contenus sur smartphone.
 
 ### Formateur
-- Création et organisation guidées, en s'appuyant sur les mécanismes natifs.
+
+- Création et organisation guidées en s'appuyant sur les mécanismes natifs Moodle.
 - Ajout d'activités et de ressources par intention pédagogique : transmettre, pratiquer, évaluer, collaborer.
-- Organisation des sections et réutilisation des contenus.
-- Accès direct aux participants, évaluations et corrections.
+- Organisation des sections et réutilisation des contenus lorsque les mécanismes natifs le permettent.
+- Accès aux participants, évaluations et corrections.
 - Accès permanent aux paramètres avancés natifs.
 - Prévisualisation du cours côté apprenant.
+- Distinction entre opérations adaptées au mobile et opérations complexes pouvant être plus confortables sur grand écran, sans rendre les fonctions inutilement inaccessibles sur smartphone.
 
 ### Administrateur
-- Centre de gestion organisé par grands domaines fonctionnels.
-- Accès direct aux actions fréquentes, conditionné par les capacités réelles.
-- Recherche et repérage des paramètres (en complément de la recherche native, pas en remplacement).
+
+- Centre de gestion organisé par domaines fonctionnels.
+- Accès direct aux actions fréquentes, selon les capacités effectives.
+- Recherche et repérage des paramètres en complément de la recherche native.
 - Présentation thématique des réglages.
-- Conservation des pages natives pour les formulaires, validations et contrôles de droits.
+- Conservation des pages natives Moodle pour les formulaires, validations et contrôles de droits.
+- Accès mobile aux opérations courantes et présentation adaptée des opérations complexes.
 
-## Périmètre
+## Mobile-first : exigences de conception
 
-- **Inclus** : interface web Moodle et Iomad, des versions 4.5 à 5.3.
-- **Exclus** : application mobile Moodle (le thème n'a pas d'effet sur elle).
+Les maquettes et tests couvrent dès P0 trois formats de référence : smartphone (390 × 844 CSS px), tablette (768 × 1024 CSS px) et ordinateur (1440 × 900 CSS px). Ces dimensions sont des repères de conception, pas des limites techniques.
+
+- Navigation tactile, sans dépendance au survol.
+- Cibles tactiles visées d'au moins 44 × 44 CSS px.
+- Pas de défilement horizontal global à 320 CSS px ; les contenus intrinsèquement bidimensionnels (par exemple certains tableaux) disposent d'un traitement adapté.
+- Cartes, tableaux, formulaires, menus, dialogues et notifications adaptés aux petits écrans.
+- Claviers mobiles adaptés au type de champ et formulaires utilisables au tactile.
+- Performance mobile : poids des ressources maîtrisé, images optimisées et JavaScript limité.
+- Tests sur appareils réels en complément de l'émulation navigateur.
+
+Le périmètre porte sur l'interface web Moodle/Iomad consultée dans un navigateur mobile. L'application mobile Moodle est hors périmètre : un thème Moodle ne contrôle pas son interface.
 
 ## Accessibilité et qualité
 
 La cible est **WCAG 2.2 niveau AA**, avec prise en compte du **RGAA** et de la norme **EN 301 549** selon le périmètre applicable.
 
 L'accessibilité est un critère d'acceptation à chaque étape, et non une phase de correction finale. La validation combine :
+
 - analyse automatisée avec axe-core ;
 - navigation complète au clavier et contrôle du focus ;
-- vérification des contrastes, du zoom à 200 % et du reflow à 320 px ;
-- tests avec lecteurs d'écran (NVDA, TalkBack) ;
-- contrôle de la sémantique HTML et de l'usage d'ARIA ;
-- tests des menus, dialogues, formulaires, notifications et états dynamiques.
+- vérification des contrastes, du zoom à 200 % et du reflow à 320 CSS px ;
+- tests avec lecteurs d'écran (notamment NVDA et TalkBack) ;
+- contrôle de la sémantique HTML, des noms accessibles et de l'usage justifié d'ARIA ;
+- tests des menus, dialogues, formulaires, notifications et états dynamiques ;
+- vérifications sur smartphone et avec interactions tactiles.
 
-Un résultat axe-core sans anomalie ne suffit pas à déclarer un parcours accessible. Les résultats et écarts résiduels sont documentés dans une déclaration d'accessibilité.
+Un résultat axe-core sans anomalie ne suffit pas à déclarer un parcours accessible. Les résultats, anomalies et écarts résiduels sont documentés.
 
 ## Compatibilité visée
 
-- **Moodle** : 4.5 à 5.3.
-- **Iomad** : 4.5 à 5.3, selon les versions réellement disponibles et testables.
+- **Moodle :** 4.5 à 5.3.
+- **Iomad :** 4.5 à 5.2, selon les versions réellement disponibles et testables.
 
 Une version n'est annoncée comme compatible que si elle a été effectivement testée. La matrice et le statut des tests sont suivis dans [ROADMAP.md](ROADMAP.md).
 
 ## Architecture envisagée
 
-- Thème `theme_projectn`, avec choix du thème parent (Boost ou thème standalone) à documenter en P0.
-- Plugin compagnon `local_projectn` uniquement si une fonction métier ne peut pas être réalisée proprement dans le thème ; il restera facultatif.
+- Thème autonome `theme_projectn`, héritant de **Boost**.
+- Réutilisation prioritaire des composants, API, layouts et mécanismes natifs Moodle.
+- Surcharges de templates sélectives, justifiées et documentées.
+- Plugin compagnon `local_projectn` uniquement si une fonction métier ne peut pas être réalisée proprement dans le thème ; il reste facultatif.
 - Pas de format de cours propriétaire.
-- Utilisation prioritaire des API, composants, capacités et mécanismes natifs.
-- Adaptations Iomad conditionnelles, sans effet sur le fonctionnement Moodle standard.
+- Adaptations Iomad conditionnelles et isolées, sans effet sur le fonctionnement Moodle standard.
+- Pas de logique d'autorisation parallèle aux capacités Moodle.
 
-## Publication
+## Développement et validation
 
-Le projet est destiné au répertoire des plugins Moodle. Les prérequis de publication (nom de composant unique, licence GPL compatible, documentation d'installation, versions déclarées dans `version.php`) sont suivis dans la roadmap, phase P7.
+Une intégration continue (CI) est envisagée pour automatiser les contrôles reproductibles : qualité du code, tests automatisés et contrôles pertinents d'accessibilité. Son périmètre et son hébergement seront définis en P0. Elle complète les tests manuels et les validations sur environnements Moodle/Iomad réels ; elle ne les remplace pas.
 
 ## État du projet
 
-Le dépôt est en phase de cadrage. Aucune phase n'est terminée. Le plan de travail, les jalons et les décisions à prendre sont détaillés dans [ROADMAP.md](ROADMAP.md).
+Le dépôt est en phase de cadrage. Aucune phase n'est déclarée terminée. Les jalons, livrables, décisions et critères d'acceptation sont détaillés dans [ROADMAP.md](ROADMAP.md).
