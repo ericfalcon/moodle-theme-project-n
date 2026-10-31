@@ -1216,6 +1216,8 @@ Project N doit donc distinguer :
 
 Le thème ne doit pas encapsuler le lecteur dans un conteneur qui contraint sa largeur/hauteur, masque ses contrôles, coupe ses contenus ou perturbe le focus. Le test d'accessibilité doit porter sur le lecteur et le type de contenu, pas uniquement sur le shell du thème.
 
+Comparaison complémentaire Moodle 5.2 / Iomad 5.2 : le template mod_h5pactivity/templates/result.mustache possède le SHA commun 71768c563c8367f4f3339018f95900f2ce5e872c dans les deux branches. Le rendu de résultat ciblé est donc identique pour cette génération. Cela ne permet pas de conclure sur les bibliothèques H5P, les types de contenus, le lecteur embarqué ni les rapports complets.
+
 ### 45.3 Page et ressource fichier : rendu principalement porté par le cœur
 
 Les chemins `mod/page/classes/output` et leurs répertoires `templates` ne sont pas présents dans les branches Moodle 4.5 et 5.3 consultées. Pour `mod/resource`, seul un composant de format de cours existe (`classes/output/courseformat/activitybadge.php`, présent en 4.5 et 5.3) ; il n'existe pas de jeu de templates dédiés à l'affichage de la ressource. Leurs pages s'appuient principalement sur les mécanismes de rendu génériques du cœur Moodle et les formats de cours, plutôt que sur un ensemble autonome de templates propres à chaque module.
@@ -1279,6 +1281,42 @@ La gestion JavaScript ciblée de la liste des discussions et de la bascule de vu
 ### 46.4 Portée et limites de la comparaison
 
 Quatre fichiers ciblés ont été comparés par SHA complet dans les branches de même génération. Leur identité établit une égalité de contenu, pas une équivalence fonctionnelle de toute l'activité forum. Les contrôleurs, classes output, services, autres templates, modules AMD, plugins et comportements d'accès doivent faire l'objet d'une analyse distincte. Aucun test d'exécution, de navigation clavier, axe-core, NVDA, TalkBack ou smartphone n'a été effectué.
+
+## 50. Composants génériques d'interface — notifications, modales, menus et tiroirs
+
+Cette tranche compare des composants du cœur utilisés transversalement par les trois espaces Project N. Les SHA complets des fichiers ci-dessous sont identiques entre MOODLE_502_STABLE et IOMAD_502_STABLE.
+
+### 50.1 Templates Mustache
+
+| Composant | Fichier | SHA commun |
+|---|---|---|
+| Notifications | public/lib/templates/notification.mustache | d61040498230b6a8214fc936f356c3ff4773bbea |
+| Modale | public/lib/templates/modal.mustache | e457fbfc9efb27ac5976f5ed4745efd7342e7233 |
+| Menu d'actions | public/lib/templates/action_menu.mustache | 34998b9291cf13c0288b8d171cd54203eaf4d2c2 |
+| Tiroir générique | public/lib/templates/drawer.mustache | 2c2d9f3a3958bf38f8cef98fea792e6e0e5c051b |
+
+### 50.2 Modules JavaScript AMD
+
+| Composant | Fichier | SHA commun |
+|---|---|---|
+| Gestion des modales | public/lib/amd/src/modal.js | 661f9ae640dbfc775cdbae958671c92baa667bf3 |
+| Gestion des tiroirs | public/lib/amd/src/drawer.js | 2f9a3e4c4a16e0ef16d8b7262501c67fe7b9b1a0 |
+| Notifications | public/lib/amd/src/notification.js | 9b86298c4c75d8aa7009e0b2308b7eb1ee3efd9f |
+
+Pour ces composants génériques, aucune divergence Iomad n'est observée dans les sept fichiers comparés. La conclusion est strictement limitée à ces fichiers ; elle ne couvre pas les composants spécifiques de navigation, les menus propres à Iomad, les scripts tiers ni tous les usages de Bootstrap.
+
+### 50.3 Contrats à préserver
+
+- **Notifications :** conserver la distinction succès/information/avertissement/erreur, les messages nettoyés, la possibilité de fermeture lorsqu'elle est autorisée et le mécanisme d'annonce aux lecteurs d'écran. Ne pas supprimer les annonces pour gagner de la place.
+- **Modales :** préserver le rôle dialog, aria-modal, le lien aria-labelledby vers le titre, les régions d'en-tête/corps/pied, le bouton de fermeture nommé et la gestion du focus assurée par le composant JavaScript. Tester ouverture, fermeture, Échap lorsque prévu, piège/restauration du focus et contenu long sur smartphone.
+- **Menus d'actions :** préserver la distinction entre actions prioritaires et menu secondaire, les attributs générés et les interactions natives. Ne pas remplacer les liens d'action par des contrôles visuellement équivalents mais sémantiquement incorrects.
+- **Tiroirs :** préserver l'identifiant unique, le rôle et le nom accessibles fournis par le contexte, l'état masqué, le tabindex et les attributs/slots transmis par le composant. Tester l'ouverture, la fermeture, le focus et l'absence de contenu masqué encore atteignable au clavier.
+
+### 50.4 Conséquences pour Project N
+
+Project N doit d'abord personnaliser les variables, classes et styles autour de ces composants plutôt que les réécrire. Toute surcharge Mustache doit conserver les contrats attendus par le JavaScript. Les comportements de modalité, de focus et d'annonce ne doivent pas être reconstruits dans le thème si le cœur les fournit déjà. Les parcours doivent être testés dans Moodle et Iomad, même lorsque les fichiers de base sont identiques, car les contextes d'utilisation, les extensions et les contenus affichés peuvent différer.
+
+Aucune validation runtime, axe-core, clavier, NVDA, TalkBack ou smartphone n'a été réalisée sur cette tranche.
 
 ## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
 
