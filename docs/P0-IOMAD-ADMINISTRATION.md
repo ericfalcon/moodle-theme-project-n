@@ -378,3 +378,152 @@ La méthode illustre pourquoi le thème ne doit pas implémenter lui-même la cr
 | Accessibilité du formulaire | Aucun test axe-core ou manuel effectué |
 
 **Prochaine tranche :** retrouver et cartographier les contrôleurs de liste et d'édition, les affectations départementales, l'import CSV et les opérations de suspension/suppression. Ensuite, traiter la gestion des cours et des licences comme des parcours liés mais distincts.
+
+
+## 10. Parcours de gestion des utilisateurs, affectations et import CSV — Iomad 5.2
+
+> Analyse statique des contrôleurs, formulaires et sélecteurs de la branche `IOMAD_502_STABLE`. Elle décrit les mécanismes observés, mais ne valide pas les droits effectifs en exécution ni les comportements de l'interface sur les différents profils.
+
+### 10.1 Liste et recherche des utilisateurs
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur de liste/recherche/actions | `public/blocks/iomad_company_admin/editusers.php` | `006c78b420229f1c0bb01153651863a23f8261e5` |
+| Formulaire de recherche | `public/local/iomad/classes/forms/user_search_form.php` | À confirmer dans la prochaine lecture |
+| Tableau des résultats | `public/blocks/iomad_company_admin/classes/tables/editusers_table.php` | À confirmer dans la prochaine lecture |
+
+Le contrôleur :
+- exige une authentification et la capacité `view_editusers` dans le contexte entreprise ;
+- détermine l'entreprise active et son contexte Iomad ;
+- réserve la recherche « toutes entreprises » aux utilisateurs disposant de la capacité `company_add` au niveau système ;
+- vérifie la validité du département demandé avec `company::check_valid_department()` ;
+- calcule le niveau départemental de l'utilisateur courant, sauf s'il possède `edit_all_departments` ;
+- initialise le sélecteur de département et le module AMD `department_select` ;
+- initialise le module AMD `edit_users` pour les interactions de la page ;
+- construit la recherche à partir des critères génériques et des champs de profil ;
+- associe les utilisateurs à leur entreprise et département via les tables Iomad, puis applique les restrictions de périmètre.
+
+Les colonnes changent selon le mode d'affichage :
+- dans le périmètre courant : nom, courriel, fonction Iomad, département ;
+- en mode toutes entreprises : entreprise en plus de ces informations ;
+- les champs personnalisés de l'entreprise peuvent être ajoutés ;
+- la date de dernier accès et les actions dépendent du mode et des capacités.
+
+La requête exclut les administrateurs du site et tient compte des départements descendants. En mode édition, le contrôleur retire aussi de la liste les fonctions que l'utilisateur courant n'a pas le droit d'attribuer. Cette restriction est importante : l'affichage d'une action et la population retournée par le tableau sont pilotés par les capacités, pas seulement par le rôle affiché.
+
+### 10.2 Suspension, réactivation, suppression et actions de ligne
+
+Le contrôleur accepte des paramètres dédiés à la suspension, à la réactivation, à la suppression, à la réinitialisation du mot de passe et à la confirmation. Les actions sont intégrées au parcours de gestion de la liste et au tableau Iomad.
+
+À préserver impérativement :
+- les contrôles de capacité avant toute opération ;
+- les confirmations et les jetons de session Moodle ;
+- les restrictions spécifiques aux comptes administrateurs ;
+- les états distincts du compte Moodle et du rattachement entreprise (les données de liste distinguent notamment `u.suspended` et `cu.suspended`) ;
+- les éventuelles actions liées aux inscriptions et aux licences.
+
+**Limite de cette tranche :** les branches d'exécution complètes des actions de suspension/suppression et le détail des méthodes de la classe `editusers_table` doivent encore être lus avant de décrire chaque transition d'état. Il ne faut donc pas conclure que « suspendre un utilisateur » et « suspendre son rattachement à une entreprise » sont des opérations équivalentes.
+
+### 10.3 Affectation d'utilisateurs à une entreprise
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur | `public/blocks/iomad_company_admin/company_users_form.php` | `bb832ccfc27e91ddfb09a5759b8cc2571e9226a0` |
+| Formulaire | `public/blocks/iomad_company_admin/classes/forms/company_users_form.php` | `94efc006e48bf4e0fe64168af091526e43da3d40` |
+| Sélecteur des membres actuels | `public/local/iomad/classes/user_selector/current_company.php` | `fd0bc5ded1a38e7fc33a0f5f457b6fd6063b1197` |
+| Sélecteur des membres potentiels | `public/local/iomad/classes/user_selector/potential_company.php` | `b05d2f8e9622fcf81511f28c94ab8834376a5fd2` |
+| Base commune des sélecteurs | `public/local/iomad/classes/user_selector/company_base.php` | `af6085d4431b591e795b7ff54dfcbccb046b3ddd` |
+
+Ce parcours n'est pas une simple édition d'un champ « entreprise » sur la fiche utilisateur. Il utilise deux sélecteurs Moodle/Iomad :
+- les utilisateurs déjà rattachés à l'entreprise ;
+- les utilisateurs susceptibles d'y être rattachés.
+
+Le formulaire construit une interface de transfert entre les deux listes. Il permet l'ajout et le retrait ; le mode « allusers » autorise en plus un flux d'importation des utilisateurs provenant d'autres entreprises, réservé à une capacité système adaptée.
+
+Le traitement :
+- exige un jeton de session valide ;
+- contrôle le quota d'utilisateurs de l'entreprise avant l'affectation ;
+- appelle la méthode métier `assign_user_to_company()` ;
+- déclenche l'événement Iomad `company_user_assigned` ;
+- déclenche aussi l'événement Moodle `user_updated` ;
+- invalide les sélections pour rafraîchir les listes.
+
+Le sélecteur des utilisateurs potentiels applique une règle importante :
+- par défaut, il propose les utilisateurs qui ne sont rattachés à aucune entreprise ;
+- le mode élargi, accessible avec la capacité système `company_add`, peut proposer les utilisateurs d'autres entreprises, tout en excluant ceux qui sont déjà membres de l'entreprise cible ;
+- les administrateurs du site sont exclus des résultats pour les utilisateurs qui ne sont pas eux-mêmes administrateurs ;
+- les comptes suspendus ne sont pas proposés.
+
+Le sélecteur des membres actuels filtre les utilisateurs sur l'entreprise cible et exclut les comptes Moodle suspendus. Il limite également le volume des résultats selon le paramètre `max_select_users`.
+
+**Conséquence Project N :** conserver les deux listes, leurs recherches et leurs règles d'éligibilité. Ne pas remplacer ce mécanisme par un simple champ multi-sélection chargé côté navigateur, ni autoriser une affectation en se fondant uniquement sur la présence d'un utilisateur dans une liste.
+
+### 10.4 Import CSV : parcours en plusieurs étapes
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur et moteur d'import | `public/blocks/iomad_company_admin/uploaduser.php` | `8453eb165ebfa2abe16a0c7330ca096c0cb7e79d` |
+| Étape 1 : fichier et paramètres CSV | `public/blocks/iomad_company_admin/classes/forms/company_uploaduser_form1.php` | `0c86c778521b3ae8689385ec46feef0b381ce04d` |
+| Étape 2 : options et données complémentaires | `public/blocks/iomad_company_admin/classes/forms/company_uploaduser_form2.php` | `1c267e1c4eeecf8679bbc0612c51a312fbb21020` |
+| Étape 3 : formulaire de relance | `public/blocks/iomad_company_admin/classes/forms/company_uploaduser_form3.php` | SHA à récupérer |
+
+Le parcours comporte plusieurs phases :
+1. sélection d'un fichier CSV, encodage, séparateur, nombre de lignes de prévisualisation et type d'opération ;
+2. lecture et validation des colonnes avec `csv_import_reader` ;
+3. estimation du nombre de nouveaux utilisateurs et contrôle du quota de l'entreprise ;
+4. configuration des règles d'import et des valeurs par défaut ;
+5. traitement ligne par ligne avec suivi de progression ;
+6. synthèse des créations, mises à jour, suppressions, renommages, erreurs et utilisateurs ignorés.
+
+Les modes d'import reprennent les opérations de l'outil Moodle `tool_uploaduser` : ajout uniquement, ajout avec incrément du nom d'utilisateur, ajout/mise à jour, mise à jour uniquement. Les options permettent aussi de contrôler les mots de passe, les renommages, les suppressions, les doublons de courriel et les mises à jour de champs.
+
+Le formulaire d'étape 1 :
+- utilise un sélecteur de fichier Moodle limité aux fichiers CSV ;
+- propose un exemple de fichier ;
+- expose les choix d'encodage et de séparateur ;
+- permet de choisir un volume de prévisualisation ;
+- reprend les quatre modes d'opération.
+
+L'étape 2 ajoute notamment :
+- les règles de création et de mise à jour des comptes ;
+- les options de génération et d'envoi de mots de passe ;
+- les options de renommage et de suppression ;
+- le traitement des doublons de courriel ;
+- la possibilité d'affecter des rôles de cours si les colonnes correspondantes sont présentes ;
+- le rattachement à un département ;
+- les champs de profil globaux et ceux propres à l'entreprise ;
+- les licences et cours correspondants, selon les capacités.
+
+Le moteur d'import ne se contente pas de déléguer à Moodle : il ajoute les règles de quota et d'appartenance Iomad. Il reconnaît les champs standard Moodle, les champs de profil personnalisés et les colonnes de rattachement départemental. Il vérifie les identifiants, normalise le nom d'utilisateur, recherche les utilisateurs dans le périmètre de l'entreprise et produit un suivi détaillé des erreurs.
+
+**Conséquence Project N :** l'import CSV doit être considéré comme un parcours métier complexe et séquentiel. Ne pas fusionner les étapes, masquer la prévisualisation, ou remplacer le suivi de progression par un simple message de réussite. Les erreurs par ligne et la possibilité de corriger puis relancer le traitement font partie du contrat fonctionnel à préserver.
+
+### 10.5 Séparation des états et des périmètres
+
+L'analyse confirme plusieurs distinctions à conserver dans le modèle de navigation et dans les écrans :
+- un compte Moodle peut être membre de plusieurs entreprises ;
+- le statut suspendu du compte Moodle et le statut suspendu du rattachement entreprise sont deux données distinctes ;
+- les fonctions de gestion sont attachées au rattachement Iomad et à son périmètre ;
+- les départements définissent un sous-périmètre d'accès dans l'entreprise ;
+- l'inscription à un cours et l'attribution d'une licence sont des opérations différentes ;
+- l'import CSV peut créer ou mettre à jour le compte Moodle tout en créant ou actualisant les rattachements Iomad.
+
+Un tableau Project N qui n'afficherait qu'un statut unique « actif/inactif » risquerait donc de masquer une information opérationnelle importante.
+
+### 10.6 Limites et vérifications restantes
+
+| Point | Statut |
+|---|---|
+| Contrôleur de liste et filtres | Analysés statiquement |
+| Périmètre entreprise/département dans la recherche | Analysé statiquement |
+| Sélecteurs d'affectation entreprise | Analysés statiquement |
+| Affectation et événements déclenchés | Analysés statiquement |
+| Actions suspension/réactivation/suppression | Paramètres et points d'entrée identifiés ; flux complet à relire |
+| Import CSV, étapes et options | Analysés statiquement ; traitement complet à approfondir |
+| Règles d'erreur et relance | Partiellement analysées |
+| Import des départements CSV | À cartographier séparément |
+| Affectation multi-départements après création | À approfondir |
+| Comparaison Iomad 4.5/5.0/5.1/5.2 | Non effectuée pour cette tranche |
+| Accessibilité clavier, lecteur d'écran, reflow et axe-core | Non testée |
+
+**Prochaine tranche :** terminer le cycle des utilisateurs (actions complètes, tableau, rôles éditables, affectations départementales et import CSV), puis cartographier les parcours de création de cours, affectation des utilisateurs aux cours, groupes, licences et programmes. Les rapports resteront un chantier séparé.
