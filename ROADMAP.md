@@ -41,7 +41,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 | Accessibilité | WCAG 2.2 AA, RGAA et EN 301 549 applicables ; validation continue | Retenu |
 | CI | CI envisageable et à définir en P0 ; elle n'est pas exclue | À définir |
 | Licence | GPL v3 ou ultérieure envisagée, à confirmer | À confirmer |
-| Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5 LTS, 5.0 et 5.1 publiés ; 5.2 dès publication et disponibilité d'un environnement | À vérifier |
+| Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5–5.2 ; compatibilité réelle à établir par génération et tests exécutés | À vérifier |
 | Points d'extension | Inventaire des API, composants, renderers, layouts et templates nécessaires | À documenter |
 | Tests utilisateurs | Tâches types et profils apprenant, formateur, administrateur ; inclure autant que possible des personnes en situation de handicap | À définir |
 
@@ -49,7 +49,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 
 ## P0 — Cadrage, spécifications et décisions
 
-Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : il sert à identifier les mécanismes réutilisables et les dépendances à vérifier, sans lancer le développement avant la clôture de la cartographie P0.
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : l'inventaire a été complété sur les renderers de cours, tableaux de bord et la configuration, mais reste une analyse statique. La cartographie technique [docs/P0-CARTOGRAPHIE-NAVIGATION.md](docs/P0-CARTOGRAPHIE-NAVIGATION.md) comprend désormais une section 53 sur l'architecture fonctionnelle de `local_iomad`. Ces ajouts ne clôturent pas P0 et ne déclenchent pas le développement.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
@@ -194,7 +194,7 @@ Version 1.x :
 - couverture élargie des fonctions spécifiques Iomad.
 
 Critères d'acceptation :
-- tests sur Iomad 4.5 LTS, 5.0 et 5.1 ; extension à Iomad 5.2 dès publication et disponibilité d'un environnement ; distinguer la branche expérimentale Iomad 4.5 de la branche LTS ;
+- tests sur Iomad 4.5 LTS, 5.0, 5.1 et 5.2 dès qu'un environnement correspondant est disponible ; distinguer la branche expérimentale Iomad 4.5 de la branche LTS ;
 - absence de fuite de données entre entreprises, vérifiée par des tests dédiés ;
 - rôles, capacités et contextes contrôlés ;
 - aucune dépendance Iomad dans le chemin d'exécution Moodle standard ;
