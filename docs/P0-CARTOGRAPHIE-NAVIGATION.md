@@ -1680,3 +1680,78 @@ Les mêmes fichiers ont été récupérés dans les branches Moodle 5.2 et Iomad
 - [Iomad 5.2 — activitychooserbutton.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
 
 Analyse statique des fichiers cités uniquement. Les interactions du sélecteur, la gestion réelle du focus, l'accessibilité du dialogue et les extensions tierces restent à tester en environnement Moodle/Iomad.
+
+---
+
+## Annexe A — Version précédente des sections 44.6 et 46 (comparaison inter-génération)
+
+> Texte conservé tel quel depuis la version `2dae1d3`. Les comparaisons Moodle 5.3 / Iomad 5.2 et Moodle 4.5 / Iomad 4.5 ci-dessous sont des écarts de génération, non des divergences propres à Iomad. La comparaison de référence est celle de la section 44.6 et de la section 46 révisées.
+
+### 44.6 Écarts Moodle / Iomad et portée des conclusions
+
+Les fichiers ciblés montrent des réutilisations importantes entre Moodle et Iomad :
+- la classe de statut de remise et la classe de page du test sont identiques par blob entre Moodle 4.5/5.3 et Iomad 5.2 ;
+- plusieurs templates de test et de remise sont identiques ;
+- le template de l'application de correction Iomad 5.2 correspond au template Moodle 5.3 ;
+- le module AMD de correction Iomad 5.2 diffère de celui de Moodle 5.3.
+
+Ces constats ne permettent pas d'attribuer chaque différence à la logique multi-entreprise. Il faut comparer les diffs complets et surtout les appels aux APIs/capacités Iomad avant toute conclusion.
+
+## 46. Comparaison ciblée des forums — écarts de version et d'Iomad
+
+Cette section compare les mêmes fichiers dans les quatre branches du périmètre : Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2.
+
+### 46.1 Template d'un message de forum
+
+Le template `forum_discussion_post.mustache` conserve dans les quatre branches les repères structurants suivants :
+- `data-region="post"` et `data-post-id` ;
+- un identifiant de cible et les régions de contenu ;
+- `tabindex="0"` sur le conteneur de message ;
+- `aria-labelledby` reliant le message à son en-tête ;
+- `aria-describedby` reliant le message à son contenu ;
+- un en-tête contenant les informations de l'auteur.
+
+Les différences sont principalement de présentation et de structure CSS :
+- Moodle 5.3 adopte des marges et espacements différents, des bordures arrondies et une structure d'en-tête simplifiée ;
+- Moodle 4.5 et Iomad 4.5 partagent exactement le même blob ;
+- Iomad 5.2 reste proche de Moodle 4.5 sur ce template, avec quelques écarts mineurs, et ne reprend pas les changements de présentation de Moodle 5.3.
+
+Cela montre que la version Iomad 5.2 du fork ne suit pas nécessairement toutes les évolutions de présentation de Moodle 5.3, même si les deux branches partagent certaines bases.
+
+### 46.2 Réponses imbriquées et titres accessibles
+
+Le template `forum_discussion_nested_v2_post_reply.mustache` est identique entre Moodle 4.5 et Iomad 4.5, et identique entre Moodle 5.3 et Iomad 5.2. Il conserve :
+- les actions de réponse conditionnées par `capabilities.reply` ;
+- les données nécessaires à la réponse privée ;
+- les attributs `data-action` et `data-post-id` utilisés par le JavaScript ;
+- le compteur de réponses et le contrôle d'affichage/masquage des réponses.
+
+Une différence utile est le passage des classes utilitaires d'accessibilité `sr-only` et `font-weight-bold` à `visually-hidden` et `fw-bold` entre Bootstrap 4 et Bootstrap 5. Le thème doit donc éviter de réintroduire les anciennes classes dans les templates ou CSS personnalisés, et s'aligner sur la version Bootstrap de chaque branche.
+
+### 46.3 Liste de discussions et abonnements
+
+Le module `discussion_list.js` a le même blob dans Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Ce fichier n'a donc pas évolué entre ces branches : la gestion des abonnements dans les listes de discussions n'est pas un écart établi par cette comparaison, et ne doit pas être présentée comme une nouveauté de Moodle 5.3.
+
+Moodle 5.3 introduit également `forum_overview_toggle.js`, qui gère les bascules d'abonnement/suivi dans la vue d'ensemble, avec une attention explicite à la cohérence entre libellé visible et `aria-label`. Le fichier Iomad 5.2 existe mais présente un contenu différent et plus ancien ; il ne faut donc pas supposer que cette fonctionnalité de vue d'ensemble est portée de la même façon dans cette branche.
+
+### 46.4 Conséquences techniques pour Project N
+
+1. **Ne pas copier un template Moodle 5.3 sans vérifier les dépendances de la branche Iomad ciblée.** Les changements Bootstrap et les classes d'accessibilité doivent être conditionnés par la version réelle.
+2. **Ne pas remplacer les attributs de liaison DOM** (`data-region`, `data-action`, `data-post-id`, `data-target`) sans analyse du module AMD associé.
+3. **Préserver la relation accessible message/en-tête/contenu.** Les attributs ARIA sont structurels et ne doivent pas être supprimés au nom d'une simplification visuelle.
+4. **Vérifier les annonces d'état des bascules.** Le libellé visible et le nom accessible doivent décrire le même état, en particulier pour les abonnements.
+5. **Ne pas traiter Iomad 5.2 comme un simple alias de Moodle 5.3.** La comparaison doit rester explicite pour les templates, modules AMD, APIs et comportements multi-entreprises.
+
+### 46.5 Fichiers comparés
+
+- `mod/forum/templates/forum_discussion_post.mustache` : quatre branches ;
+- `mod/forum/templates/forum_discussion_nested_v2_post_reply.mustache` : quatre branches ;
+- `mod/forum/amd/src/discussion_list.js` : quatre branches ;
+- `mod/forum/amd/src/forum_overview_toggle.js` : Moodle 5.3 et Iomad 5.2.
+
+Les constats ci-dessus proviennent des blobs et extraits comparés dans les forks personnels. Ils ne constituent pas un audit complet des différences de toutes les classes, templates et dépendances du forum. Aucune exécution de ces interfaces ni validation d'accessibilité n'a été effectuée.
+
+### Compléments de la version précédente (§44.2 et §44.4)
+
+- Iomad 5.2 reprend le template Moodle 5.3 à l'identique (même blob), mais son module AMD de correction possède un blob différent.
+Elle possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Les templates de liste des tentatives, de résumé d'une tentative, de confirmation de remise et de minuterie sont également identiques entre les deux branches Moodle 4.5/5.3 consultées pour les fichiers ciblés, et Iomad 5.2 reprend les templates 5.3 correspondants.
