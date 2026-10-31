@@ -10,7 +10,9 @@ Le périmètre couvre l'interface web Moodle/Iomad utilisée dans un navigateur 
 
 Cibles envisagées :
 - Moodle 4.5 à 5.3 ;
-- Iomad 4.5 LTS, 5.0 et 5.1 comme versions publiées documentées ; la branche expérimentale Iomad 4.5 doit être distinguée de la branche stable. Iomad 5.2 reste une cible conditionnelle à confirmer dans les notes de publication officielles avant de l'inscrire dans la matrice des versions installables.
+- Iomad 4.5 LTS, 5.0 et 5.1 comme versions publiées documentées ; la branche expérimentale Iomad 4.5 doit être distinguée de la branche stable.
+- Iomad 5.2 reste une cible conditionnelle : la branche `IOMAD_502_STABLE` existe dans le fork, mais cela ne prouve pas la publication. Il faut la confirmer dans les notes de publication officielles avant de l'inscrire dans la matrice des versions installables.
+- Iomad 5.3 n'existe pas à ce jour : aucune branche correspondante dans le fork, et confirmation par le porteur du projet.
 
 Aucune version ne devra être déclarée compatible sur la seule base d'une inspection du code.
 
@@ -52,7 +54,7 @@ Références :
 ### 3.2 Risques de compatibilité identifiés
 
 Les versions de Moodle ne doivent pas être considérées comme un continuum sans rupture :
-Points vérifiés dans les fichiers `UPGRADING.md` des branches Moodle `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE` :
+Points vérifiés : la présence des sections de version dans `public/theme/boost/UPGRADING.md` de `MOODLE_503_STABLE` a été confirmée, et le contenu des entrées a été relu sur la branche `main` de Moodle ; les suppressions de templates ont été contrôlées dans les arbres des branches `MOODLE_501_STABLE` et `MOODLE_502_STABLE` du fork `ericfalcon/moodle` :
 - Moodle 5.1 : les layouts peuvent être hérités du grand-parent et des parents, le thème enfant restant prioritaire (MDL-79319) ;
 - Moodle 5.2 : les templates `flat_navigation.mustache` et `nav-drawer.mustache` de Boost sont supprimés (MDL-87425) ; la navigation latérale de Boost passe désormais par les partiels de `drawers.mustache` ;
 - Moodle 5.3 : la police d'interface par défaut de Boost passe de la pile système à Noto Sans (MDL-88412), ce qui modifie le rendu des thèmes enfants qui s'appuyaient sur le repli système ;
@@ -61,7 +63,7 @@ Points vérifiés dans les fichiers `UPGRADING.md` des branches Moodle `MOODLE_4
 - Moodle 5.3 : les variables `$dialogue-*` prennent les propriétés personnalisées du design system (MDL-89735), et le chargement direct des sous-modules Bootstrap est déprécié (MDL-88766). Pour les modules AMD, l'import public passe de `theme_boost/index` (jusqu'à 5.2) à `bootstrap` (à partir de 5.3) pour les composants Bootstrap concernés ;
 - Moodle 5.0 à 5.2 : suppression des variables `$activity-icon-*-filter`, dépréciation de `bs4-compat` (SCSS et module JS), suppression des styles `mod_chat` et `mod_survey` du thème (MDL-83725, MDL-80519, MDL-84450, MDL-82457).
 
-Non vérifié : la documentation React indique que Moodle 5.2 introduit un mécanisme de surcharge des composants React et que la résolution ne retombe pas automatiquement sur le thème parent. Cette affirmation n'a pas pu être confirmée (documentation moodledev.io inaccessible depuis la session) et doit être vérifiée avant d'être retenue.
+Non vérifié : la documentation React indique que Moodle 5.2 introduit un mécanisme de surcharge des composants React et que la résolution ne retombe pas automatiquement sur le thème parent. La documentation moodledev.io est inaccessible depuis la session. Une recherche dans les arbres `MOODLE_502_STABLE` et `MOODLE_503_STABLE` n'a pas trouvé de mécanisme documenté de surcharge de composants React par thème, ni de règle de repli vers le parent. L'affirmation est donc sans source à ce stade et ne doit pas être retenue en l'état.
 
 Conséquences :
 - ne pas fonder la navigation Project N sur une copie de `nav-drawer.mustache` ou `flat_navigation.mustache` ;
@@ -80,7 +82,13 @@ Références :
 
 ### 3.3 Rupture d'arborescence à partir de Moodle 5.1
 
-Moodle 5.1 introduit un répertoire `public/` qui devient la racine web. Les plugins tiers doivent être déplacés dans leur emplacement relatif sous ce répertoire. Ce changement concerne directement le déploiement du thème : `theme/projectn` sur Moodle 4.5 et 5.0, `public/theme/projectn` à partir de 5.1. Iomad 5.1 adopte également cette restructuration et annonce d'autres évolutions internes (schéma de données, autoload des classes, organisation des plugins). Le thème ne doit donc jamais coder en dur des chemins absolus du cœur ; les outils de packaging et d'installation doivent être testés sur les deux modèles.
+Moodle 5.1 introduit un répertoire `public/` qui devient la racine web. Ce changement concerne directement le déploiement du thème : `theme/projectn` sur Moodle 4.5 et 5.0, `public/theme/projectn` à partir de 5.1.
+
+Vérifié dans le fork `ericfalcon/moodle` : le répertoire `public/` est absent de `MOODLE_500_STABLE` et présent dans `MOODLE_501_STABLE`.
+
+Iomad 5.1 adopte la même restructuration. Vérifié dans le fork `ericfalcon/iomad` : le module est sous `local/iomad` en 4.5 (`IOMAD_405_STABLE`) et sous `public/local/iomad` en 5.1 (`IOMAD_501_STABLE`).
+
+Le thème ne doit donc jamais coder en dur des chemins absolus du cœur ; les outils de packaging et d'installation doivent être testés sur les deux modèles.
 
 Références :
 - [MoodleDocs — Mise à jour à Moodle 5.1](https://docs.moodle.org/501/en/Upgrading_Moodle) ;
@@ -228,7 +236,7 @@ Ne pas créer un tableau de bord qui expose des actions sans vérifier les capac
 - vérification des accès directs aux URL, pas seulement de la visibilité des liens ;
 - parcours du gestionnaire d'entreprise inclus dans le MVP Iomad, sur smartphone et desktop.
 
-Le thème ne doit pas reproduire la logique de cloisonnement d'Iomad. Il doit respecter et tester les contrôles fournis par Iomad et Moodle. Il ne doit pas interroger directement les tables internes Iomad pour construire ses écrans : les évolutions Iomad 5.1 (notamment la modernisation du schéma et le changement de nom de la table des entreprises) renforcent la nécessité de s'appuyer sur les API, fonctions et capacités publiques disponibles. Toute intégration spécifique devra être isolée et testée sur chaque branche Iomad retenue.
+Le thème ne doit pas reproduire la logique de cloisonnement d'Iomad. Il doit respecter et tester les contrôles fournis par Iomad et Moodle. Il ne doit pas interroger directement les tables internes Iomad pour construire ses écrans : les évolutions Iomad 5.1 renforcent la nécessité de s'appuyer sur les API, fonctions et capacités publiques disponibles. Vérifié dans `IOMAD_405_STABLE` et `IOMAD_501_STABLE` : les tables de l'entreprise sont renommées en 5.1 (`company` devient `local_iomad_companies`, `company_course` devient `local_iomad_company_courses`, etc.). Toute intégration spécifique devra être isolée et testée sur chaque branche Iomad retenue.
 
 ## 7. Accessibilité et validation
 
