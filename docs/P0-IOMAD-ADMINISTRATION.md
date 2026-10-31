@@ -527,3 +527,99 @@ Un tableau Project N qui n'afficherait qu'un statut unique « actif/inactif » r
 | Accessibilité clavier, lecteur d'écran, reflow et axe-core | Non testée |
 
 **Prochaine tranche :** terminer le cycle des utilisateurs (actions complètes, tableau, rôles éditables, affectations départementales et import CSV), puis cartographier les parcours de création de cours, affectation des utilisateurs aux cours, groupes, licences et programmes. Les rapports resteront un chantier séparé.
+
+
+## 11. Gestion des cours, affectations et licences — première cartographie Iomad 5.2
+
+> Cette section couvre les contrôleurs principaux repérés dans `IOMAD_502_STABLE`. Les formulaires métier associés et les traitements complets des licences restent à examiner avant de considérer le parcours cartographié.
+
+### 11.1 Création d'un cours dans une entreprise
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur de création | `public/blocks/iomad_company_admin/company_course_create_form.php` | `7d9a34ffc88cd911dc7b6d9d5403434d7db5414a` |
+
+Le contrôleur :
+- exige la capacité `createcourse` dans le contexte entreprise ;
+- utilise le formulaire Iomad `course_edit_form` ;
+- choisit la catégorie par défaut de l'entreprise si elle est définie, sinon la catégorie de demande Moodle ;
+- fusionne les données saisies avec la configuration Moodle des cours ;
+- active le paramètre `restrictmodules` ;
+- délègue la création à `company::create_course()`.
+
+**Conséquence Project N :** il s'agit d'une création de cours Moodle pilotée par Iomad, et non d'un type de cours spécifique. Le thème doit préserver le formulaire Moodle/Iomad, les catégories, les réglages de cours, les capacités et les règles de restriction des modules. Il ne doit pas créer un assistant de cours parallèle qui contournerait `company::create_course()`.
+
+### 11.2 Affectation des cours à l'entreprise et aux départements
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur d'affectation des cours | `public/blocks/iomad_company_admin/company_courses_form.php` | `b20946bea21e1d26bedc8e3160a12c5815af9ae7` |
+
+Le contrôleur exige `company_course`, détermine le niveau départemental de l'utilisateur courant et limite la liste des départements à son périmètre, sauf s'il possède `edit_all_departments`. Le formulaire reçoit l'entreprise, le contexte, le département courant et le nœud parent de l'entreprise.
+
+L'affectation des cours est donc liée à l'organisation de l'entreprise et au département. Un gestionnaire de département ne doit pas voir ou modifier arbitrairement les associations d'un autre département. La sélection de département est vérifiée avec `company::check_valid_department()`.
+
+**Conséquence Project N :** ne pas représenter « cours de l'entreprise » comme une simple propriété globale du cours. L'association cours/entreprise/département doit être conservée et présentée selon les droits du gestionnaire.
+
+### 11.3 Affectation des utilisateurs aux cours
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur | `public/blocks/iomad_company_admin/company_course_users_form.php` | `572fdcf7834c89e4` (SHA à revalider) |
+
+Le contrôleur combine deux formulaires :
+- sélection des cours concernés ;
+- sélection des utilisateurs à inscrire.
+
+Il gère également un département et un groupe, vérifie le département, utilise le sélecteur de département dynamique et ne présente le sélecteur d'utilisateurs qu'une fois une sélection de cours effectuée. Il exige la capacité `company_course_users`.
+
+Le paramètre utilisateur/cours est donc un parcours d'inscription encadré par l'entreprise et le département, et non une simple inscription Moodle détachée du contexte Iomad.
+
+**Conséquence Project N :** préserver les étapes et les dépendances entre sélection de cours, département, groupe et sélection d'utilisateurs. La visibilité du second formulaire dépend de l'état du premier ; cette interaction doit être cartographiée avec le module AMD et les sélecteurs associés avant toute adaptation visuelle.
+
+### 11.4 Gestion des inscriptions d'un utilisateur
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur | `public/blocks/iomad_company_admin/company_users_course_form.php` | `fd52c163fc081588f77236412a1a1867be87186e` |
+
+Cette page est accessible avec la capacité `company_course_users`. Elle exige un identifiant utilisateur, vérifie que le département est valide et contrôle l'appartenance de l'utilisateur à l'entreprise/département avec `company::check_valid_user()` avant de traiter le formulaire.
+
+Ce contrôle est un point de sécurité essentiel : le thème ne doit jamais considérer qu'un identifiant utilisateur transmis dans une URL prouve l'appartenance au tenant courant.
+
+### 11.5 Gestion des licences d'un utilisateur
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur | `public/blocks/iomad_company_admin/company_users_licenses_form.php` | `db76a57a65119e0b4815195caca63639222142cd` |
+| Formulaire dynamique de licence | `public/blocks/iomad_company_admin/classes/forms/company_license_form.php` | `69771cdf45562ed49f51e03a0c75a5252ef69e60` |
+
+La page d'affectation de licences :
+- exige la capacité `company_license_users` ;
+- reçoit l'utilisateur, le département et éventuellement la licence ;
+- limite les licences visibles à l'entreprise et aux dates de validité ;
+- applique une restriction départementale si l'utilisateur courant ne dispose pas de `edit_licenses` ;
+- filtre aussi les types de licences selon que le bénéficiaire possède ou non la fonction éducateur ;
+- traite les licences de programmes et les licences de cours.
+
+Le formulaire dynamique `company_license_form` distingue une licence autonome d'une licence enfant rattachée à une licence parent/programme. Pour un programme, les valeurs utilisées/allouées sont calculées à partir du nombre de cours associés ; une entreprise enfant peut être désignée pour une licence dérivée. Le formulaire expose donc des relations entre licences, cours et entreprises.
+
+**Conséquence Project N :** les licences ne doivent pas être ramenées à un simple badge « accès au cours ». Il existe des objets de licence, des quotas, des dates, des types, des programmes, des relations parent/enfant et des périmètres départementaux. La représentation visuelle peut simplifier les informations, mais pas leur modèle métier.
+
+### 11.6 Ce que cette première tranche ne permet pas encore d'affirmer
+
+| Sujet | Statut |
+|---|---|
+| Création du cours par API Iomad | Contrôleur et délégation métier identifiés |
+| Catégorie par défaut de l'entreprise | Observée |
+| Restriction des modules à la création | Observée |
+| Affectation cours/département | Contrôleur et contrôle du département observés |
+| Inscription en lot des utilisateurs | Contrôleur repéré ; traitement complet des formulaires à lire |
+| Inscription individuelle | Contrôleur et contrôles d'appartenance observés |
+| Attribution de licences | Filtrage des licences observé ; opérations complètes à lire |
+| Licences de programme et licences dérivées | Structure du formulaire dynamique observée |
+| Gestion complète des quotas/consommations | À approfondir dans l'API métier |
+| Comparaison 4.5/5.0/5.1/5.2 | Non effectuée pour cette tranche |
+| Accessibilité des formulaires et interactions | Non testée |
+
+**Prochaine tranche :** lire les formulaires complets d'affectation cours/utilisateurs et de gestion des licences, puis les API métier de création de cours, d'inscription, de consommation de licences et de programmes. Il faudra ensuite comparer les fichiers équivalents entre les branches Iomad 4.5, 5.0, 5.1 et 5.2.
