@@ -171,3 +171,115 @@ Le template contient aussi des styles inline et des contrôles alignés horizont
 5. Compléter l'analyse des plugins de rapports et distinguer les rapports génériques des rapports dépendant des entreprises ou licences.
 
 Aucun test d'installation, de navigation, de sécurité inter-entreprises, axe-core, clavier, NVDA, TalkBack ou smartphone n'a été exécuté dans cette tranche. Les constats d'accessibilité et les anomalies signalées doivent être reproduits en environnement avant d'être qualifiés de défauts confirmés.
+
+
+## 8. Gestion des entreprises, départements et sélection du tenant — Iomad 5.2
+
+> Analyse statique des sources de la branche `IOMAD_502_STABLE`, complétée par une comparaison ciblée des mêmes fichiers dans les branches 4.5, 5.0 et 5.1. Elle ne vaut ni test d'autorisation en exécution ni audit exhaustif des formulaires.
+
+### 8.1 Création et modification d'une entreprise
+
+Fichiers contrôlés :
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Contrôleur de création/modification | `public/blocks/iomad_company_admin/company_edit_form.php` | `b6c985af711eb64c5734cd3bd39d82a0f71a1006` |
+| Formulaire Moodle | `public/blocks/iomad_company_admin/classes/forms/company_edit_form.php` | `07aa54436d127532cb3d020f4102d6a991d02b87` |
+| API métier | `public/local/iomad/classes/company.php` | `73d2678b440c6c8806f703243e3d178144661b80` |
+
+Le contrôleur ne se limite pas à afficher un formulaire :
+- il distingue création, modification et création d'une entreprise enfant ;
+- il détermine le contexte système ou le contexte de l'entreprise concernée ;
+- il contrôle les capacités `company_edit`, `company_add` et `company_add_child` avec les API Iomad ;
+- il prépare les données déjà saisies après certains retours de formulaire, notamment via la session ;
+- il prépare les zones de brouillon pour le logo, le logo compact, le favicon et les éléments graphiques des certificats ;
+- il associe à l'entreprise des paramètres qui dépassent la simple identité : modèles de rôles et de courriels, page de tableau de bord, notifications, champs de profil et options avancées.
+
+Le formulaire est lui-même conditionnel : les champs et options dépendent du contexte, du statut création/modification, de l'existence d'une entreprise parente et des capacités disponibles. Certaines options sensibles, comme la limite d'utilisateurs, sont conditionnées par une capacité spécifique. Il ne faut donc pas remplacer cette page par un formulaire générique Project N ni présumer qu'un formulaire identique est présenté à tous les gestionnaires.
+
+**Conséquence Project N :** l'écran d'entreprise doit rester la page Iomad native. Le thème peut agir sur le layout, la hiérarchie visuelle, les espacements et le responsive, mais il ne doit pas reconstruire les règles de visibilité des champs, les valeurs par défaut, les transferts de fichiers ou les contrôles de capacité.
+
+### 8.2 Hiérarchie des entreprises
+
+Le code de création distingue explicitement une entreprise racine d'une entreprise enfant. La création enfant utilise le contexte de la société parente et contrôle la capacité `company_add_child`. La page récupère aussi les données de la société parente et peut reprendre certains paramètres et éléments graphiques comme valeurs initiales.
+
+Cette hiérarchie est une relation métier Iomad, distincte de la hiérarchie des départements. Elle doit être représentée sans la confondre avec une arborescence de catégories de cours Moodle.
+
+Points à préserver :
+1. distinguer l'entreprise courante, l'entreprise parente et l'entreprise enfant ;
+2. ne pas afficher une action « créer une entreprise enfant » sur la seule base d'un rôle ou d'un lien connu ;
+3. conserver les contrôles de capacité et le contexte serveur ;
+4. ne pas déduire que les valeurs reprises du parent sont nécessairement héritées dynamiquement après la création : le code observé les utilise comme données initiales dans le formulaire.
+
+### 8.3 Gestion des départements
+
+Fichier contrôlé :
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Formulaire de département | `public/blocks/iomad_company_admin/classes/forms/department_edit_form.php` | `93b6ba1552b26f10f2237fbf82a1b1f76fc95532` |
+
+Le formulaire reçoit explicitement l'identifiant de l'entreprise, l'identifiant du département et un objet de rendu. Il :
+- charge le département à modifier et son parent ;
+- propose un sélecteur d'arborescence de départements fourni par le renderer Iomad ;
+- gère le nom complet et le nom court ;
+- vérifie l'unicité du nom court dans le périmètre de l'entreprise ;
+- limite le nom court aux lettres ASCII, chiffres et underscore.
+
+La structure est donc une arborescence de départements à l'intérieur d'une entreprise. Les utilisateurs peuvent être rattachés à plusieurs départements ; les gestionnaires de département et les profils « report only » voient leur département et ses sous-départements selon leurs affectations. Le gestionnaire d'entreprise, lui, est affecté au niveau supérieur de l'entreprise et ne doit pas être assimilé à un gestionnaire de département.
+
+**Conséquence Project N :** ne pas réduire le département à un simple champ de profil ni le représenter comme un rôle Moodle. C'est une structure d'organisation qui influe sur les populations visibles, les rapports et la délégation des tâches. La cartographie des pages d'affectation des utilisateurs aux départements reste à compléter.
+
+### 8.4 Sélection complète d'une entreprise
+
+Fichiers contrôlés :
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Page de sélection complète | `public/blocks/iomad_company_admin/fullselect.php` | `84728ca871d267f69ed1785394d309adbf96103d` |
+| Objet de données | `public/blocks/iomad_company_admin/classes/output/full_companies_select.php` | `d26825e3ef98c4e9180aeb7c4b1f5a4dc9d922d6` |
+| Formulaire de recherche | `public/local/iomad/classes/forms/company_search_form.php` | `842b8d61202ecfa2852196f0bf2c5ccd5ba338b5` |
+
+La page `fullselect.php` :
+- exige une authentification ;
+- reprend l'entreprise courante depuis la session pour déterminer le contexte de page ;
+- utilise le layout `base` ;
+- initialise le module AMD `block_iomad_company_admin/admin` ;
+- associe un formulaire de recherche et un objet `full_companies_select` ;
+- délègue la constitution de la liste à `company_user::get_all_user_companies($search)`.
+
+Le sélecteur complet est donc une vue des entreprises accessibles à l'utilisateur, pas une liste globale autonome. Le formulaire de recherche utilise `PARAM_CLEAN`, tandis que le paramètre d'entrée du contrôleur est lu avec `PARAM_ALPHANUM` : cette différence de nettoyage mérite une vérification fonctionnelle pour les noms contenant espaces, accents ou ponctuation. Il ne s'agit pas, à ce stade, d'un défaut confirmé.
+
+**Conséquence Project N :** le changement d'entreprise doit conserver le flux natif, la liste autorisée et la persistance du contexte. Un sélecteur Project N ne peut être qu'une autre présentation du même contrat métier, pas une requête de recherche indépendante dans les entreprises.
+
+### 8.5 Comparaison ciblée des générations Iomad
+
+Les fichiers de formulaire de création/modification d'entreprise et de département ont été récupérés dans les branches suivantes :
+
+| Branche | Fichier entreprise (SHA) | Fichier département (SHA) |
+|---|---|---|
+| `IOMAD_405_STABLE` | `265d4ab2c6dab3b776180e2091ffdfab8c47b93d` | `43241363aa9aa058e0b4efebc1e51a33d3e448e6` |
+| `IOMAD_500_STABLE` | `fed080e96b062859b587657058966246b78f5574` | `6e46fe829ef3208d918b21713c14508cad451463` |
+| `IOMAD_501_STABLE` | `b6c985af711eb64c5734cd3bd39d82a0f71a1006` | `93b6ba1552b26f10f2237fbf82a1b1f76fc95532` |
+| `IOMAD_502_STABLE` | `b6c985af711eb64c5734cd3bd39d82a0f71a1006` | `93b6ba1552b26f10f2237fbf82a1b1f76fc95532` |
+
+Résultat strict de cette comparaison :
+- les deux fichiers ciblés sont identiques entre Iomad 5.1 et 5.2 (mêmes SHA) ;
+- ils diffèrent entre 4.5 et 5.0, et entre 5.0 et 5.1 ;
+- en 4.5/5.0, les chemins sont sous `blocks/` et `local/` ; en 5.1/5.2, ils sont sous `public/blocks/` et `public/local/`, conformément à la nouvelle organisation du code Moodle ;
+- cette comparaison ne permet pas d'affirmer que toutes les pages d'administration sont identiques entre 5.1 et 5.2, ni de qualifier chaque différence 4.5/5.0/5.1 comme fonctionnelle : il faut comparer les contrôleurs, formulaires, classes métier, templates et modules AMD associés.
+
+### 8.6 Décisions de conception et travaux encore ouverts
+
+| Sujet | Décision / statut |
+|---|---|
+| Formulaire entreprise | Préserver le formulaire Iomad conditionnel et ses capacités ; ne pas le remplacer |
+| Entreprises parentes/enfants | Distinguer cette hiérarchie de celle des départements et des catégories Moodle |
+| Département | Conserver l'arborescence et le périmètre d'accès associé |
+| Affectation multi-départements | À cartographier dans les pages utilisateurs et département |
+| Sélecteur complet | Préserver `get_all_user_companies()`, le filtrage et le contexte de session |
+| Téléversements | Cartographier les zones de brouillon, fileareas, validation et affichage des fichiers avant toute surcharge |
+| Compatibilité multi-version | Comparaison ciblée effectuée sur deux formulaires seulement ; couverture insuffisante |
+| Accessibilité | Pas de test clavier, lecteur d'écran, reflow ou axe-core effectué |
+
+**Prochaine tranche :** cartographier les pages d'affectation et de gestion des utilisateurs (création, modification, suspension, rattachement multi-entreprises, départements, types de gestionnaires et import CSV), puis les cours/licences. Les pages de rapports seront traitées séparément car elles mélangent données Moodle, données entreprise, licences et parfois historiques d'archivage.
