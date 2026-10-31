@@ -85,7 +85,7 @@ La matrice cible et le statut réel des tests sont suivis dans [ROADMAP.md](ROAD
 ## Architecture envisagée
 
 - Thème autonome : `theme_projectn`.
-- Plugin compagnon `local_projectn) uniquement si une fonction métier ne peut pas être réalisée proprement dans le thème ; il restera facultatif.
+- Plugin compagnon `local_projectn` uniquement si une fonction métier ne peut pas être réalisée proprement dans le thème ; il restera facultatif.
 - Pas de format de cours propriétaire par défaut.
 - Utilisation prioritaire des API, composants, capacités et mécanismes natifs Moodle.
 - Adaptations Iomad conditionnelles, sans altérer le fonctionnement Moodle standard.
