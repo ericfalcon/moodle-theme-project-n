@@ -493,3 +493,142 @@ Règles :
 - [Iomad 5.2 — drawers.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/amd/src/drawers.js)
 - [Moodle 4.5 — drawer.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/drawer.js)
 - [Moodle 5.3 — template drawer](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/templates/drawer.mustache)
+
+
+## 23. Navigation secondaire et composants de navigation
+
+### Moodle 4.5
+
+La vue secondaire est construite par `core\\navigation\\views\\secondary` et reste une vue de navigation contextuelle Moodle. Elle est alimentée par l'arbre de navigation et le contexte de page (cours, activité, catégorie, administration, etc.). Elle ne doit pas être remplacée par une navigation Project N reconstruite indépendamment.
+
+Le répertoire de templates Boost 4.5 ne contient pas de template `secondary_navigation.mustache` au niveau du thème. Il ne faut donc pas concevoir l'intégration 4.5 à partir d'un nom de template supposé : le rendu passe par les mécanismes de sortie natifs de la version.
+
+### Moodle 5.3
+
+Les templates `core/primarymoremenu` et `core/secondarymoremenu` sont présents dans `public/lib/templates`. Ils préparent un montage React (`core/nav/PrimaryNav` et `core/nav/Nav`) et conservent un rendu serveur de repli pour les navigateurs sans JavaScript et les tests non-JS.
+
+Le template secondaire crée lui-même son landmark `nav`; Project N ne doit pas l'envelopper dans un second landmark de navigation. Le composant gère aussi les rôles de menu/tablist, le débordement et les éléments du menu « plus ».
+
+### Décisions Project N
+
+1. Ne pas remplacer les vues primaire/secondaire Moodle par une liste codée en dur.
+2. Ne pas envelopper un composant qui produit déjà son propre landmark `nav`.
+3. Préserver le fallback serveur et le fonctionnement sans JavaScript.
+4. Ne pas manipuler directement le DOM généré par React ni injecter des éléments dans son arbre après montage.
+5. Utiliser le hook de navigation pour ajouter des destinations compatibles, puis traiter leur présentation par CSS ou par un point d'extension officiellement disponible.
+6. Conserver les menus contextuels de cours/activité et le menu secondaire ; Project N fournit les destinations de haut niveau, pas une deuxième copie de chaque page Moodle.
+
+Sources de code :
+- [Moodle 4.5 — vue secondaire](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/classes/navigation/views/secondary.php)
+- [Moodle 5.3 — vue secondaire](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/navigation/views/secondary.php)
+- [Moodle 5.3 — template secondaire React](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/templates/secondarymoremenu.mustache)
+- [Moodle 5.3 — template primaire React](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/templates/primarymoremenu.mustache)
+
+## 24. Index de cours et commandes du tiroir
+
+L'index de cours est un composant Moodle/format de cours distinct de la navigation globale. Boost fournit des contrôles propres à cet index.
+
+En Moodle 4.5, `theme_boost/courseindexdrawercontrols` utilise un menu déroulant avec commandes explicites d'expansion et de réduction des sections. Le template expose notamment `aria-haspopup`, `aria-expanded`, `aria-controls`, un libellé accessible et des rôles de menu/menuitem. Le module AMD s'appuie sur `core/reactive`.
+
+En Moodle 5.3, le même point d'entrée fonctionnel est conservé, mais l'interface du contrôle évolue : un bouton unique bascule l'état de toutes les sections (`toggleallcourseindexsections`). Le module synchronise notamment `aria-expanded` et `aria-controls` avec l'index de cours.
+
+Conséquences :
+1. Ne pas reconstruire l'index de cours dans la navigation Project N.
+2. Ne pas réutiliser le HTML 4.5 tel quel en 5.3 : les commandes et attributs ont évolué.
+3. Laisser le module Boost gérer l'état et les interactions ; ne pas ajouter un second contrôleur d'ouverture/réduction.
+4. Si Project N modifie l'apparence, préserver les identifiants, sélecteurs `data-action`, attributs ARIA et initialisations AMD attendus.
+5. Valider l'index sur smartphone, au clavier et avec TalkBack/NVDA, y compris après changement d'orientation et lorsque des sections sont ouvertes ou repliées.
+
+Sources de code :
+- [Moodle 4.5 — contrôles index cours](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/templates/courseindexdrawercontrols.mustache)
+- [Moodle 4.5 — module contrôles index cours](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/courseindexdrawercontrols.js)
+- [Moodle 5.3 — contrôles index cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/templates/courseindexdrawercontrols.mustache)
+- [Moodle 5.3 — module contrôles index cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/amd/src/courseindexdrawercontrols.js)
+
+## 25. Notifications et messages système
+
+Les notifications Moodle sont des objets de sortie (`core\\output\\notification`) rendus par les templates génériques `core/notification`, `notification_success`, `notification_info`, `notification_warning`, `notification_error` et `notification_base`.
+
+Le template de base porte une partie du contrat d'accessibilité : rôle `alert` lorsque l'annonce aux lecteurs d'écran est demandée, attribut `data-aria-autofocus`, bouton de fermeture avec nom accessible et structure de titre optionnelle. En Moodle 5.3, le bouton de fermeture utilise `data-bs-dismiss="alert"` et la classe `visually-hidden`; Moodle 4.5 utilise les conventions Bootstrap antérieures (`data-dismiss`, `sr-only`).
+
+Décisions Project N :
+1. Ne pas remplacer les notifications Moodle par un système de toast indépendant.
+2. Ne pas transformer toutes les notifications en annonces assertives : respecter le paramètre `announce` et le niveau de message.
+3. Préserver le contenu, le titre, l'ordre de lecture, le bouton de fermeture et les attributs attendus par Bootstrap.
+4. Ne pas supprimer les notifications natives de validation, d'erreur ou de confirmation dans les parcours.
+5. Les notifications Project N éventuelles doivent passer par les API Moodle et les mêmes conventions d'accessibilité ; leur couleur ne doit jamais être le seul indicateur du type de message.
+6. Tester annonces répétées, fermeture clavier, focus, messages longs et affichage mobile.
+
+Sources de code :
+- [Moodle 4.5 — objet notification](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/classes/output/notification.php)
+- [Moodle 4.5 — template de base](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/templates/notification_base.mustache)
+- [Moodle 5.3 — template de base](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/templates/notification_base.mustache)
+
+## 26. Formulaires Moodle : stratégie de modernisation
+
+La bibliothèque `formslib.php` demeure présente en Moodle 4.5 et 5.3. Les formulaires Moodle ne sont pas de simples blocs HTML : ils reposent sur les classes de formulaires, les éléments QuickForm, les règles de validation côté serveur, les contrôles de capacité et des comportements JavaScript associés.
+
+Le thème doit donc améliorer la présentation sans se substituer au moteur de formulaires.
+
+Décisions :
+1. Conserver les formulaires natifs et leurs règles de validation serveur ; ne jamais considérer la validation JavaScript comme une protection suffisante.
+2. Moderniser prioritairement la mise en page, les espacements, les libellés, les aides, les erreurs et les états de focus via les styles et templates officiellement surchargeables.
+3. Préserver les associations label/champ, les identifiants, les descriptions, les indications de champ obligatoire et les messages d'erreur.
+4. Ne pas remplacer globalement les éléments Moodle par des contrôles HTML personnalisés si cela fait perdre les types de champs, les sélecteurs, les sélecteurs de fichiers, les éditeurs, les aides ou les intégrations de plugins.
+5. Tester les formulaires natifs Moodle, les formulaires de plugins tiers et les formulaires Iomad : un thème ne peut pas présumer que tous les formulaires utilisent le même jeu de composants.
+6. Pour les parcours guidés Project N, utiliser les formulaires Moodle sous-jacents ou les API de formulaire adaptées ; le guidage est une couche d'accompagnement, pas un moteur de formulaire parallèle.
+7. Prévoir des tests clavier, lecteur d'écran, erreurs de validation, champs dynamiques, téléversement de fichiers, sélecteurs et affichage à 320 CSS px.
+
+L'analyse effectuée ici confirme la présence de `lib/formslib.php` sur les branches Moodle 4.5 et 5.3. Elle ne constitue pas un audit exhaustif de tous les types de champs, templates et formulaires de plugins ; cette cartographie devra être complétée par un inventaire ciblé des composants utilisés dans les parcours apprenant et formateur.
+
+Sources de code :
+- [Moodle 4.5 — formslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/formslib.php)
+- [Moodle 5.3 — formslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/formslib.php)
+
+## 27. Déclaration d'un thème Iomad
+
+L'analyse des forks Iomad confirme l'existence d'une propriété spécifique dans `core\\output\\theme_config` :
+
+```php
+public $isiomadtheme = false;
+```
+
+Le thème Iomad Boost la déclare explicitement dans son `config.php` :
+
+```php
+$THEME->isiomadtheme = true;
+```
+
+Emplacements vérifiés :
+- Iomad 4.5 : `theme/iomadboost/config.php`
+- Iomad 5.2 : `public/theme/iomadboost/config.php`
+
+Une différence d'héritage a également été relevée :
+- Iomad 4.5 : `$THEME->parents = []`
+- Iomad 5.2 : `$THEME->parents = ['boost']`
+
+La propriété existe aussi dans `theme_config.php` en Iomad 4.5 et 5.2, avec une valeur par défaut à `false`. Cette déclaration identifie le thème comme thème Iomad au niveau de sa configuration. L'analyse menée ici ne démontre toutefois pas encore l'ensemble des endroits où Iomad exploite cette propriété, ni qu'elle constitue à elle seule un filtre de sélection dans le sélecteur de thèmes.
+
+Décision Project N :
+1. Le thème déclare `$THEME->isiomadtheme = true` dans son mode Iomad.
+2. La compatibilité ne se limite pas à cette propriété : elle implique les menus entreprise, logos/favicon, capacités, contextes et règles de cloisonnement déjà cartographiés.
+3. Le thème reste installable et utilisable sur Moodle standard ; il ne doit pas imposer de dépendance à Iomad.
+4. Le mode Iomad doit être détecté de manière sûre et compatible avec les versions cibles, sans supposer que la simple présence d'une classe ou d'un fichier garantit le contexte d'exécution.
+5. Le choix de l'héritage Boost doit être validé par version : le fork Iomad 5.2 utilise Boost comme parent dans Iomad Boost, ce qui conforte l'orientation Project N, sans prouver que toutes les versions intermédiaires ont exactement le même comportement.
+
+Sources de code :
+- [Iomad 4.5 — Iomad Boost config.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/theme/iomadboost/config.php)
+- [Iomad 4.5 — theme_config.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/classes/output/theme_config.php)
+- [Iomad 5.2 — Iomad Boost config.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/iomadboost/config.php)
+- [Iomad 5.2 — theme_config.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/output/theme_config.php)
+
+## 28. Limites de cette tranche de cartographie
+
+Cette tranche est une analyse statique de fichiers des forks, pas une validation en exécution. Elle ne prouve pas le comportement complet des menus React, des notifications, des formulaires tiers ou du sélecteur de thèmes sur une installation réelle.
+
+Les prochains relevés doivent notamment couvrir :
+- les API Bootstrap réellement importées et utilisées dans les modules AMD de Boost entre 4.5 et 5.3 ;
+- les templates de champs et les composants de formulaire utilisés par les parcours retenus ;
+- les points d'extension disponibles pour les composants React et leurs limites de personnalisation ;
+- le comportement effectif de la propriété `isiomadtheme` dans les parcours Iomad de sélection et de configuration des thèmes ;
+- la compatibilité des personnalisations avec Iomad 4.5 et les branches Iomad 5.x ciblées.
