@@ -929,3 +929,103 @@ Les prochaines lectures ciblées doivent couvrir :
 - les formulaires et rendus mod_forum, mod_page, mod_resource et mod_h5pactivity sur les quatre branches ;
 - les composants AMD/ESM et les dialogues de remise/tentative ;
 - les plugins de remise, types de questions et types de contenus H5P réellement utilisés dans les environnements clients.
+
+
+## 44. Rendu des devoirs et tests — classes output, templates et JavaScript
+
+Cette tranche descend du contrôleur vers les objets de présentation, les templates Mustache et les modules AMD. Elle confirme que les activités ne sont pas des pages HTML statiques : une partie du rendu est pilotée par des objets PHP, et les interfaces de correction et de tentative reposent sur des contrats DOM/JavaScript précis.
+
+### 44.1 Devoirs — état de remise et feedback
+
+La classe `mod/assign/classes/output/assign_submission_status.php` fournit un objet de présentation qui transporte notamment :
+- les dates d'ouverture des remises ;
+- la remise individuelle ou en groupe et les informations de groupe ;
+- les membres d'un groupe qui doivent encore remettre ;
+- l'activation des remises et les plugins de remise ;
+- la méthode de réouverture et le nombre maximal de tentatives ;
+- le statut de correction et les contraintes d'appartenance à un groupe.
+
+Cette classe possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Cela indique une base de présentation partagée pour ces données, sans prouver que tout le comportement du module est identique.
+
+Le renderer du devoir expose des méthodes distinctes pour les fichiers, formulaires, résumés utilisateur, confirmations de soumission, synthèses de correction, feedback et statuts compacts. Il ne faut donc pas assimiler le rendu complet à une simple surcharge de template de page.
+
+### 44.2 Interface de correction du formateur
+
+Le template `mod_assign/grading_app` compose plusieurs régions fonctionnelles :
+- navigation entre les participants ;
+- panneau de relecture ;
+- panneau de notation ;
+- actions de correction ;
+- zone de superposition pendant les opérations.
+
+Le module AMD `grading_panel.js` pilote notamment l'enregistrement asynchrone, la sérialisation du formulaire, la conservation de l'état des champs, les notifications de soumission et le rechargement de la correction. La zone de correction est donc un composant interactif avec un contrat de données et des sélecteurs `data-region` utilisés par le JavaScript.
+
+Évolution observée entre Moodle 4.5 et Moodle 5.3 :
+- le template 5.3 ajoute une poignée de redimensionnement avec `tabindex="0"` et un nom accessible ;
+- le module de correction 5.3 prend en compte les marqueurs (markers) dans la soumission de la note et comporte des contrôles supplémentaires ;
+- Iomad 5.2 reprend le template Moodle 5.3 à l'identique (même blob), mais son module AMD de correction possède un blob différent.
+
+Conséquences Project N :
+1. Ne pas renommer, déplacer ou supprimer les régions `data-region` utilisées par les modules natifs.
+2. Ne pas transformer un panneau redimensionnable en interaction souris uniquement ; conserver clavier, focus visible et nom accessible.
+3. Préserver les états de sauvegarde, erreurs, confirmation et notification étudiant.
+4. Tester la navigation entre participants, les changements non enregistrés, les marqueurs, les annotations et les différents plugins de feedback.
+5. Sur smartphone, préférer une progression séquentielle entre relecture et notation à une réduction miniature de deux panneaux côte à côte ; conserver toutefois les fonctions natives.
+
+### 44.3 Actions de remise de l'apprenant
+
+Le template `user_submission_actionmenu` expose des actions conditionnelles de remise, consultation de la remise précédente, modification et suppression. Les actions sont rendues via les composants natifs `core/single_button` et des formulaires. Leur présence dépend des données préparées par la classe output.
+
+Le thème peut hiérarchiser une action principale et clarifier les états, mais ne doit pas afficher une action de soumission, modification ou suppression indépendamment des conditions fournies par Moodle. La confirmation de soumission définitive doit rester explicite.
+
+### 44.4 Tests — tentatives, questions et confirmation
+
+La classe `mod_quiz/classes/output/view_page.php` transporte notamment :
+- les tentatives précédentes et leurs objets ;
+- le nombre de tentatives et la possibilité d'en commencer une autre ;
+- l'existence d'une tentative inachevée ;
+- la dernière tentative terminée ;
+- les notes et feedbacks affichables ;
+- le libellé et l'URL d'une action de démarrage autorisée.
+
+Elle possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Les templates de liste des tentatives, de résumé d'une tentative, de confirmation de remise et de minuterie sont également identiques entre les deux branches Moodle 4.5/5.3 consultées pour les fichiers ciblés, et Iomad 5.2 reprend les templates 5.3 correspondants.
+
+Points techniques :
+- `list_of_attempts` délègue chaque ligne au template `attempt_summary_information` ;
+- `timer` expose une région `role="timer"` et un bouton permettant de masquer/afficher le temps ;
+- `submission_confirmation` est rendu à la demande par le module AMD de confirmation avant la soumission définitive ;
+- `question_slot` porte des contrôles de banque de questions, de sélection de version et d'édition, avec des différences de classes Bootstrap entre versions.
+
+Le module AMD `submission_confirmation.js` intercepte l'action de fin de tentative, construit la confirmation et ne soumet le formulaire qu'après confirmation. Project N ne doit pas neutraliser cette étape ni déclencher une soumission à partir d'une simple navigation ou d'un changement de présentation.
+
+### 44.5 Accessibilité et responsive — critères complémentaires
+
+- Pour la minuterie, conserver l'identification sémantique du temps et vérifier que les mises à jour fréquentes ne produisent pas une annonce vocale excessive. Tester le comportement réel avec NVDA et TalkBack.
+- Pour la confirmation de fin de test, vérifier titre, description, focus initial, fermeture, retour du focus et annonce du nombre de questions sans réponse.
+- Pour la correction, vérifier que les panneaux, la navigation participant, les actions et les erreurs restent compréhensibles lorsque le JavaScript recharge une région.
+- Pour les actions de remise, vérifier que les libellés distinguent sans ambiguïté « modifier », « supprimer », « consulter » et « remettre définitivement ».
+- Pour les questions, vérifier les labels des sélecteurs, cases à cocher et boutons d'aperçu, ainsi que l'ordre clavier dans la banque de questions.
+- En affichage étroit, les tables de tentatives et de correction doivent rester lisibles sans perte de colonnes essentielles ni défilement horizontal incontrôlé.
+
+### 44.6 Écarts Moodle / Iomad et portée des conclusions
+
+Les fichiers ciblés montrent des réutilisations importantes entre Moodle et Iomad :
+- la classe de statut de remise et la classe de page du test sont identiques par blob entre Moodle 4.5/5.3 et Iomad 5.2 ;
+- plusieurs templates de test et de remise sont identiques ;
+- le template de l'application de correction Iomad 5.2 correspond au template Moodle 5.3 ;
+- le module AMD de correction Iomad 5.2 diffère de celui de Moodle 5.3.
+
+Ces constats ne permettent pas d'attribuer chaque différence à la logique multi-entreprise. Il faut comparer les diffs complets et surtout les appels aux APIs/capacités Iomad avant toute conclusion.
+
+### Sources de code consultées
+
+- [Moodle 4.5 — assign_submission_status.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/mod/assign/classes/output/assign_submission_status.php)
+- [Moodle 4.5 — grading_app.mustache](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/mod/assign/templates/grading_app.mustache)
+- [Moodle 4.5 — grading_panel.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/mod/assign/amd/src/grading_panel.js)
+- [Moodle 5.3 — grading_app.mustache](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/assign/templates/grading_app.mustache)
+- [Moodle 5.3 — grading_panel.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/assign/amd/src/grading_panel.js)
+- [Moodle 5.3 — quiz view_page.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/quiz/classes/output/view_page.php)
+- [Moodle 5.3 — submission_confirmation.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/quiz/amd/src/submission_confirmation.js)
+- [Iomad 5.2 — grading_panel.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/mod/assign/amd/src/grading_panel.js)
+
+Analyse statique uniquement : aucune exécution de l'interface de correction, aucune soumission réelle, aucun test axe-core, clavier, lecteur d'écran ou appareil mobile n'a été effectué.
