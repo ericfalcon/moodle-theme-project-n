@@ -565,7 +565,7 @@ L'affectation des cours est donc liée à l'organisation de l'entreprise et au d
 
 | Élément | Fichier | SHA |
 |---|---|---|
-| Contrôleur | `public/blocks/iomad_company_admin/company_course_users_form.php` | `572fdcf7834c89e4` (SHA à revalider) |
+| Contrôleur | `public/blocks/iomad_company_admin/company_course_users_form.php` | `572fdcf7834cfc89ef07c004dbe549836485a87f` |
 
 Le contrôleur combine deux formulaires :
 - sélection des cours concernés ;
