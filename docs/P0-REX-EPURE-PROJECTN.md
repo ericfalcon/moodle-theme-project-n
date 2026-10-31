@@ -187,3 +187,45 @@ La classe `theme_epure\\vocabulary\\company` conserve des termes personnalisés 
 ### 7.5 Statut de l’analyse
 
 Cette lecture confirme l’existence d’une couche d’adaptation utile, mais ne valide pas à elle seule toutes ses branches conditionnelles. Les fichiers ont été lus dans la branche `main` d’Épure ; il reste à comparer précisément les appels aux classes Iomad et les contrats de rendu dans les couples de versions Moodle/Iomad correspondants. Les résultats ne constituent pas des tests runtime.
+
+
+## 8. Complément d'inventaire : tableaux de bord, renderers et configuration
+
+Cette tranche complète la lecture des classes d'adaptation et précise les limites du retour d'expérience. Les SHA désignent les blobs consultés sur la branche `main` du dépôt Épure ; ils rendent l'observation reproductible, mais ne prouvent pas qu'un chemin a été exécuté.
+
+| Fichier | SHA observé | Constat statique | Décision / point de contrôle Project N |
+|---|---|---|---|
+| `theme/epure/classes/iomad_figures.php` | `7227a7255afe7204351a08f8df166ea93625b3e8` | Produit des indicateurs de tableau de bord, avec distinction entre indicateurs de site sur Moodle standard et indicateurs d'entreprise sur Iomad. La documentation de classe indique que les données Iomad sont lues dans les tables Iomad. | Ne pas reprendre le modèle d'indicateurs ni ses requêtes avant d'avoir défini les tâches du tableau de bord Project N, les capacités requises, le périmètre d'entreprise et le coût des requêtes. Les indicateurs ne doivent pas exposer des données agrégées hors périmètre. |
+| `theme/epure/classes/output/iomad_mycourses.php` | `531077a52c462cf3db50966c690aae791960f23e` | Trait commun de rendu « par rôle » à partir des données exportées par les blocs Iomad ; la classe documente la présence de `block_mycourses` jusqu'à Iomad 5.0 puis `block_iomad_mycourses` à partir de 5.1. | Le pattern de partage de présentation est intéressant, mais la source de données et les états métier doivent rester ceux du bloc réellement présent. Comparer les contrats d'export par couple de versions avant d'utiliser un trait commun. |
+| `theme/epure/classes/output/block_mycourses_renderer.php` | `f1440ced3fda983d9ee4c1d89c865f00428f56b9` | Hérite de `block_mycourses\\output\\renderer` et délègue au rendu parent lorsque l'option de présentation par rôle est désactivée. | Ne pas supposer que le nom de classe existe dans toutes les versions. Le chargement doit être conditionnel à la présence du composant et du renderer parent, ou être réparti par adaptateur compatible. |
+| `theme/epure/classes/output/block_myoverview_renderer.php` | `71be6e391ceb90832bf4a5ddc7498c80d57f4120` | Surcharge le renderer natif Moodle `block_myoverview`, avec repli vers le rendu parent quand l'option est désactivée et appel d'un module AMD pour la présentation personnalisée. | Pour Project N, conserver un repli natif explicite. Tester le JavaScript activé/désactivé, le comportement après mise à jour du bloc et les états vides, cours cachés, cours terminés et utilisateurs multi-rôles. |
+| `theme/epure/classes/output/core/course_renderer.php` | `af5ceb9b8d6fe595afe63ffb444e6b71fcf53772` | Surcharge `core_course_renderer` et peut remplacer les listes/catégories de cours par un catalogue en cartes ; le commentaire indique que la barre d'actions native reste présente et qu'un réglage restaure les listes Moodle. | Le thème Project N doit préserver la sémantique et les actions natives, et ne pas imposer un catalogue si cela modifie la découverte, la pagination, les catégories ou les actions de gestion. Une surcharge de renderer doit avoir un contrat de repli testé. |
+| `theme/epure/config.php` | `071e794de655406131c6f995abe9979715c1344d` | Déclare Boost comme parent, callbacks SCSS, renderer factory, désactivation du dock et position d'ajout de blocs. | Point de comparaison utile pour le socle, mais chaque propriété doit être justifiée par les besoins Project N et les contrats de Boost des versions cibles. |
+| `theme/epure/lib.php` | `c56fb9c46bfec3a8226f969ca180b4e9644575cd` | Centralise plusieurs callbacks de génération de styles et des fonctions de configuration du thème. L'extrait consulté n'est pas suffisant pour dresser l'inventaire exhaustif de toutes les fonctions. | Examiner les fonctions appelées par `config.php` et les callbacks de fichiers séparément ; ne pas considérer la lecture des premières lignes comme une revue complète de `lib.php`. |
+| `theme/epure/version.php` | `a66c4ff53cd83fbf94dd40e523a61def8441c1a8` | Le snapshot annonce Épure `0.56.3`, `requires = 2024100700`, `supported = [405, 503]`, Boost et `tool_customlang` comme dépendance. La maturité est `MATURITY_RC`. | Distinguer version déclarée, disponibilité des branches, installation réussie, tests exécutés et compatibilité publiée. Ne pas transposer la dépendance `tool_customlang` sans nécessité fonctionnelle. |
+
+### 8.1 Leçon importante sur les pages « Mes cours »
+
+Épure peut réutiliser une présentation entre le bloc Moodle `block_myoverview` et les blocs Iomad, mais ce rapprochement est un choix de présentation, pas la preuve que les modèles métier sont équivalents. La cartographie Project N a déjà identifié que `iomad_mycourses` expose des états et fonctions spécifiques (cours disponibles, en cours, terminés, obligatoires, progression, certificats et accès liés aux licences). Le thème doit donc adapter le rendu sans aplatir ni recalculer ces états.
+
+### 8.2 Hooks, renderers et JavaScript : règles à garder
+
+- Préférer un hook documenté quand il existe dans la génération ciblée ; vérifier son enregistrement et son exécution avant de le retenir.
+- Une surcharge de renderer est un point d'extension de présentation, mais elle reste couplée à la classe parente et à sa signature. Toute différence de nom, de namespace ou de données exportées peut casser le chargement ou la sortie.
+- Préserver les attributs DOM, régions ARIA, actions et contrats AMD/ESM dont les scripts natifs dépendent.
+- Si un rendu personnalisé est désactivé ou si une fonction est absente, conserver le rendu natif plutôt qu'un écran partiellement reconstruit.
+- Un même code de thème peut devoir être conditionné selon la présence d'un composant Iomad, mais les tests doivent porter sur les couples Moodle/Iomad de même génération et les composants réellement installés.
+
+## 9. Statut de l'inventaire Épure après cette tranche
+
+| Domaine | Statut | Ce qui reste nécessaire |
+|---|---|---|
+| Adaptateur Iomad et contexte entreprise | Analyse statique partielle | Examiner toutes les méthodes et appels, distinguer API publiques et internes, comparer les couples de versions. |
+| Apparence et cache tenant | Classe principale lue | Revue complète des chemins de cache, de stockage, d'invalidation et de diffusion des fichiers. |
+| Renderers de blocs Iomad | Plusieurs classes lues | Comparer les signatures et les structures exportées des classes parentes sur Iomad 4.5, 5.0, 5.1 et 5.2. |
+| Renderers de cours Moodle | Première lecture ciblée | Inventorier les méthodes surchargées et vérifier les contrats natifs par version. |
+| Hooks et callbacks | Inventaire initial | Lire les méthodes concernées en entier et vérifier l'ordre d'exécution/conditions dans les versions cibles. |
+| Configuration/versionnement | Fichiers lus | Examiner tous les callbacks, fichiers de workflow et tests annoncés ; confirmer ce qui est effectivement exécuté, sans lancer de CI. |
+| Runtime et accessibilité | Non testés dans cette tranche | Installation réelle, parcours fonctionnels, axe-core et tests manuels. |
+
+**Conclusion de cette tranche :** l'analyse a progressé sur les classes de rendu des tableaux de bord, les cours, la configuration et le versionnement. L'inventaire n'est pas encore exhaustif et la cartographie P0 n'est pas clôturée. Aucun code d'interface Project N ne doit être commencé à ce stade.
