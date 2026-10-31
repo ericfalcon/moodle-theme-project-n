@@ -1139,15 +1139,21 @@ Le module AMD `submission_confirmation.js` intercepte l'action de fin de tentati
 - Pour les questions, vérifier les labels des sélecteurs, cases à cocher et boutons d'aperçu, ainsi que l'ordre clavier dans la banque de questions.
 - En affichage étroit, les tables de tentatives et de correction doivent rester lisibles sans perte de colonnes essentielles ni défilement horizontal incontrôlé.
 
-### 44.6 Écarts Moodle / Iomad et portée des conclusions
+### 44.6 Comparaison correcte Moodle 5.2 / Iomad 5.2
 
-Les fichiers ciblés montrent des réutilisations importantes entre Moodle et Iomad :
-- la classe de statut de remise et la classe de page du test sont identiques par blob entre Moodle 4.5/5.3 et Iomad 5.2 ;
-- plusieurs templates de test et de remise sont identiques ;
-- le template de l'application de correction Iomad 5.2 correspond au template Moodle 5.3 ;
-- le module AMD de correction Iomad 5.2 diffère de celui de Moodle 5.3.
+La comparaison des branches de même génération a été reprise sur les forks personnels. Les fichiers suivants ont été récupérés dans MOODLE_502_STABLE et IOMAD_502_STABLE ; les SHA de blob sont strictement identiques :
 
-Ces constats ne permettent pas d'attribuer chaque différence à la logique multi-entreprise. Il faut comparer les diffs complets et surtout les appels aux APIs/capacités Iomad avant toute conclusion.
+| Fichier | SHA commun | Conclusion limitée au fichier |
+|---|---|---|
+| mod/assign/mod_form.php | ecc81dbe149bc20ac72e3435a49d14c2d5e5daa9 | Formulaire natif de configuration du devoir identique |
+| mod/quiz/mod_form.php | fb9ecc92016d4ebbfd9c4a0cdc991b19d2255ab1 | Formulaire natif de configuration du test identique |
+| mod/assign/classes/output/assign_submission_status.php | 7be979424df357c17978984daaa6cbc91be83ad7 | Objet de présentation du statut de remise identique |
+| mod/assign/amd/src/grading_panel.js | 441476cb1da0adcf6e2f0379609170c114be1df1 | Gestion JavaScript du panneau de correction identique |
+| mod/quiz/classes/output/view_page.php | a1e9ed55b39a20c7a8bb55b96f702fb158c8d9b8 | Objet de présentation de la page du test identique |
+
+Pour ce périmètre, aucune divergence Iomad n'est donc observée dans ces cinq fichiers entre Moodle 5.2 et Iomad 5.2. Les constats précédents reposant sur Moodle 5.3 face à Iomad 5.2 (notamment le template de correction et le module AMD) décrivaient un écart de génération et ne doivent pas être interprétés comme des adaptations propres à Iomad.
+
+Cela ne prouve pas que tout le module assign/quiz est identique : les autres templates, bibliothèques, contrôleurs, services, événements, APIs et éventuels ajouts Iomad doivent être examinés séparément.
 
 ### Sources de code consultées
 
@@ -1240,60 +1246,39 @@ Les inventaires de répertoires ont été réalisés sur les forks personnels. L
 Aucun test d'exécution, de navigation clavier, axe-core, NVDA, TalkBack ou smartphone n'a été effectué.
 
 
-## 46. Comparaison ciblée des forums — écarts de version et d'Iomad
+## 46. Comparaison ciblée des forums — Moodle 5.2 / Iomad 5.2
 
-Cette section compare les mêmes fichiers dans les quatre branches du périmètre : Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2.
+Cette section remplace les comparaisons croisées de générations précédemment utilisées. Les fichiers ont été récupérés dans les forks ericfalcon/moodle (MOODLE_502_STABLE) et ericfalcon/iomad (IOMAD_502_STABLE). Les SHA complets sont identiques pour chacun des fichiers ci-dessous.
 
-### 46.1 Template d'un message de forum
+### 46.1 Message de forum et réponses imbriquées
 
-Le template `forum_discussion_post.mustache` conserve dans les quatre branches les repères structurants suivants :
-- `data-region="post"` et `data-post-id` ;
-- un identifiant de cible et les régions de contenu ;
-- `tabindex="0"` sur le conteneur de message ;
-- `aria-labelledby` reliant le message à son en-tête ;
-- `aria-describedby` reliant le message à son contenu ;
-- un en-tête contenant les informations de l'auteur.
+| Fichier | SHA commun Moodle 5.2 / Iomad 5.2 | Résultat |
+|---|---|---|
+| mod/forum/templates/forum_discussion_post.mustache | 9ab4de95951b1743ee47a3492f68ea9697d3e107 | Identique |
+| mod/forum/templates/forum_discussion_nested_v2_post_reply.mustache | b517fdb6548fab643f64b99f8437b8ec90004266 | Identique |
 
-Les différences sont principalement de présentation et de structure CSS :
-- Moodle 5.3 adopte des marges et espacements différents, des bordures arrondies et une structure d'en-tête simplifiée ;
-- Moodle 4.5 et Iomad 4.5 partagent exactement le même blob ;
-- Iomad 5.2 reste proche de Moodle 4.5 sur ce template, avec quelques écarts mineurs, et ne reprend pas les changements de présentation de Moodle 5.3.
+Les contrats DOM et d'accessibilité présents dans ces templates sont donc partagés dans les deux branches de même génération : régions data-region, identifiants de message, associations aria-labelledby/aria-describedby, actions conditionnées par les capacités et données nécessaires aux réponses privées. Le thème doit préserver ces contrats, sans conclure que tous les composants du forum sont identiques.
 
-Cela montre que la version Iomad 5.2 du fork ne suit pas nécessairement toutes les évolutions de présentation de Moodle 5.3, même si les deux branches partagent certaines bases.
+### 46.2 Discussions, abonnements et bascule de vue
 
-### 46.2 Réponses imbriquées et titres accessibles
+| Fichier | SHA commun Moodle 5.2 / Iomad 5.2 | Résultat |
+|---|---|---|
+| mod/forum/amd/src/discussion_list.js | 97bf7273373e9320bc169800addd0866955db8b2 | Identique |
+| mod/forum/amd/src/forum_overview_toggle.js | 89631cdd9626f766211c794bf2f2832c05948b4d | Identique |
 
-Le template `forum_discussion_nested_v2_post_reply.mustache` est identique entre Moodle 4.5 et Iomad 4.5, et identique entre Moodle 5.3 et Iomad 5.2. Il conserve :
-- les actions de réponse conditionnées par `capabilities.reply` ;
-- les données nécessaires à la réponse privée ;
-- les attributs `data-action` et `data-post-id` utilisés par le JavaScript ;
-- le compteur de réponses et le contrôle d'affichage/masquage des réponses.
+La gestion JavaScript ciblée de la liste des discussions et de la bascule de vue est donc également identique entre Moodle 5.2 et Iomad 5.2. Les différences antérieurement signalées entre Moodle 5.3 et Iomad 5.2 relevaient de générations différentes ; elles ne permettent pas d'affirmer que le portage Iomad avait omis ou modifié ces fonctions.
 
-Une différence utile est le passage des classes utilitaires d'accessibilité `sr-only` et `font-weight-bold` à `visually-hidden` et `fw-bold` entre Bootstrap 4 et Bootstrap 5. Le thème doit donc éviter de réintroduire les anciennes classes dans les templates ou CSS personnalisés, et s'aligner sur la version Bootstrap de chaque branche.
+### 46.3 Conséquences pour Project N
 
-### 46.3 Liste de discussions et abonnements
+1. Conserver les templates natifs et leurs contrats DOM, notamment data-region, data-action, data-post-id et les associations ARIA.
+2. Préserver les actions de favori, abonnement, verrouillage, épinglage, suivi de lecture et évaluation lorsqu'elles sont fournies par Moodle.
+3. Conserver la hiérarchie sémantique des discussions et réponses ; ne pas s'appuyer uniquement sur la couleur ou l'indentation.
+4. Préserver le comportement clavier, le focus après action asynchrone et la cohérence entre libellé visible et nom accessible.
+5. Ne pas extrapoler ces résultats à l'ensemble du forum, aux plugins tiers, aux événements ou aux fonctions multi-entreprises non inclus dans les fichiers comparés.
 
-Le module `discussion_list.js` a le même blob dans Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Ce fichier n'a donc pas évolué entre ces branches : la gestion des abonnements dans les listes de discussions n'est pas un écart établi par cette comparaison, et ne doit pas être présentée comme une nouveauté de Moodle 5.3.
+### 46.4 Portée et limites de la comparaison
 
-Moodle 5.3 introduit également `forum_overview_toggle.js`, qui gère les bascules d'abonnement/suivi dans la vue d'ensemble, avec une attention explicite à la cohérence entre libellé visible et `aria-label`. Le fichier Iomad 5.2 existe mais présente un contenu différent et plus ancien ; il ne faut donc pas supposer que cette fonctionnalité de vue d'ensemble est portée de la même façon dans cette branche.
-
-### 46.4 Conséquences techniques pour Project N
-
-1. **Ne pas copier un template Moodle 5.3 sans vérifier les dépendances de la branche Iomad ciblée.** Les changements Bootstrap et les classes d'accessibilité doivent être conditionnés par la version réelle.
-2. **Ne pas remplacer les attributs de liaison DOM** (`data-region`, `data-action`, `data-post-id`, `data-target`) sans analyse du module AMD associé.
-3. **Préserver la relation accessible message/en-tête/contenu.** Les attributs ARIA sont structurels et ne doivent pas être supprimés au nom d'une simplification visuelle.
-4. **Vérifier les annonces d'état des bascules.** Le libellé visible et le nom accessible doivent décrire le même état, en particulier pour les abonnements.
-5. **Ne pas traiter Iomad 5.2 comme un simple alias de Moodle 5.3.** La comparaison doit rester explicite pour les templates, modules AMD, APIs et comportements multi-entreprises.
-
-### 46.5 Fichiers comparés
-
-- `mod/forum/templates/forum_discussion_post.mustache` : quatre branches ;
-- `mod/forum/templates/forum_discussion_nested_v2_post_reply.mustache` : quatre branches ;
-- `mod/forum/amd/src/discussion_list.js` : quatre branches ;
-- `mod/forum/amd/src/forum_overview_toggle.js` : Moodle 5.3 et Iomad 5.2.
-
-Les constats ci-dessus proviennent des blobs et extraits comparés dans les forks personnels. Ils ne constituent pas un audit complet des différences de toutes les classes, templates et dépendances du forum. Aucune exécution de ces interfaces ni validation d'accessibilité n'a été effectuée.
-
+Quatre fichiers ciblés ont été comparés par SHA complet dans les branches de même génération. Leur identité établit une égalité de contenu, pas une équivalence fonctionnelle de toute l'activité forum. Les contrôleurs, classes output, services, autres templates, modules AMD, plugins et comportements d'accès doivent faire l'objet d'une analyse distincte. Aucun test d'exécution, de navigation clavier, axe-core, NVDA, TalkBack ou smartphone n'a été effectué.
 
 ## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
 
