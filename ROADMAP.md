@@ -37,6 +37,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 |---|---|---|
 | Thème parent | Boost ; décision de principe retenue, détails d'héritage à documenter en P0 | Retenu |
 | Approche ergonomique | Mobile-first pour les trois espaces, puis adaptation tablette/desktop | Retenu |
+| Navigation | Approche hybride : navigation globale Project N et navigation contextuelle native Moodle | Retenu ; détails à prototyper dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md) |
 | Accessibilité | WCAG 2.2 AA, RGAA et EN 301 549 applicables ; validation continue | Retenu |
 | CI | CI envisageable et à définir en P0 ; elle n'est pas exclue | À définir |
 | Licence | GPL v3 ou ultérieure envisagée, à confirmer | À confirmer |
@@ -48,7 +49,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 
 ## P0 — Cadrage, spécifications et décisions
 
-Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. Il ne vaut pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser.
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
