@@ -632,3 +632,155 @@ Les prochains relevés doivent notamment couvrir :
 - les points d'extension disponibles pour les composants React et leurs limites de personnalisation ;
 - le comportement effectif de la propriété `isiomadtheme` dans les parcours Iomad de sélection et de configuration des thèmes ;
 - la compatibilité des personnalisations avec Iomad 4.5 et les branches Iomad 5.x ciblées.
+
+
+## 29. Bootstrap : coexistence des générations 4 et 5
+
+### Moodle 4.5
+
+Boost embarque Bootstrap 4.6.2. Le point d'entrée AMD `theme_boost/index` exporte les composants Bootstrap (Alert, Button, Carousel, Collapse, Dropdown, Modal, Popover, Tab, Toast, Tooltip, etc.). Les modules sont également présents sous `theme/boost/amd/src/bootstrap/`.
+
+Les conventions DOM correspondantes sont celles de Bootstrap 4 : par exemple `data-toggle`, `data-target`, `data-dismiss`, et les classes utilitaires historiques.
+
+### Moodle 5.3
+
+Boost utilise Bootstrap 5.3.8. Les attributs ont évolué vers `data-bs-toggle`, `data-bs-target`, `data-bs-dismiss`, etc. Les classes d'accessibilité et utilitaires ont aussi évolué (par exemple `visually-hidden` à la place de `sr-only`).
+
+Le module `theme_boost/bs4-compat` adapte encore une liste définie d'éléments Bootstrap 4 vers Bootstrap 5. Cette compatibilité est transitoire et explicitement dépréciée : elle ne doit pas servir de fondation aux nouveaux composants Project N.
+
+Le point d'entrée des composants change également :
+- Moodle 5.2 et antérieurs : `theme_boost/index`.
+- Moodle 5.3 et ultérieur : `bootstrap`.
+
+Les imports directs des sous-modules Bootstrap depuis `theme_boost/bootstrap/*` sont dépréciés en 5.3. Les modules internes `util` et `dom` restent des exceptions non couvertes par l'API publique et sont à utiliser à ses risques.
+
+### Décisions Project N
+
+1. Éviter d'écrire des interactions dépendant directement des attributs Bootstrap dans les templates Project N.
+2. Ne pas mélanger les attributs Bootstrap 4 et 5 dans un même composant.
+3. Ne pas utiliser `bs4-compat` pour rendre compatibles de nouveaux composants ; il s'agit d'une couche de transition.
+4. Pour les composants JS propres au thème, isoler les appels Bootstrap derrière un module Project N et choisir l'import selon la version Moodle.
+5. Pour les interactions déjà gérées par Moodle/Boost (modales, dropdowns, tabs, tiroirs), réutiliser leurs API et leur initialisation plutôt que créer un deuxième contrôleur.
+6. Tester les états clavier, focus, fermeture, échappement, scroll et annonces accessibles après chaque changement de version Bootstrap.
+7. Prévoir une matrice distincte pour Moodle 4.5, Moodle 5.3 et Iomad 5.2 : le fork Iomad 5.2 observé est encore sur les imports historiques `theme_boost/bootstrap/*` et ne doit pas être assimilé à Moodle 5.3.
+
+Sources de code :
+- [Moodle 4.5 — index Bootstrap Boost](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/index.js)
+- [Moodle 4.5 — modal Bootstrap 4](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/bootstrap/modal.js)
+- [Moodle 5.3 — compatibilité Bootstrap 4/5](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/amd/src/bs4-compat.js)
+- [Iomad 5.2 — compatibilité Bootstrap](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/amd/src/bs4-compat.js)
+- [Boost 5.3 — notes de migration](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/UPGRADING.md)
+
+## 30. Personnalisation des composants React à partir de Moodle 5.2
+
+La documentation développeur Moodle 5.3 décrit un mécanisme de résolution dynamique des composants React en fonction du thème actif. Un thème peut fournir un override sous :
+
+```
+public/theme/projectn/js/esm/src/overrides/<composant>/<chemin>
+```
+
+Le système cherche d'abord l'override du thème actif, puis retombe sur le composant original du cœur ou du plugin.
+
+Point d'attention majeur : **les overrides React ne suivent pas automatiquement la chaîne d'héritage des thèmes**. Un composant fourni par un parent Boost n'est donc pas automatiquement repris par Project N comme le sont certains templates ou fichiers hérités. Il faut fournir l'override dans le thème enfant ou utiliser explicitement les alias prévus pour charger le composant original ou celui d'un thème parent.
+
+Le mécanisme propose deux stratégies :
+- `wrap` : envelopper le composant original et conserver son comportement ;
+- `eject` : reprendre son implémentation pour la modifier plus profondément.
+
+Depuis Moodle 5.3, le CLI `swizzle` peut générer ces overrides. Chaque composant dispose d'un niveau de risque déclaré dans `swizzle.json` : `safe`, `risky` ou `prohibited`. Les composants non déclarés sont considérés comme risqués.
+
+Dans le code Moodle 5.3 inspecté, `core/nav/Nav` est déclaré `risky` en wrap comme en eject. Il ne faut donc pas considérer la navigation React comme un point d'extension stable et sans coût.
+
+### Décisions Project N
+
+1. Ne pas prévoir une réécriture globale des composants React Moodle.
+2. Privilégier CSS, tokens, configuration et points d'extension publics avant un override React.
+3. Utiliser `wrap` quand une modification d'enveloppe suffit ; réserver `eject` aux besoins démontrés et documentés.
+4. Avant chaque override, vérifier le niveau de risque du composant dans la version exacte ciblée.
+5. Garder une liste explicite des overrides Project N et des versions Moodle/Iomad pour lesquelles ils sont maintenus.
+6. Ne jamais supposer que l'héritage Boost couvre un override React ; le prévoir explicitement.
+7. Pour Moodle 4.5, qui précède ce mécanisme, utiliser les points d'extension Mustache/AMD disponibles dans cette version ; ne pas introduire un système React propre au thème qui ferait doublon avec l'évolution du cœur.
+8. Vérifier séparément Iomad 5.2 : la branche inspectée n'expose pas les mêmes fichiers React de navigation que Moodle 5.3. Ne pas appliquer automatiquement les conclusions Moodle 5.3 à Iomad 5.2.
+
+Sources :
+- [Moodle — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming)
+- [Moodle 5.3 — manifeste swizzle du cœur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/js/esm/src/swizzle.json)
+- [Moodle 5.3 — composant Nav](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/js/esm/src/nav/Nav.tsx)
+
+## 31. Sélecteur d'activités et de ressources : rupture entre 4.5 et 5.1+
+
+Le sélecteur d'activités est un point central de l'expérience formateur. Son évolution est suffisamment importante pour interdire une surcharge unique supposée compatible sur toute la plage.
+
+### Moodle 4.5
+
+Les templates sont sous `course/templates`, notamment :
+- `core_course/activitychooser` ;
+- `core_course/activitychooserbutton` ;
+- les sous-templates `core_course/local/activitychooser/*`.
+
+La logique AMD est principalement sous `course/amd/src/activitychooser.js` et `course/amd/src/local/activitychooser/*`. Le contrôleur orchestre les données, les favoris, les onglets, la modale, le pied de modale et les événements.
+
+Le template du bouton utilise les conventions Bootstrap 4 (`data-toggle="dropdown"`) et des attributs spécifiques au sélecteur.
+
+### Moodle 5.1 et 5.3
+
+À partir de Moodle 5.1, les templates et la logique du sélecteur sont déplacés de `core_course` vers `core_courseformat`. Les emplacements deviennent notamment :
+- `course/format/templates/activitychooser.mustache` ;
+- `course/format/templates/local/activitychooser/*` ;
+- `course/format/templates/local/content/activitychooserbutton.mustache` ;
+- `course/format/amd/src/local/activitychooser/*`.
+
+Le pied de modale est désormais géré par le contrôleur de dialogue du format de cours. Le bouton ajoute des attributs de contexte tels que `data-section-id`, `data-returnsectionid`, `data-action` et utilise les conventions Bootstrap 5 dans la branche 5.3.
+
+Les formats de cours peuvent aussi fournir leurs propres sorties et templates. Le sélecteur n'est donc pas uniquement une interface globale que le thème pourrait redessiner sans tenir compte du format actif.
+
+### Décisions Project N
+
+1. Le parcours de création guidée du formateur doit s'appuyer sur le sélecteur natif, pas le remplacer.
+2. Les catégories pédagogiques « transmettre / pratiquer / évaluer / collaborer » peuvent constituer une couche de présentation ou d'aide à la décision, mais le choix final doit conserver les activités et ressources réellement disponibles et autorisées.
+3. Ne jamais supprimer les favoris, recommandations, recherche, onglets, aides, résumé de sélection, pied de modale ou états de chargement.
+4. Ne pas recopier les templates 4.5 dans le thème en espérant qu'ils fonctionneront en 5.1+ : le namespace et le propriétaire fonctionnel ont changé.
+5. Toute surcharge doit être versionnée et testée avec les formats de cours natifs et tiers.
+6. Préserver les attributs `data-region`, `data-action`, identifiants uniques, associations ARIA et événements attendus par les modules.
+7. Le guidage Project N ne doit pas masquer les activités disponibles selon les capacités, les plugins installés ou les restrictions du cours.
+8. Sur smartphone, contrôler la hauteur de la modale, le scroll du contenu, la visibilité du pied d'action et le focus après ajout d'une activité.
+
+Sources de code :
+- [Moodle 4.5 — template activité](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/templates/activitychooser.mustache)
+- [Moodle 4.5 — bouton du sélecteur](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/templates/activitychooserbutton.mustache)
+- [Moodle 4.5 — contrôleur AMD](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/amd/src/activitychooser.js)
+- [Moodle 5.3 — template activité](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/activitychooser.mustache)
+- [Moodle 5.3 — bouton du sélecteur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/activitychooserbutton.mustache)
+- [Moodle 5.3 — contrôleur de dialogue](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/local/activitychooser/dialogue.js)
+- [Moodle 5.1 — migration du sélecteur](https://moodledev.io/docs/5.1/devupdate)
+
+## 32. Conséquences sur l'architecture et la matrice de compatibilité
+
+Les relevés montrent que la plage de versions visée ne peut pas être traitée comme une seule plateforme technique homogène.
+
+| Sujet | Moodle 4.5 | Iomad 5.2 (fork) | Moodle 5.3 |
+|---|---|---|---|
+| Bootstrap | 4.6.2 | Bootstrap 5, imports historiques Boost | 5.3.8, imports `bootstrap` |
+| Navigation primaire/secondaire | rendu historique | rendu historique hérité Moodle 5.2 | composants React dans les templates de navigation |
+| Overrides React par thème | non disponibles via le mécanisme 5.2+ | présence à vérifier selon composants de la branche | mécanisme d'override et swizzle |
+| Sélecteur d'activités | `core_course` | migration 5.1+ à vérifier dans le fork | `core_courseformat` |
+| Templates | racine historique | répertoire `public/` | répertoire `public/` |
+
+Cette matrice est un instantané des branches inspectées, et non une affirmation sur toutes les versions publiées d'Iomad.
+
+Conséquences :
+1. Définir une couche de compatibilité frontale interne au thème, avec des implémentations par génération lorsque nécessaire.
+2. Éviter les conditions de version dispersées dans les templates ; centraliser les différences dans les fichiers de configuration et modules ciblés.
+3. Maintenir une matrice de tests distincte Moodle 4.5, Moodle 5.3 et Iomad 4.5/5.2.
+4. Ne pas retarder la conception mobile-first en attendant les composants React : l'expérience doit être cohérente même avec le rendu historique de Moodle 4.5.
+5. Prévoir que les adaptations de composants React soient des améliorations progressives pour Moodle 5.2+, et non une dépendance nécessaire au fonctionnement du thème.
+
+## 33. Limites et prochaines vérifications
+
+Cette tranche repose sur les fichiers des branches identifiées et sur la documentation développeur. Elle n'est pas un test d'exécution. Les éléments à confirmer dans les prochaines étapes :
+- vérifier les templates et modules du sélecteur d'activités dans Iomad 4.5 et 5.2, notamment les éventuelles adaptations Iomad ;
+- cartographier les éditeurs TinyMCE/TinyMCE premium et Atto selon les versions réellement supportées ;
+- cartographier le sélecteur de fichiers, le gestionnaire de fichiers et les téléversements dans les formulaires ;
+- établir une liste des composants React réellement pertinents pour les espaces apprenant, formateur et gestionnaire ;
+- vérifier les éventuels overrides React dans les plugins tiers Iomad utilisés par les clients ;
+- définir les tests de non-régression par version et par rôle, sans présumer de la disponibilité de tous les plugins.
