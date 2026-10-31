@@ -1029,3 +1029,80 @@ Ces constats ne permettent pas d'attribuer chaque différence à la logique mult
 - [Iomad 5.2 — grading_panel.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/mod/assign/amd/src/grading_panel.js)
 
 Analyse statique uniquement : aucune exécution de l'interface de correction, aucune soumission réelle, aucun test axe-core, clavier, lecteur d'écran ou appareil mobile n'a été effectué.
+
+
+## 45. Forums, H5P, pages et ressources — composants de rendu
+
+### 45.1 Forum : rendu fragmenté et interactions nombreuses
+
+Le module forum dispose d'un ensemble important de templates Mustache, notamment :
+- listes de discussions par type de forum (standard, questions/réponses, social, actualités, discussion unique) ;
+- affichage des discussions et des messages en mode imbriqué ou fil de discussion ;
+- publication/réponse en ligne ;
+- actions de discussion (favori, verrouillage, épinglage, abonnement) ;
+- barre d'action, paramètres dans un tiroir, recherche, suivi de lecture et évaluations.
+
+Les modules AMD correspondants gèrent les discussions, listes, réponses en ligne, favoris, verrouillage, épinglage, abonnements, événements et sélecteurs. L'interface n'est donc pas un bloc monolithique que Project N pourrait remplacer sans reprendre un grand nombre de comportements.
+
+Comparaison des listes :
+- Moodle 4.5 et Moodle 5.3 conservent la majorité des templates et modules AMD ;
+- Moodle 5.3 ajoute notamment un template de navigation dans une discussion et un module de bascule de vue d'ensemble ;
+- plusieurs templates de discussion et modules sont identiques par blob entre les deux versions ;
+- les templates d'action, de recherche, de liste et de paramètres ont aussi évolué.
+
+Les quatre branches Iomad 4.5/5.2 et Moodle 4.5/5.3 présentent les mêmes familles de classes output du forum. Cela ne signifie pas que chaque template et module est strictement identique : une comparaison fichier par fichier reste nécessaire avant de qualifier un écart d'adaptation Iomad.
+
+**Décisions Project N :**
+1. Conserver les différents types et modes de forum, notamment les discussions imbriquées et filées.
+2. Ne pas supprimer les actions natives de favori, abonnement, verrouillage, épinglage, suivi de lecture ou évaluation.
+3. Sur mobile, privilégier une lecture verticale des messages, avec auteur/date/actions clairement identifiables.
+4. Pour les fils longs, conserver une hiérarchie perceptible entre message initial, réponses et niveaux d'imbrication ; ne pas s'appuyer uniquement sur l'indentation ou la couleur.
+5. Conserver les tiroirs et dialogues natifs, leurs sélecteurs JS et la gestion du focus.
+6. Vérifier les notifications de réponse, les annonces des bascules d'état et le retour du focus après les actions asynchrones.
+
+### 45.2 H5P : shell Moodle et activité interactive
+
+Le module H5P Activity possède des classes output et templates propres, notamment pour :
+- l'affichage d'une tentative ;
+- la liste des tentatives ;
+- le résultat ;
+- les liens et pages de rapport ;
+- les résultats et rapports de tentatives.
+
+Les templates ciblés sont largement identiques entre Moodle 4.5 et Moodle 5.3. Le template `result.mustache` diffère cependant. Aucun répertoire `amd/src` propre à `mod_h5pactivity` n'a été trouvé dans les chemins inspectés : cela ne signifie pas qu'aucun JavaScript n'intervient, car le lecteur H5P et ses bibliothèques ont leurs propres ressources et dépendances.
+
+Project N doit donc distinguer :
+- le shell Moodle (titre, consigne, contexte, disponibilité, progression, tentatives, résultat) ;
+- le lecteur H5P et le contenu interactif ;
+- les données de suivi et de complétion transmises au moteur Moodle.
+
+Le thème ne doit pas encapsuler le lecteur dans un conteneur qui contraint sa largeur/hauteur, masque ses contrôles, coupe ses contenus ou perturbe le focus. Le test d'accessibilité doit porter sur le lecteur et le type de contenu, pas uniquement sur le shell du thème.
+
+### 45.3 Page et ressource fichier : rendu principalement porté par le cœur
+
+Les chemins `mod/page/classes/output`, `mod/resource/classes/output` et leurs répertoires `templates` ne sont pas présents comme répertoires dédiés dans les branches Moodle 4.5 et 5.3 consultées. Leurs pages s'appuient principalement sur les mécanismes de rendu génériques du cœur Moodle et les formats de cours, plutôt que sur un ensemble autonome de templates propres à chaque module.
+
+Conséquences :
+- ne pas supposer qu'un template propre à `mod_page` ou `mod_resource` peut être surchargé pour refaire l'intégralité de l'affichage ;
+- analyser le layout, les output components du cœur, le contenu filtré et les éventuels plugins avant d'intervenir ;
+- pour une page, préserver le contenu HTML filtré et sa sémantique ;
+- pour une ressource fichier, préserver les paramètres d'ouverture, le téléchargement, les restrictions, les types MIME et les contrôles d'accès ;
+- ne pas confondre l'icône ou la carte d'une ressource avec le contrôle réel d'accès au fichier.
+
+### 45.4 Accessibilité transversale
+
+Les parcours forum et H5P doivent être audités en tenant compte de leurs composants interactifs, pas seulement de leur apparence :
+- titres et niveaux de titres cohérents dans les discussions ;
+- auteur, date, statut et actions correctement associés au message ;
+- état favori/abonnement/verrouillage/épinglage exposé aux technologies d'assistance ;
+- dialogues, tiroirs et réponses en ligne utilisables au clavier ;
+- focus visible et retour de focus après action ;
+- annonces pertinentes des changements d'état sans répétitions excessives ;
+- contenus H5P testés par type d'activité, version de bibliothèque et appareil ;
+- absence de débordement horizontal et de contenu masqué à 320 CSS px et à 200 % de zoom.
+
+### 45.5 Limites de cette tranche
+
+Les inventaires de répertoires ont été réalisés sur les forks personnels. Les templates et modules AMD ont été recensés, mais pas tous lus intégralement. Les répertoires de templates/output dédiés à page et resource étant absents, leur rendu devra être approfondi au niveau du cœur Moodle et des layouts. Les plugins tiers, formats de cours, types H5P et bibliothèques embarquées restent hors de cette lecture.
+
+Aucun test d'exécution, de navigation clavier, axe-core, NVDA, TalkBack ou smartphone n'a été effectué.
