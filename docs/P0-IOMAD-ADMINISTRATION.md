@@ -4,6 +4,8 @@
 
 ## 1. Périmètre de cette tranche
 
+Les SHA ci-dessous ont été contrôlés. Les affirmations marquées « à vérifier » ou « non vérifié » ne l'ont pas été.
+
 Fichiers examinés :
 
 | Élément | Fichier | SHA |
@@ -48,7 +50,7 @@ Le tableau de bord construit des catégories en fonction de capacités vérifié
 
 Les catégories ne sont donc pas une liste universelle affichée à tous les gestionnaires. Leur présence dépend des capacités et de certaines options fonctionnelles.
 
-Les entrées sont ensuite collectées dynamiquement depuis les plugins qui déclarent une fonction dans `db/iomadmenu.php`. Chaque entrée est filtrée à nouveau par sa capacité avant d'être ajoutée à une catégorie.
+Les entrées sont ensuite collectées dynamiquement depuis les plugins qui déclarent une fonction dans `db/iomadmenu.php`. Chaque entrée est filtrée à nouveau par sa capacité avant d'être ajoutée à une catégorie *(filtrage par entrée à vérifier)*.
 
 **Conséquences Project N :**
 1. Ne jamais coder en dur une liste exhaustive des fonctions accessibles au gestionnaire.
@@ -105,9 +107,9 @@ Project N ne doit jamais construire sa propre liste d'entreprises à partir d'un
 
 ### 3.3 Contexte d'entreprise et personnalisation visuelle
 
-Le changement d'entreprise est mémorisé dans `$SESSION->currenteditingcompany`. Le tableau de bord initialise ensuite son contexte métier à partir de cette valeur. Le changement peut également entraîner l'application du thème configuré pour l'entreprise dans la session.
+Le changement d'entreprise est mémorisé dans `$SESSION->currenteditingcompany`. Le tableau de bord initialise ensuite son contexte métier à partir de cette valeur. Le changement peut également entraîner l'application du thème configuré pour l'entreprise dans la session *(non vérifié dans le code)*.
 
-Le README de `local_iomad` avertit toutefois que le CSS et le logo propres à chaque entreprise ne sont pas automatiquement compatibles avec tous les thèmes : cela dépend notamment de l'utilisation des réglages natifs de logo et des mécanismes de thème.
+Le README de `local_iomad` avertit toutefois que le CSS et le logo propres à chaque entreprise ne sont pas automatiquement compatibles avec tous les thèmes : cela dépend notamment de l'utilisation des réglages natifs de logo et des mécanismes de thème *(contenu du README non vérifié)*.
 
 **Conséquences Project N :**
 - rendre l'entreprise active clairement identifiable, sans ambiguïté avec l'identité globale de la plateforme ;

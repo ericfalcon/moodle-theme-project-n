@@ -13,7 +13,7 @@ La comparaison est toujours effectuée entre branches de même génération :
 | 5.0 | `MOODLE_500_STABLE` | `IOMAD_500_STABLE` | Sources disponibles |
 | 5.1 | `MOODLE_501_STABLE` | `IOMAD_501_STABLE` | Sources disponibles |
 | 5.2 | `MOODLE_502_STABLE` | `IOMAD_502_STABLE` | Sources disponibles |
-| 5.3 | `MOODLE_503_STABLE` | — | Iomad 5.3 en cours de développement ; pas de comparaison Iomad 5.3 validable à ce stade |
+| 5.3 | `MOODLE_503_STABLE` | — | Iomad 5.3 absent des forks consultés (statut de développement non vérifié) ; pas de comparaison Iomad 5.3 validable à ce stade |
 
 Une différence n'est attribuée à Iomad que si elle apparaît entre deux branches de même génération. Les changements intervenus entre Moodle 4.5, 5.0, 5.1 et 5.2 sont consignés séparément.
 
@@ -38,7 +38,7 @@ Les sources des branches 4.5 et 5.0 sont à la racine du dépôt Moodle. À part
 
 Cette réorganisation concerne également Iomad 5.1 et 5.2. Ce n'est pas une différence Moodle/Iomad, mais une évolution du socle à intégrer dans les environnements de développement et de test. Le paquet du thème reste organisé selon la structure normale d'un plugin Moodle ; il ne faut pas ajouter un répertoire `public` dans l'archive du thème.
 
-Moodle 5.2 introduit en outre un moteur de routage et recommande que la racine documentaire du serveur web pointe vers `public/`. Pour Project N, les URL doivent être construites avec les API Moodle (`moodle_url`, routes et liens fournis par les composants) plutôt qu'avec des chemins supposés.
+Moodle 5.2 introduit en outre un moteur de routage et recommande que la racine documentaire du serveur web pointe vers `public/` *(à vérifier)*. Pour Project N, les URL doivent être construites avec les API Moodle (`moodle_url`, routes et liens fournis par les composants) plutôt qu'avec des chemins supposés.
 
 ### 2.2 Capacités déclarées dans le cœur Moodle
 
@@ -173,7 +173,7 @@ La déclaration des layouts Boost est donc stable sur cette période dans le fic
 
 Le fichier `layout/drawers.php` est identique dans Moodle 4.5, 5.0 et 5.1. Il évolue dans Moodle 5.2, notamment pour construire le sélecteur de navigation tertiaire et transmettre le nom et l'URL du cours au template.
 
-Le template `drawers.mustache` évolue entre 4.5 et 5.0, reste identique entre 5.0 et 5.1, puis évolue à nouveau en 5.2. Les changements 5.2 observés comprennent notamment :
+Le template `drawers.mustache` évolue entre 4.5 et 5.0, reste identique entre 5.0 et 5.1, puis évolue à nouveau en 5.2. Les changements 5.2 observés comprennent notamment *(liste non vérifiée ligne à ligne ; à confirmer)* :
 
 - un bloc de template pour l'en-tête du tiroir d'index du cours ;
 - des icônes de fermeture adaptées au sens de lecture RTL/LTR ;
@@ -250,5 +250,5 @@ La sortie attendue sera une matrice **écran / action / composant natif / capaci
 - [Iomad 5.2 — contexte entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/custom_context/context_company.php)
 - [Moodle 5.2 — layout Boost](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/theme/boost/layout/drawers.php)
 - [Iomad 5.2 — layout Boost](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/layout/drawers.php)
-- [Notes de version développeur Moodle 5.2](https://moodledev.io/general/releases/5.2)
-- [Notes de mise à jour développeur Moodle 5.2](https://moodledev.io/docs/5.2/devupdate)
+- [Notes de version développeur Moodle 5.2](https://moodledev.io/general/releases/5.2) *(non consultée)*
+- [Notes de mise à jour développeur Moodle 5.2](https://moodledev.io/docs/5.2/devupdate) *(non consultée)*

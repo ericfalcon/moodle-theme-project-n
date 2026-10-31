@@ -16,7 +16,7 @@ Le rôle seul ne suffit donc pas à déterminer l'interface à afficher. Un mêm
 
 ## 2. Rôles standards Moodle
 
-Le code d'installation Moodle 5.2 crée les rôles standards suivants :
+Le code d'installation Moodle 5.2 crée les rôles standards suivants *(tableau non vérifié contre `install.php`)* :
 
 | Rôle (shortname) | Fonction générale | Contexte d'affectation habituel |
 |---|---|---|
@@ -88,7 +88,7 @@ Le commentaire du schéma XML sur les valeurs de `managertype` mentionne seuleme
 
 Iomad sépare la gestion d'une entreprise de l'intervention pédagogique dans un cours.
 
-Dans `company::add_course()`, pour les cours non licenciés, le code récupère les rôles `companycourseeditor` et `companycoursenoneditor`. L'affectation dépend de la configuration `local_iomad/autoenrol_managers` :
+Dans `company::add_course()`, pour les cours non licenciés, le code récupère les rôles `companycourseeditor` et `companycoursenoneditor`. L'affectation dépend de la configuration `local_iomad/autoenrol_managers` *(règles à vérifier jusqu'au bout)* :
 
 - Si l'auto-inscription des gestionnaires est activée, les rattachements de gestionnaires (`managertype != 0`) sont utilisés pour affecter les rôles pédagogiques. Un gestionnaire de département reçoit le rôle non éditeur ; un gestionnaire d'entreprise peut recevoir le rôle éditeur sur un cours qu'il crée ; sur un cours qui n'est pas créé par un gestionnaire, le rôle non éditeur est affecté.
 - Si cette option est désactivée, les associations marquées `educator != 0` sont utilisées pour attribuer les rôles pédagogiques. Le choix éditeur / non éditeur dépend notamment du fait que le cours soit créé par un gestionnaire.
@@ -125,7 +125,7 @@ La couche Iomad peut donc retirer, pour une entreprise donnée, une capacité qu
 
 ## 8. Capacités Iomad : première cartographie
 
-Le fichier `blocks/iomad_company_admin/db/access.php` déclare 86 capacités pour le bloc d'administration, dont 84 capacités au contexte entreprise et deux capacités d'instance de bloc. Dans les déclarations d'archétypes de ce fichier, on relève notamment :
+Le fichier `blocks/iomad_company_admin/db/access.php` déclare 86 capacités pour le bloc d'administration, dont 84 capacités au contexte entreprise et deux capacités d'instance de bloc *(répartition 84/2 non vérifiée)*. Dans les déclarations d'archétypes de ce fichier, on relève notamment :
 
 | Archétype | Nombre de capacités où il est explicitement autorisé |
 |---|---:|

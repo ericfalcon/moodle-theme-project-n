@@ -1288,6 +1288,210 @@ La gestion JavaScript ciblée de la liste des discussions et de la bascule de vu
 
 Quatre fichiers ciblés ont été comparés par SHA complet dans les branches de même génération. Leur identité établit une égalité de contenu, pas une équivalence fonctionnelle de toute l'activité forum. Les contrôleurs, classes output, services, autres templates, modules AMD, plugins et comportements d'accès doivent faire l'objet d'une analyse distincte. Aucun test d'exécution, de navigation clavier, axe-core, NVDA, TalkBack ou smartphone n'a été effectué.
 
+## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
+
+### 47.1 État actuel du dépôt
+
+Au moment de cette vérification, la branche `main` du dépôt Project N contient :
+- `README.md` et `ROADMAP.md` ;
+- `docs/P0-CADRAGE.md`, `docs/P0-NAVIGATION.md` et `docs/P0-CARTOGRAPHIE-NAVIGATION.md`.
+
+Aucun répertoire de code de thème (`theme/`) n'est encore présent. Les recommandations qui suivent sont donc des règles de conception à appliquer pendant P0/P1, et non la description d'une implémentation déjà codée.
+
+### 47.2 Ordre de préférence des interventions
+
+La documentation officielle Moodle distingue les layouts, les templates Mustache, les renderers et les objets output. Les templates peuvent être surchargés dans le thème sous `templates/<componentname>/<templatename>.mustache`, sans modifier le plugin d'origine. Les renderers sont un point d'extension plus puissant, mais exigent l'activation d'une renderer factory adaptée.
+
+Pour limiter le coût de maintenance de Project N, retenir l'ordre suivant :
+
+1. Variables CSS/SCSS, classes et composants Bootstrap déjà fournis par Boost.
+2. SCSS du thème et styles ciblés, sans sélectionner des éléments uniquement par leur position DOM.
+3. Surcharge Mustache d'un template précis, seulement si la structure HTML doit réellement changer.
+4. Renderer de thème ciblé, uniquement si le template ne suffit pas ou si l'API output l'exige.
+5. Layout complet, uniquement lorsqu'un changement de structure de page est indispensable.
+6. JavaScript/ESM de remplacement, en dernier recours, après vérification des API publiques et des points d'extension.
+
+Cette hiérarchie ne doit pas devenir une règle absolue : une adaptation d'accessibilité peut exiger une intervention structurelle. Elle sert à éviter de réécrire un composant natif lorsque CSS ou un template ciblé suffit.
+
+### 47.3 Règles Mustache
+
+- Copier uniquement le template nécessaire et conserver son nom de composant exact.
+- Conserver les variables et structures de données exportées par la classe output.
+- Préserver les identifiants, attributs `data-region`, `data-action`, `data-*` et contrats de fragments utilisés par les modules AMD/ESM.
+- Ne pas supprimer les attributs ARIA, les noms accessibles, les labels, les descriptions ou les éléments de focus sans justification vérifiée.
+- Éviter de figer dans le template des états que le serveur fournit déjà (droits, statut de remise, disponibilité, tentative, abonnement).
+- Documenter chaque surcharge : raison, fichiers sources, versions Moodle/Iomad vérifiées, dépendances JS et critères de retrait éventuel.
+
+### 47.4 Règles Renderer et Output API
+
+La documentation Moodle indique que les renderers sont un point d'extension pour modifier le rendu d'un composant. Le rendu peut toutefois être assuré par Mustache, un composant React ou du HTML construit manuellement. Un thème ne doit donc pas présumer qu'une méthode renderer intercepte tous les chemins d'affichage.
+
+Avant toute surcharge :
+- identifier la classe renderable et son interface (`renderable`, `templatable`, `named_templatable`, ou `react_component_renderable`) ;
+- identifier la méthode renderer réellement appelée ;
+- vérifier si le composant est rafraîchi en fragments ;
+- vérifier le comportement sans JavaScript et avec JavaScript ;
+- vérifier les différences de version et les extensions Iomad.
+
+Ne pas créer de renderer générique qui modifie le HTML de façon globale si une surcharge Mustache ciblée répond au besoin.
+
+### 47.5 Politique de compatibilité et de maintenance
+
+Chaque surcharge doit être enregistrée dans une matrice de compatibilité indiquant :
+- fichier source amont et chemin de surcharge Project N ;
+- version Moodle et version Iomad vérifiées ;
+- SHA du fichier source analysé ;
+- raison fonctionnelle et résultat UX attendu ;
+- sélecteurs/attributs DOM consommés par JavaScript ;
+- tests fonctionnels, responsive et accessibilité à exécuter ;
+- risque de régression et méthode de contrôle après mise à jour.
+
+Une surcharge doit être supprimée lorsqu'une évolution du cœur fournit nativement le résultat attendu, ou lorsqu'elle n'est plus nécessaire. Le but est de garder Project N fin et maintenable, et non de maintenir un fork parallèle de l'interface Moodle.
+
+### 47.6 Références développeur Moodle
+
+- [Theme plugins — structure, parents, layouts, templates et renderer factory](https://docs.moodle.org/dev/Themes_overview)
+- [Output API — cycle de rendu, renderers, renderables et templates](https://docs.moodle.org/dev/Output_API)
+- [Templates — organisation, surcharge et contexte Mustache](https://moodledev.io/docs/5.0/guides/templates)
+- [Course format — rendu des sections et fragments du cours](https://docs.moodle.org/en/Development%3ACourse_formats)
+
+Les liens de cette section n'ont pas été consultés (accès à moodledev.io et docs.moodle.org non vérifié) et l'interface `react_component_renderable` n'a pas été recherchée dans le code : à vérifier. Ces références décrivent les mécanismes généraux Moodle. Elles ne remplacent pas la vérification du code exact de chaque branche ciblée, en particulier pour les changements de chemins introduits dans Moodle 5.x et les adaptations propres à Iomad.
+
+
+## 48. Rendu natif des cours — sections, activités et formats de cours
+
+### 48.1 Architecture de rendu observée
+
+Le rendu des sections et activités ne relève pas d'un simple template de thème. Il s'appuie sur le composant core_courseformat :
+
+- les classes output de section et d'activité implémentent renderable et named_templatable ;
+- les classes output exportent les données destinées aux templates Mustache ;
+- la classe de format de cours fournit les classes output spécialisées via get_output_classname() ;
+- les templates sont organisés en composants réutilisables : section, en-tête, disponibilité, résumé, liste d'activités, activité, menu de contrôle et visibilité.
+
+La classe output content\section délègue plusieurs parties du rendu à des classes distinctes, et non à un unique renderer monolithique. Elle calcule notamment l'état de visibilité, les sections orphelines/stealth, les restrictions, la section courante, les contrôles d'édition et l'état replié. La classe output content\cm prépare les données de chaque activité : nom, disponibilité, contenu alternatif, dates, achèvement, mode groupe, visibilité, menu de contrôle et bouton d'ajout.
+
+**Conséquence :** Project N doit travailler avec cette architecture de composants. Il ne faut pas reconstruire la liste des activités ni recalculer côté thème les droits, les restrictions, les états de complétion ou la disponibilité.
+
+### 48.2 Templates et points d'extension réels
+
+Le template core_courseformat/local/content/section est un wrapper autour de section/content. Il expose notamment un bloc Mustache nommé core_courseformat/local/content/section/content, ainsi qu'un bloc pour l'insertion d'une section. Cette composition permet de personnaliser une partie du rendu sans recopier nécessairement tout le template.
+
+Les fichiers examinés montrent les responsabilités suivantes :
+
+| Composant | Responsabilité observée |
+|---|---|
+| section.mustache | Conteneur de section, attributs d'identification, composition du contenu |
+| section/content.mustache | En-tête, badges, restrictions, repli/dépli, résumé et liste d'activités |
+| section/cmitem.mustache | Élément d'activité dans la liste |
+| cm.mustache | Carte/conteneur d'activité, contrôles d'édition et activity chooser |
+| section/header.mustache | Titre et métadonnées de section |
+| section/cmlist.mustache | Liste des activités d'une section |
+| section/availability.mustache | Informations de disponibilité et restrictions |
+| section/controlmenu.mustache | Actions de gestion de section |
+
+Les blocs Mustache et les composants partiels constituent des points d'extension plus fins que la copie de la page complète. Leur disponibilité et leur contenu doivent néanmoins être contrôlés dans chaque branche cible.
+
+### 48.3 Contrats DOM à préserver
+
+Les templates contiennent des attributs consommés par les mécanismes de cours et les modules JavaScript. Parmi ceux relevés :
+
+- section : data-for="section", data-sectionid, data-id, data-number, data-sectionname ;
+- informations de section : data-region="sectionbadges", data-for="sectioninfo" ;
+- activité : data-region="activity-card", data-for="cmitem", data-id et l'ancre d'activité ;
+- édition et sélection groupée : structures et attributs propres aux contrôles de l'éditeur de cours.
+
+Ils ne sont pas des attributs décoratifs. Une surcharge qui les supprime ou les déplace peut casser le déplacement d'activités, l'édition, les mises à jour partielles, les sélecteurs Behat ou les interactions du cours.
+
+Les contrôles de repli/dépli utilisent également un état accessible (aria-expanded) et des attributs d'interaction. Les libellés, l'état annoncé et le comportement clavier doivent rester cohérents. La présence d'un lien portant role="button" dans le template historique doit être réévaluée dans le contexte exact de la version *(présence de ce motif non vérifiée)* ; ne pas reproduire ce motif par défaut dans les nouveaux composants Project N.
+
+### 48.4 Comparaison correcte : Moodle 5.2 / Iomad 5.2
+
+La comparaison de référence pour évaluer les adaptations propres à Iomad doit opposer des versions de même génération : Moodle 5.2 à Iomad 5.2. Iomad est construit à partir d'une version Moodle correspondante ; comparer Iomad 5.2 à Moodle 5.3 confond les adaptations Iomad avec le décalage de génération entre les deux bases.
+
+Les SHA complets ci-dessous ont été vérifiés dans les forks personnels :
+
+| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
+|---|---|---|---|
+| Output section.php | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | Identique |
+| Output cm.php | 914b28b4643d6b71fda2d6e52911404bdad6690e | 914b28b4643d6b71fda2d6e52911404bdad6690e | Identique |
+| Template section.mustache | 4138fd2116f1b3b4e3855b37aca309792b317d11 | 4138fd2116f1b3b4e3855b37aca309792b317d11 | Identique |
+| Template section/content.mustache | b57667d80b8dcda59832611333f3a97ed49bae47 | b57667d80b8dcda59832611333f3a97ed49bae47 | Identique |
+| Template cm.mustache | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | Identique |
+| Template section/cmitem.mustache | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | Identique |
+| Renderer section_renderer.php | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | Identique |
+| Classe core_courseformat/base.php | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | Identique |
+
+**Résultat : sur tous les fichiers de rendu comparés dans ce périmètre, Moodle 5.2 et Iomad 5.2 sont strictement identiques.** Les différences précédemment signalées entre Moodle 5.3 et Iomad 5.2 correspondent au changement de génération Moodle 5.2 → 5.3, et ne doivent pas être présentées comme des divergences propres à Iomad.
+
+### 48.5 Lecture du décalage de génération
+
+Le cycle de publication Iomad prévoit une version correspondante à chaque version Moodle, avec une cible de publication Iomad environ trois mois après Moodle. Il existe donc une période transitoire pendant laquelle la dernière branche Iomad publiée repose sur la génération Moodle précédente.
+
+Conséquences pour la cartographie Project N :
+
+1. **Comparaison de portage / adaptation Iomad :** comparer Moodle X.Y et Iomad X.Y. C'est la comparaison qui permet d'identifier les modifications spécifiques à Iomad.
+2. **Comparaison de migration / anticipation :** comparer Iomad X.Y à Moodle X.Y+1 uniquement pour identifier les changements du cœur Moodle à anticiper lors du futur portage Iomad. Les différences doivent être étiquetées « écart de génération », pas « divergence Iomad ».
+3. **Compatibilité Project N :** maintenir une matrice distincte pour Moodle 5.2, Moodle 5.3, Iomad 5.2 et, lorsqu'elle sera disponible, Iomad 5.3.
+4. **Validation du support :** ne pas déclarer Iomad 5.3 compatible ou disponible avant que la branche et la version correspondantes aient été effectivement publiées et vérifiées.
+
+La documentation officielle Iomad décrit explicitement ce cycle *(à vérifier : liens externes non consultés)* : une version Iomad correspond à chaque version Moodle et la cible de sortie se situe environ trois mois après Moodle. Les notes de version Iomad 5.2 indiquent que cette version a été retardée et que le travail sur Iomad 5.3 était déjà engagé. (Voir [cycle de publication Iomad](https://docs.iomad.org/wiki/Releases) et [notes Iomad 5.2](https://www.iomad.org/documentation/documentation/release-notes/iomad-5-2/).)
+
+## 49. Éditeur de cours et sélecteur d'activités — événements, clavier et hooks
+
+### 49.1 Éditeur de cours : un contrat JavaScript commun
+
+Le fichier course/format/amd/src/courseeditor.js a le même SHA dans les quatre branches consultées : Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2 (6560c35e). Le module expose notamment dispatchStateChangedEvent() et émet l'événement core_course/state_changed.
+
+Ce constat établit que ce fichier précis est commun aux quatre branches. Il ne prouve pas que tous les modules de l'éditeur, ses dépendances ou ses consommateurs sont identiques. Project N doit éviter de détourner ou de remplacer cet événement : il sert de contrat de notification de changement d'état du cours.
+
+### 49.2 Sélecteur d'activités : composant natif à conserver
+
+Dans Moodle 5.3 et Iomad 5.2, le sélecteur d'activités est porté par core_courseformat :
+
+- module AMD activitychooser.js ;
+- classe output activitychooserbutton ;
+- template activitychooserbutton.mustache ;
+- dialogue, dépôt et sélecteurs associés dans core_courseformat/local/activitychooser.
+
+Le module écoute les événements d'activation standard et clavier (activate et keyboardActivate), repère le bouton de sélection d'activité, puis détermine la position dans le cours à partir des données de section. Le code signale explicitement que l'usage du seul numéro de section est déprécié et demande l'attribut data-section-id. Le bouton et le conteneur de section restent donc liés par un contrat de données.
+
+La classe output activitychooserbutton déclenche aussi le hook public before_activitychooserbutton_exported avant l'export des données. Ce hook est un point d'extension à privilégier pour ajouter une action complémentaire au sélecteur, plutôt que de recopier le template ou de remplacer son JavaScript, sous réserve de vérifier son enregistrement dans chaque version ciblée.
+
+### 49.3 Comparaison correcte : Moodle 5.2 / Iomad 5.2
+
+Les mêmes fichiers ont été récupérés dans les branches Moodle 5.2 et Iomad 5.2. Tous les SHA sont identiques :
+
+| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
+|---|---|---|---|
+| courseeditor.js | 6560c35ea4d728a3273405eb3e6954cc1c912022 | 6560c35ea4d728a3273405eb3e6954cc1c912022 | Identique |
+| activitychooser.js | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | Identique |
+| activitychooserbutton.php | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | Identique |
+| activitychooserbutton.mustache | 07c65be9d84289711e0c7484cf80f501c897c5f2 | 07c65be9d84289711e0c7484cf80f501c897c5f2 | Identique |
+
+**Conclusion : aucun écart propre à Iomad n'a été observé dans ces quatre fichiers en comparant les deux versions 5.2.** Les différences mentionnées dans l'analyse précédente provenaient de la comparaison avec Moodle 5.3 ; elles relèvent du décalage de génération et non d'une adaptation Iomad.
+
+### 49.4 Conséquences pour Project N
+
+1. Ne pas remplacer le sélecteur natif par un composant Project N : le sélecteur gère les plugins, les dépôts d'activités, les actions complémentaires et les événements clavier.
+2. Utiliser le hook before_activitychooserbutton_exported lorsqu'une action additionnelle est nécessaire et lorsque sa disponibilité est confirmée sur la version concernée.
+3. Ne pas dépendre du seul numéro de section : préserver les identifiants de section et les attributs attendus par le module.
+4. Ne pas intercepter ou neutraliser les événements activate, keyboardActivate et core_course/state_changed.
+5. Préserver les boutons natifs, leurs noms accessibles, leur état développé/replié et leur activation clavier.
+6. Tester l'ajout d'activité en mode édition, l'ajout avant une activité existante, l'ajout en fin de section, les formats de cours différents et les extensions qui ajoutent des actions au sélecteur.
+
+### 49.5 Sources comparées
+
+- [Moodle 4.5 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/amd/src/courseeditor.js)
+- [Moodle 5.3 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/courseeditor.js)
+- [Iomad 5.2 — courseeditor.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/courseeditor.js)
+- [Moodle 5.3 — activitychooser.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/activitychooser.js)
+- [Iomad 5.2 — activitychooser.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/activitychooser.js)
+- [Moodle 5.3 — activitychooserbutton.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
+- [Iomad 5.2 — activitychooserbutton.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
+
+Analyse statique des fichiers cités uniquement. Les interactions du sélecteur, la gestion réelle du focus, l'accessibilité du dialogue et les extensions tierces restent à tester en environnement Moodle/Iomad.
+
 ## 50. Composants génériques d'interface — notifications, modales, menus et tiroirs
 
 Cette tranche compare des composants du cœur utilisés transversalement par les trois espaces Project N. Les SHA complets des fichiers ci-dessous sont identiques entre MOODLE_502_STABLE et IOMAD_502_STABLE.
@@ -1330,7 +1534,7 @@ Aucune validation runtime, axe-core, clavier, NVDA, TalkBack ou smartphone n'a �
 
 L'analyse du fork ericfalcon/iomad, branche IOMAD_502_STABLE, confirme que les fonctionnalités métier Iomad ne résident pas uniquement dans des modifications du cœur Moodle. Elles sont largement distribuées dans une suite de plugins dédiés, avec un plugin local central et des dépendances entre plugins.
 
-Le README de public/local/iomad décrit explicitement local_iomad comme le fournisseur principal de classes nécessaires au fonctionnement des autres plugins Iomad. Il indique également que la suite requiert des adaptations du cœur Moodle pour activer le multi-tenant. Il faut donc distinguer :
+Le README de public/local/iomad *(non relu dans cette analyse)* décrit explicitement local_iomad comme le fournisseur principal de classes nécessaires au fonctionnement des autres plugins Iomad. Il indique également que la suite requiert des adaptations du cœur Moodle pour activer le multi-tenant. Il faut donc distinguer :
 - les adaptations ponctuelles du cœur et les API/contextes qu'elles rendent disponibles ;
 - local_iomad, socle technique et métier commun ;
 - les blocs Iomad, qui fournissent des interfaces et points d'entrée fonctionnels ;
@@ -1476,210 +1680,6 @@ Points d'attention :
 ### 52.5 État de vérification
 
 Analyse statique de templates Mustache et classes PHP dans IOMAD_502_STABLE. Les points d'accessibilité ci-dessus sont des risques et contrôles à effectuer, pas des non-conformités axe-core confirmées. Aucun parcours n'a été exécuté ; aucune validation axe-core, clavier, NVDA, TalkBack ou test de reflow mobile n'a été réalisée.
-
-## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
-
-### 47.1 État actuel du dépôt
-
-Au moment de cette vérification, la branche `main` du dépôt Project N contient :
-- `README.md` et `ROADMAP.md` ;
-- `docs/P0-CADRAGE.md`, `docs/P0-NAVIGATION.md` et `docs/P0-CARTOGRAPHIE-NAVIGATION.md`.
-
-Aucun répertoire de code de thème (`theme/`) n'est encore présent. Les recommandations qui suivent sont donc des règles de conception à appliquer pendant P0/P1, et non la description d'une implémentation déjà codée.
-
-### 47.2 Ordre de préférence des interventions
-
-La documentation officielle Moodle distingue les layouts, les templates Mustache, les renderers et les objets output. Les templates peuvent être surchargés dans le thème sous `templates/<componentname>/<templatename>.mustache`, sans modifier le plugin d'origine. Les renderers sont un point d'extension plus puissant, mais exigent l'activation d'une renderer factory adaptée.
-
-Pour limiter le coût de maintenance de Project N, retenir l'ordre suivant :
-
-1. Variables CSS/SCSS, classes et composants Bootstrap déjà fournis par Boost.
-2. SCSS du thème et styles ciblés, sans sélectionner des éléments uniquement par leur position DOM.
-3. Surcharge Mustache d'un template précis, seulement si la structure HTML doit réellement changer.
-4. Renderer de thème ciblé, uniquement si le template ne suffit pas ou si l'API output l'exige.
-5. Layout complet, uniquement lorsqu'un changement de structure de page est indispensable.
-6. JavaScript/ESM de remplacement, en dernier recours, après vérification des API publiques et des points d'extension.
-
-Cette hiérarchie ne doit pas devenir une règle absolue : une adaptation d'accessibilité peut exiger une intervention structurelle. Elle sert à éviter de réécrire un composant natif lorsque CSS ou un template ciblé suffit.
-
-### 47.3 Règles Mustache
-
-- Copier uniquement le template nécessaire et conserver son nom de composant exact.
-- Conserver les variables et structures de données exportées par la classe output.
-- Préserver les identifiants, attributs `data-region`, `data-action`, `data-*` et contrats de fragments utilisés par les modules AMD/ESM.
-- Ne pas supprimer les attributs ARIA, les noms accessibles, les labels, les descriptions ou les éléments de focus sans justification vérifiée.
-- Éviter de figer dans le template des états que le serveur fournit déjà (droits, statut de remise, disponibilité, tentative, abonnement).
-- Documenter chaque surcharge : raison, fichiers sources, versions Moodle/Iomad vérifiées, dépendances JS et critères de retrait éventuel.
-
-### 47.4 Règles Renderer et Output API
-
-La documentation Moodle indique que les renderers sont un point d'extension pour modifier le rendu d'un composant. Le rendu peut toutefois être assuré par Mustache, un composant React ou du HTML construit manuellement. Un thème ne doit donc pas présumer qu'une méthode renderer intercepte tous les chemins d'affichage.
-
-Avant toute surcharge :
-- identifier la classe renderable et son interface (`renderable`, `templatable`, `named_templatable`, ou `react_component_renderable`) ;
-- identifier la méthode renderer réellement appelée ;
-- vérifier si le composant est rafraîchi en fragments ;
-- vérifier le comportement sans JavaScript et avec JavaScript ;
-- vérifier les différences de version et les extensions Iomad.
-
-Ne pas créer de renderer générique qui modifie le HTML de façon globale si une surcharge Mustache ciblée répond au besoin.
-
-### 47.5 Politique de compatibilité et de maintenance
-
-Chaque surcharge doit être enregistrée dans une matrice de compatibilité indiquant :
-- fichier source amont et chemin de surcharge Project N ;
-- version Moodle et version Iomad vérifiées ;
-- SHA du fichier source analysé ;
-- raison fonctionnelle et résultat UX attendu ;
-- sélecteurs/attributs DOM consommés par JavaScript ;
-- tests fonctionnels, responsive et accessibilité à exécuter ;
-- risque de régression et méthode de contrôle après mise à jour.
-
-Une surcharge doit être supprimée lorsqu'une évolution du cœur fournit nativement le résultat attendu, ou lorsqu'elle n'est plus nécessaire. Le but est de garder Project N fin et maintenable, et non de maintenir un fork parallèle de l'interface Moodle.
-
-### 47.6 Références développeur Moodle
-
-- [Theme plugins — structure, parents, layouts, templates et renderer factory](https://docs.moodle.org/dev/Themes_overview)
-- [Output API — cycle de rendu, renderers, renderables et templates](https://docs.moodle.org/dev/Output_API)
-- [Templates — organisation, surcharge et contexte Mustache](https://moodledev.io/docs/5.0/guides/templates)
-- [Course format — rendu des sections et fragments du cours](https://docs.moodle.org/en/Development%3ACourse_formats)
-
-Ces références décrivent les mécanismes généraux Moodle. Elles ne remplacent pas la vérification du code exact de chaque branche ciblée, en particulier pour les changements de chemins introduits dans Moodle 5.x et les adaptations propres à Iomad.
-
-
-## 48. Rendu natif des cours — sections, activités et formats de cours
-
-### 48.1 Architecture de rendu observée
-
-Le rendu des sections et activités ne relève pas d'un simple template de thème. Il s'appuie sur le composant core_courseformat :
-
-- les classes output de section et d'activité implémentent renderable et named_templatable ;
-- les classes output exportent les données destinées aux templates Mustache ;
-- la classe de format de cours fournit les classes output spécialisées via get_output_classname() ;
-- les templates sont organisés en composants réutilisables : section, en-tête, disponibilité, résumé, liste d'activités, activité, menu de contrôle et visibilité.
-
-La classe output content\section délègue plusieurs parties du rendu à des classes distinctes, et non à un unique renderer monolithique. Elle calcule notamment l'état de visibilité, les sections orphelines/stealth, les restrictions, la section courante, les contrôles d'édition et l'état replié. La classe output content\cm prépare les données de chaque activité : nom, disponibilité, contenu alternatif, dates, achèvement, mode groupe, visibilité, menu de contrôle et bouton d'ajout.
-
-**Conséquence :** Project N doit travailler avec cette architecture de composants. Il ne faut pas reconstruire la liste des activités ni recalculer côté thème les droits, les restrictions, les états de complétion ou la disponibilité.
-
-### 48.2 Templates et points d'extension réels
-
-Le template core_courseformat/local/content/section est un wrapper autour de section/content. Il expose notamment un bloc Mustache nommé core_courseformat/local/content/section/content, ainsi qu'un bloc pour l'insertion d'une section. Cette composition permet de personnaliser une partie du rendu sans recopier nécessairement tout le template.
-
-Les fichiers examinés montrent les responsabilités suivantes :
-
-| Composant | Responsabilité observée |
-|---|---|
-| section.mustache | Conteneur de section, attributs d'identification, composition du contenu |
-| section/content.mustache | En-tête, badges, restrictions, repli/dépli, résumé et liste d'activités |
-| section/cmitem.mustache | Élément d'activité dans la liste |
-| cm.mustache | Carte/conteneur d'activité, contrôles d'édition et activity chooser |
-| section/header.mustache | Titre et métadonnées de section |
-| section/cmlist.mustache | Liste des activités d'une section |
-| section/availability.mustache | Informations de disponibilité et restrictions |
-| section/controlmenu.mustache | Actions de gestion de section |
-
-Les blocs Mustache et les composants partiels constituent des points d'extension plus fins que la copie de la page complète. Leur disponibilité et leur contenu doivent néanmoins être contrôlés dans chaque branche cible.
-
-### 48.3 Contrats DOM à préserver
-
-Les templates contiennent des attributs consommés par les mécanismes de cours et les modules JavaScript. Parmi ceux relevés :
-
-- section : data-for="section", data-sectionid, data-id, data-number, data-sectionname ;
-- informations de section : data-region="sectionbadges", data-for="sectioninfo" ;
-- activité : data-region="activity-card", data-for="cmitem", data-id et l'ancre d'activité ;
-- édition et sélection groupée : structures et attributs propres aux contrôles de l'éditeur de cours.
-
-Ils ne sont pas des attributs décoratifs. Une surcharge qui les supprime ou les déplace peut casser le déplacement d'activités, l'édition, les mises à jour partielles, les sélecteurs Behat ou les interactions du cours.
-
-Les contrôles de repli/dépli utilisent également un état accessible (aria-expanded) et des attributs d'interaction. Les libellés, l'état annoncé et le comportement clavier doivent rester cohérents. La présence d'un lien portant role="button" dans le template historique doit être réévaluée dans le contexte exact de la version ; ne pas reproduire ce motif par défaut dans les nouveaux composants Project N.
-
-### 48.4 Comparaison correcte : Moodle 5.2 / Iomad 5.2
-
-La comparaison de référence pour évaluer les adaptations propres à Iomad doit opposer des versions de même génération : Moodle 5.2 à Iomad 5.2. Iomad est construit à partir d'une version Moodle correspondante ; comparer Iomad 5.2 à Moodle 5.3 confond les adaptations Iomad avec le décalage de génération entre les deux bases.
-
-Les SHA complets ci-dessous ont été vérifiés dans les forks personnels :
-
-| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
-|---|---|---|---|
-| Output section.php | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | Identique |
-| Output cm.php | 914b28b4643d6b71fda2d6e52911404bdad6690e | 914b28b4643d6b71fda2d6e52911404bdad6690e | Identique |
-| Template section.mustache | 4138fd2116f1b3b4e3855b37aca309792b317d11 | 4138fd2116f1b3b4e3855b37aca309792b317d11 | Identique |
-| Template section/content.mustache | b57667d80b8dcda59832611333f3a97ed49bae47 | b57667d80b8dcda59832611333f3a97ed49bae47 | Identique |
-| Template cm.mustache | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | Identique |
-| Template section/cmitem.mustache | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | Identique |
-| Renderer section_renderer.php | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | Identique |
-| Classe core_courseformat/base.php | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | Identique |
-
-**Résultat : sur tous les fichiers de rendu comparés dans ce périmètre, Moodle 5.2 et Iomad 5.2 sont strictement identiques.** Les différences précédemment signalées entre Moodle 5.3 et Iomad 5.2 correspondent au changement de génération Moodle 5.2 → 5.3, et ne doivent pas être présentées comme des divergences propres à Iomad.
-
-### 48.5 Lecture du décalage de génération
-
-Le cycle de publication Iomad prévoit une version correspondante à chaque version Moodle, avec une cible de publication Iomad environ trois mois après Moodle. Il existe donc une période transitoire pendant laquelle la dernière branche Iomad publiée repose sur la génération Moodle précédente.
-
-Conséquences pour la cartographie Project N :
-
-1. **Comparaison de portage / adaptation Iomad :** comparer Moodle X.Y et Iomad X.Y. C'est la comparaison qui permet d'identifier les modifications spécifiques à Iomad.
-2. **Comparaison de migration / anticipation :** comparer Iomad X.Y à Moodle X.Y+1 uniquement pour identifier les changements du cœur Moodle à anticiper lors du futur portage Iomad. Les différences doivent être étiquetées « écart de génération », pas « divergence Iomad ».
-3. **Compatibilité Project N :** maintenir une matrice distincte pour Moodle 5.2, Moodle 5.3, Iomad 5.2 et, lorsqu'elle sera disponible, Iomad 5.3.
-4. **Validation du support :** ne pas déclarer Iomad 5.3 compatible ou disponible avant que la branche et la version correspondantes aient été effectivement publiées et vérifiées.
-
-La documentation officielle Iomad décrit explicitement ce cycle : une version Iomad correspond à chaque version Moodle et la cible de sortie se situe environ trois mois après Moodle. Les notes de version Iomad 5.2 indiquent que cette version a été retardée et que le travail sur Iomad 5.3 était déjà engagé. (Voir [cycle de publication Iomad](https://docs.iomad.org/wiki/Releases) et [notes Iomad 5.2](https://www.iomad.org/documentation/documentation/release-notes/iomad-5-2/).)
-
-## 49. Éditeur de cours et sélecteur d'activités — événements, clavier et hooks
-
-### 49.1 Éditeur de cours : un contrat JavaScript commun
-
-Le fichier course/format/amd/src/courseeditor.js a le même SHA dans les quatre branches consultées : Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2 (6560c35e). Le module expose notamment dispatchStateChangedEvent() et émet l'événement core_course/state_changed.
-
-Ce constat établit que ce fichier précis est commun aux quatre branches. Il ne prouve pas que tous les modules de l'éditeur, ses dépendances ou ses consommateurs sont identiques. Project N doit éviter de détourner ou de remplacer cet événement : il sert de contrat de notification de changement d'état du cours.
-
-### 49.2 Sélecteur d'activités : composant natif à conserver
-
-Dans Moodle 5.3 et Iomad 5.2, le sélecteur d'activités est porté par core_courseformat :
-
-- module AMD activitychooser.js ;
-- classe output activitychooserbutton ;
-- template activitychooserbutton.mustache ;
-- dialogue, dépôt et sélecteurs associés dans core_courseformat/local/activitychooser.
-
-Le module écoute les événements d'activation standard et clavier (activate et keyboardActivate), repère le bouton de sélection d'activité, puis détermine la position dans le cours à partir des données de section. Le code signale explicitement que l'usage du seul numéro de section est déprécié et demande l'attribut data-section-id. Le bouton et le conteneur de section restent donc liés par un contrat de données.
-
-La classe output activitychooserbutton déclenche aussi le hook public before_activitychooserbutton_exported avant l'export des données. Ce hook est un point d'extension à privilégier pour ajouter une action complémentaire au sélecteur, plutôt que de recopier le template ou de remplacer son JavaScript, sous réserve de vérifier son enregistrement dans chaque version ciblée.
-
-### 49.3 Comparaison correcte : Moodle 5.2 / Iomad 5.2
-
-Les mêmes fichiers ont été récupérés dans les branches Moodle 5.2 et Iomad 5.2. Tous les SHA sont identiques :
-
-| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
-|---|---|---|---|
-| courseeditor.js | 6560c35ea4d728a3273405eb3e6954cc1c912022 | 6560c35ea4d728a3273405eb3e6954cc1c912022 | Identique |
-| activitychooser.js | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | Identique |
-| activitychooserbutton.php | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | Identique |
-| activitychooserbutton.mustache | 07c65be9d84289711e0c7484cf80f501c897c5f2 | 07c65be9d84289711e0c7484cf80f501c897c5f2 | Identique |
-
-**Conclusion : aucun écart propre à Iomad n'a été observé dans ces quatre fichiers en comparant les deux versions 5.2.** Les différences mentionnées dans l'analyse précédente provenaient de la comparaison avec Moodle 5.3 ; elles relèvent du décalage de génération et non d'une adaptation Iomad.
-
-### 49.4 Conséquences pour Project N
-
-1. Ne pas remplacer le sélecteur natif par un composant Project N : le sélecteur gère les plugins, les dépôts d'activités, les actions complémentaires et les événements clavier.
-2. Utiliser le hook before_activitychooserbutton_exported lorsqu'une action additionnelle est nécessaire et lorsque sa disponibilité est confirmée sur la version concernée.
-3. Ne pas dépendre du seul numéro de section : préserver les identifiants de section et les attributs attendus par le module.
-4. Ne pas intercepter ou neutraliser les événements activate, keyboardActivate et core_course/state_changed.
-5. Préserver les boutons natifs, leurs noms accessibles, leur état développé/replié et leur activation clavier.
-6. Tester l'ajout d'activité en mode édition, l'ajout avant une activité existante, l'ajout en fin de section, les formats de cours différents et les extensions qui ajoutent des actions au sélecteur.
-
-### 49.5 Sources comparées
-
-- [Moodle 4.5 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/amd/src/courseeditor.js)
-- [Moodle 5.3 — courseeditor.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/courseeditor.js)
-- [Iomad 5.2 — courseeditor.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/courseeditor.js)
-- [Moodle 5.3 — activitychooser.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/activitychooser.js)
-- [Iomad 5.2 — activitychooser.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/amd/src/activitychooser.js)
-- [Moodle 5.3 — activitychooserbutton.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
-- [Iomad 5.2 — activitychooserbutton.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/activitychooserbutton.php)
-
-Analyse statique des fichiers cités uniquement. Les interactions du sélecteur, la gestion réelle du focus, l'accessibilité du dialogue et les extensions tierces restent à tester en environnement Moodle/Iomad.
 
 ---
 
