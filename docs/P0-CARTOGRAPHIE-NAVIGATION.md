@@ -1095,7 +1095,7 @@ Le module AMD `grading_panel.js` pilote notamment l'enregistrement asynchrone, l
 Évolution observée entre Moodle 4.5 et Moodle 5.3 :
 - le template 5.3 ajoute une poignée de redimensionnement avec `tabindex="0"` et un nom accessible ;
 - le module de correction 5.3 prend en compte les marqueurs (markers) dans la soumission de la note et comporte des contrôles supplémentaires ;
-- Iomad 5.2 reprend le template Moodle 5.3 à l'identique (même blob), mais son module AMD de correction possède un blob différent.
+- L'observation antérieure selon laquelle le template Iomad 5.2 correspond au template Moodle 5.3, tandis que le module AMD diffère, est une comparaison intergénérationnelle. Elle ne permet pas de qualifier une adaptation Iomad ; la comparaison Moodle 5.2 / Iomad 5.2 est documentée en 44.6.
 
 Conséquences Project N :
 1. Ne pas renommer, déplacer ou supprimer les régions `data-region` utilisées par les modules natifs.
@@ -1120,7 +1120,7 @@ La classe `mod_quiz/classes/output/view_page.php` transporte notamment :
 - les notes et feedbacks affichables ;
 - le libellé et l'URL d'une action de démarrage autorisée.
 
-Elle possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Les templates de liste des tentatives, de résumé d'une tentative, de confirmation de remise et de minuterie sont également identiques entre les deux branches Moodle 4.5/5.3 consultées pour les fichiers ciblés, et Iomad 5.2 reprend les templates 5.3 correspondants.
+Elle possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Les constats antérieurs sur les templates rapprochant Iomad 5.2 de Moodle 5.3 sont intergénérationnels. Pour éviter de les interpréter comme des écarts Iomad, les templates principaux de tentative ont été comparés en génération égale et sont récapitulés en 44.6.
 
 Points techniques :
 - `list_of_attempts` délègue chaque ligne au template `attempt_summary_information` ;
@@ -1150,6 +1150,12 @@ La comparaison des branches de même génération a été reprise sur les forks 
 | mod/assign/classes/output/assign_submission_status.php | 7be979424df357c17978984daaa6cbc91be83ad7 | Objet de présentation du statut de remise identique |
 | mod/assign/amd/src/grading_panel.js | 441476cb1da0adcf6e2f0379609170c114be1df1 | Gestion JavaScript du panneau de correction identique |
 | mod/quiz/classes/output/view_page.php | a1e9ed55b39a20c7a8bb55b96f702fb158c8d9b8 | Objet de présentation de la page du test identique |
+| mod/assign/templates/grading_app.mustache | 2c537cd8fa08d70ced3a322d236b6d97232d6450 | Interface de correction du formateur identique |
+| mod/assign/templates/user_submission_actionmenu.mustache | 1ebad273e804ca24e5fd9ee39f2244e53139f07c | Menu des actions de remise identique |
+| mod/quiz/amd/src/submission_confirmation.js | 8b23e9135f691aba34a1942e9c4a2420426120fa | Confirmation de fin de tentative identique |
+| mod/quiz/templates/list_of_attempts.mustache | 7886548d95691a81ffe36a38a3f2bc9fe4dacec5 | Liste des tentatives identique |
+| mod/quiz/templates/attempt_summary_information.mustache | d13a4adf531ef7d299e8fee4e553b1980e295344 | Résumé de tentative identique |
+| mod/quiz/templates/question_slot.mustache | fe24e3ccc3059187087bfed7da635f9c23750b6c | Emplacement de question identique |
 
 Pour ce périmètre, aucune divergence Iomad n'est donc observée dans ces cinq fichiers entre Moodle 5.2 et Iomad 5.2. Les constats précédents reposant sur Moodle 5.3 face à Iomad 5.2 (notamment le template de correction et le module AMD) décrivaient un écart de génération et ne doivent pas être interprétés comme des adaptations propres à Iomad.
 
