@@ -52,7 +52,7 @@ Références :
 ### 3.2 Risques de compatibilité identifiés
 
 Les versions de Moodle ne doivent pas être considérées comme un continuum sans rupture :
-Points vérifiés dans `public/theme/boost/UPGRADING.md` (branche `main` de Moodle) :
+Points vérifiés dans les fichiers `UPGRADING.md` des branches Moodle `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE` :
 - Moodle 5.1 : les layouts peuvent être hérités du grand-parent et des parents, le thème enfant restant prioritaire (MDL-79319) ;
 - Moodle 5.2 : les templates `flat_navigation.mustache` et `nav-drawer.mustache` de Boost sont supprimés (MDL-87425) ; la navigation latérale de Boost passe désormais par les partiels de `drawers.mustache` ;
 - Moodle 5.3 : la police d'interface par défaut de Boost passe de la pile système à Noto Sans (MDL-88412), ce qui modifie le rendu des thèmes enfants qui s'appuyaient sur le repli système ;
@@ -78,7 +78,7 @@ Références :
 - [IOMAD 5.1 — changements techniques et prérequis](https://docs.iomad.org/wiki/IOMAD_5.1)
 - [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming) (à vérifier)
 
-#### 3.3.1 Rupture d'arborescence à partir de Moodle 5.1
+### 3.3 Rupture d'arborescence à partir de Moodle 5.1
 
 Moodle 5.1 introduit un répertoire `public/` qui devient la racine web. Les plugins tiers doivent être déplacés dans leur emplacement relatif sous ce répertoire. Ce changement concerne directement le déploiement du thème : `theme/projectn` sur Moodle 4.5 et 5.0, `public/theme/projectn` à partir de 5.1. Iomad 5.1 adopte également cette restructuration et annonce d'autres évolutions internes (schéma de données, autoload des classes, organisation des plugins). Le thème ne doit donc jamais coder en dur des chemins absolus du cœur ; les outils de packaging et d'installation doivent être testés sur les deux modèles.
 
@@ -87,7 +87,7 @@ Références :
 - [Moodle Developer — Code restructure](https://moodledev.io/docs/5.3/guides/restructure) ;
 - [IOMAD 5.1](https://docs.iomad.org/wiki/IOMAD_5.1).
 
-## 3.4 Architecture technique proposée
+### 3.4 Architecture technique proposée
 
 Structure indicative, à confirmer par le prototype :
 
@@ -119,7 +119,7 @@ Principes :
 - `settings.php` : réglages utiles, limités et compréhensibles ;
 - `tests` : tests PHP et tests de rendu pertinents.
 
-Cette arborescence est une proposition, pas encore un engagement de créer tous ces répertoires. La structure finale dépendra du prototype et des conventions Moodle de la branche retenue. Attention au chemin d'installation : jusqu'à Moodle 5.0 inclus, le thème est installé sous `theme/projectn/` ; à partir de Moodle 5.1, les plugins web accessibles sont déplacés sous `public/`, donc le chemin devient `public/theme/projectn/`. Le dépôt du plugin doit rester structuré comme un plugin Moodle autonome ; c'est son emplacement dans l'arborescence Moodle qui change. Le paquet, la procédure d'installation/mise à niveau et les scripts de développement doivent couvrir les deux structures.
+Cette arborescence est une proposition, pas encore un engagement de créer tous ces répertoires. La structure finale dépendra du prototype et des conventions Moodle de la branche retenue.
 
 ### 3.5 Limites fonctionnelles d'un thème
 
