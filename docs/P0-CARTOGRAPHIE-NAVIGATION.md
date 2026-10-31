@@ -1412,71 +1412,37 @@ Ils ne sont pas des attributs décoratifs. Une surcharge qui les supprime ou les
 
 Les contrôles de repli/dépli utilisent également un état accessible (aria-expanded) et des attributs d'interaction. Les libellés, l'état annoncé et le comportement clavier doivent rester cohérents. La présence d'un lien portant role="button" dans le template historique doit être réévaluée dans le contexte exact de la version ; ne pas reproduire ce motif par défaut dans les nouveaux composants Project N.
 
-### 48.4 Comparaison vérifiée des quatre branches
+### 48.4 Comparaison correcte : Moodle 5.2 / Iomad 5.2
 
-Les SHA ci-dessous proviennent des fichiers des forks personnels au moment de la consultation.
+La comparaison de référence pour évaluer les adaptations propres à Iomad doit opposer des versions de même génération : Moodle 5.2 à Iomad 5.2. Iomad est construit à partir d'une version Moodle correspondante ; comparer Iomad 5.2 à Moodle 5.3 confond les adaptations Iomad avec le décalage de génération entre les deux bases.
 
-| Fichier | Moodle 4.5 | Iomad 4.5 | Moodle 5.3 | Iomad 5.2 |
-|---|---|---|---|---|
-| Output section.php | 0f6928b5 | identique Moodle 4.5 | 889a092b | bf6ea5c5 |
-| Output cm.php | d5e9abc4 | identique Moodle 4.5 | 7bfc6068 | 914b28b4 |
-| Template section.mustache | 110eed2c | identique Moodle 4.5 | 63e35dff | 4138fd21 |
-| Template section/content.mustache | fa170060 | identique Moodle 4.5 | 871a6a59 | b57667d8 |
-| Template cm.mustache | 0a9a80ad | identique Moodle 4.5 | 0c5f73d9 | identique Moodle 5.3 |
-| Template section/cmitem.mustache | be1cba56 | identique Moodle 4.5 | f95bacb4 | identique Moodle 5.3 |
-| Renderer section_renderer.php | ab985687 | non comparé ici | 93ba5aeb | 1714cf3e |
+Les SHA complets ci-dessous ont été vérifiés dans les forks personnels :
 
-Constats précis :
+| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
+|---|---|---|---|
+| Output section.php | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | bf6ea5c5e877d436ec2d63255067a33482b7b7f5 | Identique |
+| Output cm.php | 914b28b4643d6b71fda2d6e52911404bdad6690e | 914b28b4643d6b71fda2d6e52911404bdad6690e | Identique |
+| Template section.mustache | 4138fd2116f1b3b4e3855b37aca309792b317d11 | 4138fd2116f1b3b4e3855b37aca309792b317d11 | Identique |
+| Template section/content.mustache | b57667d80b8dcda59832611333f3a97ed49bae47 | b57667d80b8dcda59832611333f3a97ed49bae47 | Identique |
+| Template cm.mustache | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | 0c5f73d9310d493d21b92ea60f0927f3d7a85d80 | Identique |
+| Template section/cmitem.mustache | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | f95bacb4e36a7529b5759005a8daa2fed2d4f649 | Identique |
+| Renderer section_renderer.php | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | 1714cf3e0ec7036798e425420d93bb0ff6d88e56 | Identique |
+| Classe core_courseformat/base.php | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | 0987552e5b00d2f5bb87c4b6caa6e441ac8423f9 | Identique |
 
-1. **Moodle 4.5 et Iomad 4.5 :** les classes output section.php et cm.php, ainsi que les templates examinés, ont des SHA identiques. Pour ce périmètre, les fichiers comparés sont communs.
-2. **Moodle 5.3 :** section.php ajoute returnoptions, sérialisé depuis get_return_options(), et marque sectionreturnnum comme déprécié depuis Moodle 5.3 (MDL-86284). Le template section.mustache ajoute l'attribut data-returnoptions.
-3. **Iomad 5.2 :** le section.php examiné ne contient pas ce champ returnoptions, et son template section.mustache ne contient pas l'attribut data-returnoptions. Il ne faut donc pas recopier sans adaptation le template Moodle 5.3 dans Iomad 5.2.
-4. **Activités :** Moodle 5.3 ajoute dans cm.php le recours à get_return_options() pour construire le lien historique de déplacement YUI lorsque le format ne prend pas en charge les composants. Cette évolution n'apparaît pas dans le fichier Iomad 5.2 consulté.
-5. **Templates partagés :** les templates cm.mustache et section/cmitem.mustache ont les mêmes SHA entre Moodle 5.3 et Iomad 5.2, alors que les templates d'enveloppe et de contenu de section diffèrent. Une compatibilité doit donc être établie fichier par fichier, pas par simple numéro de version.
+**Résultat : sur tous les fichiers de rendu comparés dans ce périmètre, Moodle 5.2 et Iomad 5.2 sont strictement identiques.** Les différences précédemment signalées entre Moodle 5.3 et Iomad 5.2 correspondent au changement de génération Moodle 5.2 → 5.3, et ne doivent pas être présentées comme des divergences propres à Iomad.
 
-### 48.5 Évolution du renderer et de la classe de format
+### 48.5 Lecture du décalage de génération
 
-Le renderer de section Moodle 4.5 contient 445 lignes et de nombreuses méthodes de présentation historiques (titres, contrôles, en-têtes/pieds de section, résumé, disponibilité, navigation, affichage mono/multipage). Le renderer Moodle 5.3 est réduit à 275 lignes et ne conserve qu'un ensemble plus ciblé de méthodes. Le renderer Iomad 5.2 possède lui aussi 275 lignes et une liste de méthodes publiques comparable à Moodle 5.3, mais son SHA est différent : il ne faut pas conclure à une identité de code.
+Le cycle de publication Iomad prévoit une version correspondante à chaque version Moodle, avec une cible de publication Iomad environ trois mois après Moodle. Il existe donc une période transitoire pendant laquelle la dernière branche Iomad publiée repose sur la génération Moodle précédente.
 
-La classe core_courseformat\base évolue également. Moodle 5.3 expose notamment des méthodes supplémentaires liées à l'état du cours, aux mises à jour, aux actions, aux options de retour et à la navigation linéaire. Iomad 5.2 ne présente pas exactement la même surface de méthodes dans la branche examinée : en particulier, les méthodes get_page_section() et uses_linear_navigation() observées dans Moodle 5.3 ne figurent pas dans la liste Iomad 5.2 consultée. Les classes output Moodle 5.3 et Iomad 5.2 ne doivent donc pas être considérées comme interchangeables.
+Conséquences pour la cartographie Project N :
 
-### 48.6 Formats de cours natifs et stratégie UX
+1. **Comparaison de portage / adaptation Iomad :** comparer Moodle X.Y et Iomad X.Y. C'est la comparaison qui permet d'identifier les modifications spécifiques à Iomad.
+2. **Comparaison de migration / anticipation :** comparer Iomad X.Y à Moodle X.Y+1 uniquement pour identifier les changements du cœur Moodle à anticiper lors du futur portage Iomad. Les différences doivent être étiquetées « écart de génération », pas « divergence Iomad ».
+3. **Compatibilité Project N :** maintenir une matrice distincte pour Moodle 5.2, Moodle 5.3, Iomad 5.2 et, lorsqu'elle sera disponible, Iomad 5.3.
+4. **Validation du support :** ne pas déclarer Iomad 5.3 compatible ou disponible avant que la branche et la version correspondantes aient été effectivement publiées et vérifiées.
 
-Le répertoire course/format contient les formats natifs topics, weeks, singleactivity et social. Project N doit conserver la compatibilité avec ces formats et avec les formats tiers. Il ne doit pas supposer qu'un cours est toujours structuré en sections thématiques ou hebdomadaires.
-
-Pour les trois espaces Project N :
-
-- **Apprenant :** améliorer la lisibilité des sections et activités, l'identification des échéances, les états de progression et l'accès à l'activité suivante, sans masquer les restrictions ni les informations natives de disponibilité.
-- **Formateur :** faciliter l'ajout et l'organisation d'activités, la compréhension des actions de section et le passage entre présentation simplifiée et réglages avancés, sans remplacer l'éditeur natif ni son système de capacités.
-- **Gestionnaire Iomad :** préserver les vues et fonctions de gestion spécifiques à l'entreprise ; ne pas déduire le périmètre d'une entreprise à partir du seul rendu du cours.
-
-Le format mono-activité et le format social ne doivent pas être forcés dans une présentation en sections identique aux formats topics/weeks. L'interface globale peut rester cohérente, mais la composition centrale doit respecter les capacités et le modèle de chaque format.
-
-### 48.7 Décisions de conception pour Project N
-
-1. Commencer par les styles et les composants natifs, puis les blocs Mustache déjà exposés ; ne copier un template complet qu'en dernier recours.
-2. Préserver les classes output et leurs données : visibilité, disponibilité, restrictions, complétion, dates, groupes, édition et navigation.
-3. Traiter les formats de cours comme des fournisseurs de comportement et de composition, et non comme de simples variantes CSS.
-4. Conserver tous les contrats DOM utilisés par l'éditeur de cours et les mises à jour partielles.
-5. Ne pas reprendre directement un template Moodle 5.3 dans Iomad 5.2 sans comparer ses données d'export et ses classes output.
-6. Prévoir des tests par format de cours, par rôle (apprenant/formateur/gestionnaire) et par version, incluant les états cachés, restrictions d'accès, sections orphelines, cours multipages, mode édition, déplacement et repli/dépli.
-7. Pour l'accessibilité, contrôler les niveaux de titres, noms accessibles des actions, état développé/replié, ordre de focus, navigation clavier, annonces des mises à jour AJAX, zoom 200 % et reflow à 320 CSS px. Les cartes d'activité ne doivent pas créer de zones cliquables imbriquées ou de contrôles sans nom accessible.
-
-### 48.8 Fichiers sources comparés
-
-- [Moodle 4.5 — output section](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/classes/output/local/content/section.php)
-- [Moodle 5.3 — output section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/section.php)
-- [Iomad 4.5 — output section](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/course/format/classes/output/local/content/section.php)
-- [Iomad 5.2 — output section](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/section.php)
-- [Moodle 4.5 — template section](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/templates/local/content/section.mustache)
-- [Moodle 5.3 — template section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/section.mustache)
-- [Moodle 5.3 — contenu de section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/section/content.mustache)
-- [Iomad 5.2 — contenu de section](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/templates/local/content/section/content.mustache)
-- [Moodle 5.3 — classe de format](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/base.php)
-- [Iomad 5.2 — classe de format](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/base.php)
-
-Cette section décrit une analyse statique de fichiers identifiés et comparés dans les forks. Elle ne constitue pas un test d'installation, un test des interactions AJAX/éditeur de cours, ni une validation axe-core, clavier, NVDA ou TalkBack.
-
+La documentation officielle Iomad décrit explicitement ce cycle : une version Iomad correspond à chaque version Moodle et la cible de sortie se situe environ trois mois après Moodle. Les notes de version Iomad 5.2 indiquent que cette version a été retardée et que le travail sur Iomad 5.3 était déjà engagé. (Voir [cycle de publication Iomad](https://docs.iomad.org/wiki/Releases) et [notes Iomad 5.2](https://www.iomad.org/documentation/documentation/release-notes/iomad-5-2/).)
 
 ## 49. Éditeur de cours et sélecteur d'activités — événements, clavier et hooks
 
@@ -1499,23 +1465,18 @@ Le module écoute les événements d'activation standard et clavier (activate et
 
 La classe output activitychooserbutton déclenche aussi le hook public before_activitychooserbutton_exported avant l'export des données. Ce hook est un point d'extension à privilégier pour ajouter une action complémentaire au sélecteur, plutôt que de recopier le template ou de remplacer son JavaScript, sous réserve de vérifier son enregistrement dans chaque version ciblée.
 
-### 49.3 Comparaison Moodle 5.3 / Iomad 5.2
+### 49.3 Comparaison correcte : Moodle 5.2 / Iomad 5.2
 
-| Fichier | Moodle 5.3 | Iomad 5.2 | Conclusion |
+Les mêmes fichiers ont été récupérés dans les branches Moodle 5.2 et Iomad 5.2. Tous les SHA sont identiques :
+
+| Fichier | Moodle 5.2 | Iomad 5.2 | Résultat |
 |---|---|---|---|
-| courseeditor.js | 6560c35e | 6560c35e | Identique ; également identique dans les deux branches 4.5 |
-| activitychooser.js | a71fd94e | 90029a00 | Différent |
-| activitychooserbutton.php | 2e23bb5b | 6cc02422 | Différent |
-| activitychooserbutton.mustache | c85e1b0e | 07c65be9 | Différent |
+| courseeditor.js | 6560c35ea4d728a3273405eb3e6954cc1c912022 | 6560c35ea4d728a3273405eb3e6954cc1c912022 | Identique |
+| activitychooser.js | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | 90029a00fd5d1d14bb63e9097f6e8b10fba2823a | Identique |
+| activitychooserbutton.php | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | 6cc02422fa543f478fa1c5fa257f71cb3d8ba2b0 | Identique |
+| activitychooserbutton.mustache | 07c65be9d84289711e0c7484cf80f501c897c5f2 | 07c65be9d84289711e0c7484cf80f501c897c5f2 | Identique |
 
-Les différences constatées sont ciblées :
-
-- le JavaScript des deux branches utilise les événements activate et keyboardActivate et le même modèle de dialogue ; des différences de code subsistent dans le calcul de position et les éléments de compatibilité ;
-- la classe PHP Moodle 5.3 déprécie l'utilisation d'un entier pour sectionreturn et demande null, tandis que le message de dépréciation Iomad 5.2 demande une instance section_info plutôt qu'un entier ;
-- le template Iomad 5.2 ajoute notamment la classe utilitaire p-1 sur le bouton ; le template Moodle 5.3 ne l'ajoute pas ;
-- les deux templates conservent un véritable bouton, un data-action, un aria-label contextualisé, aria-haspopup, aria-expanded et tabindex.
-
-Ces différences ne justifient pas de réécrire le sélecteur. Elles imposent de conserver les contrats natifs et de vérifier les templates exacts avant toute surcharge.
+**Conclusion : aucun écart propre à Iomad n'a été observé dans ces quatre fichiers en comparant les deux versions 5.2.** Les différences mentionnées dans l'analyse précédente provenaient de la comparaison avec Moodle 5.3 ; elles relèvent du décalage de génération et non d'une adaptation Iomad.
 
 ### 49.4 Conséquences pour Project N
 
