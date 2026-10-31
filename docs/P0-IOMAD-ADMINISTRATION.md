@@ -283,3 +283,96 @@ Résultat strict de cette comparaison :
 | Accessibilité | Pas de test clavier, lecteur d'écran, reflow ou axe-core effectué |
 
 **Prochaine tranche :** cartographier les pages d'affectation et de gestion des utilisateurs (création, modification, suspension, rattachement multi-entreprises, départements, types de gestionnaires et import CSV), puis les cours/licences. Les pages de rapports seront traitées séparément car elles mélangent données Moodle, données entreprise, licences et parfois historiques d'archivage.
+
+
+## 9. Formulaire de gestion des utilisateurs — Iomad 5.2
+
+> Première lecture statique du formulaire utilisateur et de l'API métier. Le contrôleur qui orchestre l'enregistrement, les pages de liste, l'affectation multi-départements et l'import CSV restent à cartographier.
+
+### 9.1 Formulaire d'ajout/modification
+
+| Élément | Fichier | SHA |
+|---|---|---|
+| Formulaire utilisateur | `public/blocks/iomad_company_admin/classes/forms/user_edit_form.php` | `a37bb53203db915309c101c8b9111aeeb700055b` |
+| API utilisateur/entreprise | `public/local/iomad/classes/company_user.php` | `f4ef072b9179007dc7ee773166b339ed652039c6` |
+
+Le formulaire `user_edit_form` est un formulaire Moodle spécifique Iomad. Son constructeur reçoit l'entreprise sélectionnée, le département, une licence éventuelle et le contexte entreprise. Il prépare notamment :
+- l'arborescence des départements visibles pour l'utilisateur courant ;
+- le niveau hiérarchique de référence, avec un traitement différent si la capacité `edit_all_departments` est présente ;
+- la liste des cours de l'entreprise ;
+- le sélecteur de département et les données associées.
+
+Les champs visibles couvrent plusieurs domaines fonctionnels :
+- identité et coordonnées utilisateur, avec les champs de nom requis configurés dans Moodle ;
+- adresse électronique et, selon la configuration Iomad, nom d'utilisateur ;
+- génération éventuelle du mot de passe, changement obligatoire et envoi différé des informations de connexion ;
+- rattachement à un département ;
+- type de gestionnaire et fonction pédagogique ;
+- champs de profil globaux et champs de profil propres à l'entreprise ;
+- attribution éventuelle d'une licence et choix de cours associés, si la capacité d'allocation de licences est présente.
+
+Le formulaire ne propose pas un ensemble fixe de rôles. Les options sont construites selon les capacités disponibles dans le contexte de l'entreprise :
+- utilisateur standard ;
+- gestionnaire d'entreprise ;
+- gestionnaire de département ;
+- responsable de rapports entreprise ;
+- formateur/éducateur ;
+- combinaisons de ces fonctions lorsque la configuration autorise leur cumul.
+
+L'option éducateur et les combinaisons correspondantes dépendent notamment du réglage `autoenrol_managers`. Cette logique confirme qu'il faut éviter de reconstruire les profils Iomad à partir d'une simple liste de rôles Moodle ou d'un libellé de fonction.
+
+### 9.2 Départements et périmètre de visibilité
+
+Le formulaire construit la liste des départements à partir du niveau hiérarchique auquel l'utilisateur courant a accès. Un utilisateur ayant `edit_all_departments` reçoit l'ensemble de l'arborescence de l'entreprise ; sinon, la liste est dérivée de ses niveaux d'affectation et de leurs sous-départements.
+
+Le choix d'un département dans ce formulaire ne suffit pas à cartographier toute la gestion des affectations : les pages dédiées à l'affectation d'un utilisateur à plusieurs départements, à la modification des rôles départementaux et à la suppression d'une affectation doivent encore être inspectées.
+
+### 9.3 Licences et accès aux cours
+
+Lorsque la capacité `allocate_licenses` est disponible, le formulaire affiche une zone de gestion des licences. La sélection est filtrée sur l'entreprise concernée et sur des licences non expirées disposant encore de capacité. Le formulaire associe ensuite les licences aux cours correspondants.
+
+Cela confirme que l'ajout d'un utilisateur Iomad peut combiner identité, rattachement organisationnel, fonction de gestion et droit d'accès à la formation. Ces dimensions doivent rester séparées dans la présentation Project N :
+- l'identité et le compte Moodle ;
+- l'appartenance à l'entreprise et aux départements ;
+- les fonctions de gestion/formation ;
+- l'accès aux cours, éventuellement conditionné par une licence.
+
+Le thème ne doit ni calculer l'éligibilité d'une licence ni décider quels cours sont accessibles. Il présente les données et actions renvoyées par les composants Iomad.
+
+### 9.4 API de création d'utilisateur
+
+La méthode `local_iomad\\company_user::create()` prépare la création ou la mise à jour du compte à partir des valeurs par défaut de l'entreprise et des données du formulaire. Elle :
+- détermine l'entreprise à partir de l'identifiant fourni ou du nom court ;
+- place temporairement l'entreprise dans la session pour le traitement des événements ;
+- applique les valeurs par défaut de l'entreprise ;
+- construit ou reprend le nom d'utilisateur ;
+- contrôle les collisions de nom d'utilisateur, d'adresse électronique et, selon la configuration, de triplet nom/prénom/courriel dans une autre entreprise ;
+- tient compte du paramétrage des notifications au gestionnaire.
+
+La méthode illustre pourquoi le thème ne doit pas implémenter lui-même la création de comptes, ni présumer qu'un compte utilisateur correspond à une seule entreprise. L'identité Moodle et les rattachements Iomad sont deux objets différents.
+
+### 9.5 Implications pour Project N
+
+1. La fiche utilisateur doit être considérée comme une page métier Iomad, et non comme le formulaire natif Moodle `user/edit.php` simplement remaquillé.
+2. Les sections et champs affichés doivent rester pilotés par les capacités, la configuration et le contexte entreprise.
+3. Les fonctions « gestionnaire », « formateur » et « utilisateur » ne doivent pas être fusionnées en un rôle unique dans l'interface.
+4. Les départements visibles doivent respecter la hiérarchie autorisée ; ne pas charger tous les départements puis filtrer côté navigateur.
+5. La licence ne doit pas être présentée comme une simple inscription au cours : elle constitue une condition d'accès et un objet de suivi distinct.
+6. Les écrans de liste et d'édition doivent préserver les actions natives, les contrôles de capacité et les éventuelles opérations en lot.
+
+### 9.6 Limites et prochaine vérification
+
+| Point | Statut |
+|---|---|
+| Composition du formulaire utilisateur | Observée statiquement |
+| Options de fonctions et combinaisons éducateur/gestionnaire | Observées statiquement ; cas de droits à vérifier |
+| Filtrage de l'arborescence de départements | Observé dans le constructeur ; à vérifier avec plusieurs profils en exécution |
+| Attribution des licences | Présence et filtrage de base observés ; workflow complet non cartographié |
+| Contrôleur d'enregistrement et contrôles serveur | À inspecter |
+| Liste des utilisateurs, suspension et suppression | À inspecter |
+| Affectations multi-entreprises et multi-départements | À inspecter |
+| Import CSV et traitement des erreurs | À inspecter |
+| Compatibilité 4.5/5.0/5.1/5.2 du formulaire | Non comparée dans cette tranche |
+| Accessibilité du formulaire | Aucun test axe-core ou manuel effectué |
+
+**Prochaine tranche :** retrouver et cartographier les contrôleurs de liste et d'édition, les affectations départementales, l'import CSV et les opérations de suspension/suppression. Ensuite, traiter la gestion des cours et des licences comme des parcours liés mais distincts.
