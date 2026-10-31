@@ -1416,6 +1416,67 @@ Conséquences pour Project N :
 
 Cette section est une cartographie statique de la branche IOMAD_502_STABLE et de ses README/code. Aucun test d'installation, de navigation, de changement d'entreprise, de cloisonnement inter-entreprises, de rendu mobile ou d'accessibilité n'a été exécuté.
 
+## 52. Rendu apprenant Iomad — blocs Mes cours et Parcours d'apprentissage
+
+### 52.1 Bloc Mes cours : logique fonctionnelle
+
+Le bloc block_iomad_mycourses n'est pas un simple habillage du bloc core_myoverview. Son README le décrit comme une réécriture de l'aperçu des cours Moodle, qui ajoute notamment les cours accessibles par licence et le téléchargement des certificats enregistrés.
+
+La classe output main.php prépare quatre vues fonctionnelles :
+- cours disponibles ;
+- cours en cours ;
+- cours terminés/archivés ;
+- cours obligatoires, lorsque l'option est activée pour l'entreprise.
+
+Elle prend également en charge les préférences utilisateur de tri, ordre, affichage liste/cartes et onglet mémorisé. Le rendu prévoit un téléchargement des certificats lorsque la capacité correspondante est accordée et que des certificats existent pour l'utilisateur dans le contexte de son entreprise.
+
+Le template principal main.mustache expose des commandes de tri, d'ordre, de présentation liste/cartes, un filtre cours obligatoires et un accès au téléchargement des certificats. Les onglets sont rendus comme une navigation Bootstrap avec rôle tab. Les vues carte/liste sont séparées dans des templates dédiés ; coursecard.mustache affiche notamment le caractère obligatoire et délègue la progression au template progress-bar.mustache.
+
+### 52.2 Contrats et points de vigilance accessibilité
+
+Les éléments à préserver ou à vérifier dans le rendu actuel :
+- le conteneur de bloc identifié par data-region="iomad_mycourses" ;
+- les attributs data-action/data-name/data-value consommés par les interactions de tri et de préférence ;
+- les identifiants uniques de conteneurs et les relations entre onglets et panneaux ;
+- l'état sélectionné des onglets et la synchronisation aria-selected / classe active ;
+- les états de cours obligatoire, de cours indisponible, de cours accessible par licence et de cours terminé ;
+- le texte numérique de progression en complément de la barre graphique.
+
+Points d'audit à vérifier avant toute surcharge :
+1. Les onglets doivent respecter le modèle clavier ARIA tabs (tablist, tab, tabpanel, sélection, flèches, Home/End selon le modèle retenu). Vérifier que les panneaux sont correctement nommés et associés aux onglets.
+2. Le template progress-bar.mustache fournit role=progressbar et les valeurs min/max/now, mais l'association de la barre à un nom accessible explicite doit être vérifiée avec l'arbre d'accessibilité ; le texte visuel du pourcentage ne doit pas être le seul moyen d'identifier le cours concerné.
+3. Les commandes de tri et de présentation sont des liens déclenchant des actions via data-action. Vérifier qu'elles sont correctement annoncées et utilisables au clavier ; un bouton peut être plus approprié si l'action ne constitue pas une navigation.
+4. Les styles inline et la disposition en ligne des commandes peuvent provoquer des débordements sur smartphone. Le thème doit permettre le retour à la ligne et préserver des cibles tactiles suffisamment grandes.
+5. Vérifier le contraste et la visibilité des états actif, obligatoire, indisponible et terminé, sans dépendre uniquement de la couleur.
+
+Le template mobile_view_block.mustache est destiné à l'application mobile Moodle (composants Ionic et filtres Angular), et non au rendu navigateur du thème. Il ne faut pas le prendre pour une variante responsive web ni le modifier pour résoudre un problème d'affichage dans Project N.
+
+### 52.3 Bloc Parcours d'apprentissage
+
+Le bloc block_iomad_learningpath propose des parcours prescrits et séquencés. Sa classe de bloc récupère le contexte entreprise via local_iomad, construit les parcours visibles pour l'utilisateur et ne rend pas le bloc lorsqu'il n'y a aucun parcours à présenter. Les pages de gestion et d'administration sont également portées par le plugin : gestion des parcours, édition, groupes, cours et consultation des apprenants.
+
+Le template principal présente chaque parcours sous forme de carte avec image, nom, description, progression et bouton d'ouverture. Il rend ensuite les groupes et cours du parcours. Les templates coursecard et groupcard portent les cours, leur disponibilité, leurs prérequis et leur progression.
+
+Points d'attention :
+- l'image du parcours et les images de cours doivent avoir un texte alternatif pertinent si elles transmettent une information ; sinon elles doivent être explicitement décoratives ;
+- la progression doit être compréhensible sans couleur ni seule largeur graphique ; le pourcentage doit rester textuellement disponible ;
+- les cours non disponibles et les prérequis doivent être explicitement annoncés, sans dépendre seulement d'une couleur ou d'un style atténué ;
+- les boutons d'ouverture et de retour doivent conserver un nom compréhensible, un ordre de focus cohérent et un retour de focus après changement de vue ;
+- la bascule entre la liste des parcours et le détail d'un parcours doit rester utilisable au clavier et avec TalkBack/NVDA ;
+- les grilles Bootstrap en colonnes doivent se réorganiser en une seule colonne sur smartphone sans perte d'information.
+
+### 52.4 Décisions de conception pour Project N
+
+1. Le thème peut améliorer l'enveloppe visuelle et responsive de ces blocs, mais ne doit pas recalculer les cours disponibles, les licences, les obligations, les prérequis ou les progressions.
+2. Le bloc Mes cours Iomad et le bloc core_myoverview Moodle doivent être traités comme deux sources de données différentes, même si Project N cherche à leur donner une présentation cohérente.
+3. La cohérence visuelle ne doit pas masquer les différences de sémantique : disponibilité par licence, cours obligatoire, archive, certificat et parcours prescrit sont des états métier distincts.
+4. Les préférences de vue/tri doivent rester persistantes si le plugin les gère ; ne pas créer un second stockage concurrent dans le thème.
+5. Les blocs peuvent être affichés dans des pages My ou des pages personnalisées Iomad ; le thème doit fonctionner avec les deux placements et ne pas supposer une position unique.
+
+### 52.5 État de vérification
+
+Analyse statique de templates Mustache et classes PHP dans IOMAD_502_STABLE. Les points d'accessibilité ci-dessus sont des risques et contrôles à effectuer, pas des non-conformités axe-core confirmées. Aucun parcours n'a été exécuté ; aucune validation axe-core, clavier, NVDA, TalkBack ou test de reflow mobile n'a été réalisée.
+
 ## 47. Stratégie de surcharge du rendu — règles d'architecture pour Project N
 
 ### 47.1 État actuel du dépôt
