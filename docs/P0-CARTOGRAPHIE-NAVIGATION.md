@@ -1212,7 +1212,7 @@ Le thème ne doit pas encapsuler le lecteur dans un conteneur qui contraint sa l
 
 ### 45.3 Page et ressource fichier : rendu principalement porté par le cœur
 
-Les chemins `mod/page/classes/output`, `mod/resource/classes/output` et leurs répertoires `templates` ne sont pas présents comme répertoires dédiés dans les branches Moodle 4.5 et 5.3 consultées. Leurs pages s'appuient principalement sur les mécanismes de rendu génériques du cœur Moodle et les formats de cours, plutôt que sur un ensemble autonome de templates propres à chaque module.
+Les chemins `mod/page/classes/output` et leurs répertoires `templates` ne sont pas présents dans les branches Moodle 4.5 et 5.3 consultées. Pour `mod/resource`, seul un composant de format de cours existe (`classes/output/courseformat/activitybadge.php`, présent en 4.5 et 5.3) ; il n'existe pas de jeu de templates dédiés à l'affichage de la ressource. Leurs pages s'appuient principalement sur les mécanismes de rendu génériques du cœur Moodle et les formats de cours, plutôt que sur un ensemble autonome de templates propres à chaque module.
 
 Conséquences :
 - ne pas supposer qu'un template propre à `mod_page` ou `mod_resource` peut être surchargé pour refaire l'intégralité de l'affichage ;
@@ -1273,10 +1273,7 @@ Une différence utile est le passage des classes utilitaires d'accessibilité `s
 
 ### 46.3 Liste de discussions et abonnements
 
-Le module `discussion_list.js` est identique entre Moodle 4.5 et Iomad 4.5, et également identique entre Moodle 4.5 et Iomad 5.2. Moodle 5.3 a fait évoluer ce module :
-- gestion d'un événement global de changement d'abonnement ;
-- mise à jour de toutes les lignes concernées ;
-- synchronisation de l'état cible des contrôles d'abonnement.
+Le module `discussion_list.js` a le même blob dans Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Ce fichier n'a donc pas évolué entre ces branches : la gestion des abonnements dans les listes de discussions n'est pas un écart établi par cette comparaison, et ne doit pas être présentée comme une nouveauté de Moodle 5.3.
 
 Moodle 5.3 introduit également `forum_overview_toggle.js`, qui gère les bascules d'abonnement/suivi dans la vue d'ensemble, avec une attention explicite à la cohérence entre libellé visible et `aria-label`. Le fichier Iomad 5.2 existe mais présente un contenu différent et plus ancien ; il ne faut donc pas supposer que cette fonctionnalité de vue d'ensemble est portée de la même façon dans cette branche.
 
@@ -1304,7 +1301,7 @@ Les constats ci-dessus proviennent des blobs et extraits comparés dans les fork
 
 Au moment de cette vérification, la branche `main` du dépôt Project N contient :
 - `README.md` et `ROADMAP.md` ;
-- `docs/P0-CADRAGE.md`, `docs/P0-NAVIGATION.md` et `docs/P0-CARTOGRAPHIE-NAVIGATION.md).
+- `docs/P0-CADRAGE.md`, `docs/P0-NAVIGATION.md` et `docs/P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 Aucun répertoire de code de thème (`theme/`) n'est encore présent. Les recommandations qui suivent sont donc des règles de conception à appliquer pendant P0/P1, et non la description d'une implémentation déjà codée.
 
