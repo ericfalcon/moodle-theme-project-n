@@ -229,3 +229,50 @@ Cette tranche complète la lecture des classes d'adaptation et précise les limi
 | Runtime et accessibilité | Non testés dans cette tranche | Installation réelle, parcours fonctionnels, axe-core et tests manuels. |
 
 **Conclusion de cette tranche :** l'analyse a progressé sur les classes de rendu des tableaux de bord, les cours, la configuration et le versionnement. L'inventaire n'est pas encore exhaustif et la cartographie P0 n'est pas clôturée. Aucun code d'interface Project N ne doit être commencé à ce stade.
+
+
+## 10. Revue ciblée approfondie des hooks et indicateurs
+
+### 10.1 Effets de bord de `hook_callbacks::after_config()`
+
+La lecture des méthodes appelées par `after_config()` confirme que ce hook n'est pas un simple point de style. Dans le snapshot inspecté, il peut notamment :
+
+- réorienter le contexte d'entreprise d'un cours lorsque l'option « cours de toutes les entreprises » est active, en se basant sur le cours ou l'activité demandée ;
+- modifier `$SESSION->currenteditingcompany` et invalider `$SESSION->company` ;
+- mettre à jour le champ `lastused` de l'association utilisateur/entreprise ;
+- choisir le thème de la session en fonction de l'entreprise, du domaine ou de l'entreprise sélectionnée dans le tableau de bord ;
+- installer un gestionnaire de chaînes personnalisé si aucun gestionnaire différent n'est déjà configuré ;
+- appliquer une palette de couleurs de graphiques au niveau de la configuration de la requête.
+
+Le code contient des conditions de sortie, des appels API Iomad et des blocs `try/catch`, mais la présence de ces protections ne prouve pas que tous les chemins soient corrects dans chaque génération.
+
+**Décision Project N :** ne pas faire de `after_config` le mécanisme par défaut pour construire la navigation ou choisir l'entreprise. Tout hook exécuté aussi tôt doit être réservé à un besoin transversal démontré, avec analyse de l'ordre d'exécution, tests des URL directes, des redirections, des sessions multi-entreprises, de la CLI et des pages d'émission de certificats. Les changements de session ou de configuration globale exigent une justification distincte d'une simple adaptation de présentation.
+
+### 10.2 Résolution des réglages tenant et validation des fichiers
+
+La lecture approfondie de `company_style::settings()`, `save_settings()` et `clean()` montre un modèle explicite : les valeurs de chaque entreprise sont stockées dans un réglage dédié, nettoyées à l'enregistrement, puis résolues avec un repli vers les valeurs du site. Les couleurs sont normalisées, les choix sont validés par rapport à des listes autorisées, et les URL de pied de page sont nettoyées avec `PARAM_URL`.
+
+Pour les fichiers, les extensions autorisées sont définies par zone (logo et polices) et la validation serveur est motivée par le risque de conserver puis servir un fichier actif tel qu'une page HTML. Ce mécanisme est une bonne pratique de validation en profondeur, mais une validation d'extension ne constitue pas à elle seule une validation complète du contenu ou du MIME.
+
+**Décision Project N :** reprendre le principe de validation en couches et les listes d'options explicites. Si des fichiers tenant sont nécessaires, ajouter une revue des types MIME, des SVG et de leur mode de diffusion, des permissions de modification, de la portée du contexte de fichier, du cache HTTP et des interactions avec le stockage Moodle. Le projet ne doit pas ajouter de téléversement de logo/police par entreprise tant que le besoin n'est pas confirmé.
+
+### 10.3 Indicateurs de tableau de bord : attention aux SQL et au rôle métier
+
+`iomad_figures::site_applies()` limite les indicateurs de plateforme Moodle à la page de tableau de bord et à une capacité de consultation des rapports. `visible_to()` distingue notamment le droit de voir toutes les entreprises de la qualité de gestionnaire de l'entreprise visée. `export()` construit des indicateurs à partir de tables Iomad, notamment utilisateurs rattachés, cours, licences et suivi des complétions.
+
+Ce code est utile pour identifier les contraintes fonctionnelles, mais il illustre aussi les risques d'une logique de présentation qui interroge directement les tables métier : les noms de tables évoluent, les conditions d'association et de suspension ont un sens métier, et une erreur de périmètre pourrait divulguer des agrégats.
+
+**Décision Project N :** aucun indicateur Iomad ne sera ajouté avant d'avoir défini les tâches utiles du gestionnaire, identifié les capacités exactes, vérifié l'API de données disponible dans chaque version et conçu des tests multi-entreprises. Sur Moodle standard, les indicateurs doivent rester strictement limités aux capacités Moodle pertinentes.
+
+### 10.4 Nouveaux contrôles statiques et runtime nécessaires
+
+- Vérifier le comportement des pages de cours et d'activité quand un apprenant appartient à plusieurs entreprises, y compris après navigation directe et retour arrière.
+- Vérifier que le thème de session ne persiste pas lors du passage à une page hors entreprise ou d'une autre entreprise.
+- Vérifier les sessions déjà ouvertes après modification du thème de l'entreprise et après suspension d'un rattachement.
+- Vérifier les tâches CLI et la génération de certificats sans session utilisateur.
+- Vérifier qu'un gestionnaire de chaînes personnalisé déclaré dans `config.php` n'est jamais écrasé.
+- Vérifier les indicateurs pour un administrateur du site, un gestionnaire global, un gestionnaire d'entreprise, un responsable de département, un formateur et un apprenant.
+- Tester les résultats avec deux entreprises et des données distinctes, en alternant les utilisateurs et les contextes dans les caches applicatifs.
+- Vérifier les pages d'édition de l'entreprise quand le thème actif n'est pas Épure.
+
+Ces contrôles sont des scénarios à exécuter ; ils ne sont pas déclarés réussis par cette revue de code.
