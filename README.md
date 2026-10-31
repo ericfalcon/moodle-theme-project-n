@@ -112,4 +112,4 @@ Une intégration continue (CI) est envisagée pour automatiser les contrôles re
 
 ## État du projet
 
-Le dépôt est en phase de cadrage. Aucune phase n'est déclarée terminée. Les jalons, livrables, décisions et critères d'acceptation sont détaillés dans [ROADMAP.md](ROADMAP.md).
+Le projet est en **P0 — cadrage en cours**. Le premier dossier de cadrage technique et ergonomique est disponible dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il constitue une base de travail : les prototypes et validations sur environnements réels restent à réaliser. Les jalons, livrables, décisions et critères d'acceptation sont détaillés dans [ROADMAP.md](ROADMAP.md).
