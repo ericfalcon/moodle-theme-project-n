@@ -1755,3 +1755,62 @@ Les constats ci-dessus proviennent des blobs et extraits comparés dans les fork
 
 - Iomad 5.2 reprend le template Moodle 5.3 à l'identique (même blob), mais son module AMD de correction possède un blob différent.
 Elle possède le même blob dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Les templates de liste des tentatives, de résumé d'une tentative, de confirmation de remise et de minuterie sont également identiques entre les deux branches Moodle 4.5/5.3 consultées pour les fichiers ciblés, et Iomad 5.2 reprend les templates 5.3 correspondants.
+
+
+---
+
+## 53. Architecture fonctionnelle de `local_iomad` — portée pour Project N
+
+> Complément d'analyse statique. Cette section ne remplace pas les sections précédentes sur les menus d'administration, les rôles/capacités ou la comparaison des versions. Elle rassemble les implications fonctionnelles déjà relevées dans les sources Iomad 5.2 et signale les points qui doivent encore être confrontés aux branches antérieures.
+
+### 53.1 Responsabilités de `local_iomad`
+
+Dans Iomad 5.1/5.2, le composant `local_iomad` porte notamment les classes namespacées de gestion des entreprises et des utilisateurs, le contexte personnalisé entreprise et les règles d'autorisation propres au périmètre Iomad. Cette organisation correspond à une évolution structurelle par rapport aux versions 4.5/5.0, où plusieurs classes et chemins historiques se trouvent sous `local/iomad/lib/`.
+
+Project N ne doit pas traiter `local_iomad` comme une simple bibliothèque facultative de thème : ses API peuvent participer à la détermination du contexte et du périmètre d'entreprise. La présence du plugin, la présence d'une entreprise courante, l'appartenance d'un utilisateur et ses droits effectifs sont des faits distincts.
+
+### 53.2 Adaptateur de compatibilité
+
+| Génération Iomad | Organisation observée | Conséquence pour l'adaptateur Project N |
+|---|---|---|
+| 4.5 / 5.0 | Classes historiques `iomad` et `company` dans `local/iomad/lib/`; noms de tables historiques. | Encapsuler les appels historiques sans les propager dans les renderers et templates. |
+| 5.1 / 5.2 | Classes `local_iomad\\iomad`, `local_iomad\\company`, `local_iomad\\company_user`; contexte `local_iomad\\custom_context\\context_company`; tables renommées avec préfixe logique `local_iomad_`. | Encapsuler les nouveaux namespaces et le contexte personnalisé ; ne pas déduire la version depuis le nom d'une table. |
+| Moodle standard | Pas de classes ni de contexte métier Iomad. | Le chemin d'exécution standard ne doit charger aucune classe Iomad ni exiger de configuration tenant. |
+
+L'adaptateur doit exposer uniquement les besoins d'interface nécessaires, par exemple : disponibilité des fonctions Iomad, informations de contexte destinées à l'affichage, destinations autorisées à proposer et informations de marque. Il ne doit ni recopier l'arbre de navigation ni devenir une couche d'accès aux données métier complète.
+
+### 53.3 Autorisation et périmètre entreprise
+
+Les contrôles Iomad complètent les capacités Moodle et peuvent appliquer des restrictions spécifiques au couple entreprise/rôle/capacité. Le thème ne doit donc pas reconstruire le calcul des droits à partir des noms de rôles, des archétypes ou de la présence d'un menu.
+
+Règles de conception :
+1. Les liens visibles sont des aides à la navigation, jamais des protections.
+2. Les pages et actions restent responsables de leurs contrôles serveur Moodle/Iomad.
+3. Les destinations tenant sont construites à partir d'API adaptées à la version et au contexte ; les données ne sont pas chargées par des requêtes SQL improvisées dans les renderers.
+4. Le test doit inclure un administrateur du site, des gestionnaires Iomad, un utilisateur pédagogique, un utilisateur multi-rôles et un utilisateur rattaché à plusieurs entreprises.
+5. Vérifier l'accès direct aux URL et les changements d'entreprise, pas seulement l'affichage des menus.
+
+### 53.4 Menus Iomad dynamiques
+
+Le tableau de bord `block_iomad_company_admin` agrège des entrées déclarées par les plugins Iomad, notamment via leurs fichiers `db/iomadmenu.php`. Les entrées et catégories disponibles dépendent des capacités et de la configuration. Project N doit préserver cette découverte dynamique et éviter une liste statique de destinations.
+
+Le thème peut harmoniser l'enveloppe, les regroupements visuels et l'affichage responsive, mais les URL, les données d'action et les capacités doivent rester issus des composants Iomad. Un éventuel tableau de bord Project N doit être un point d'entrée complémentaire, pas une réimplémentation de l'administration d'entreprise.
+
+### 53.5 `iomad_mycourses` et espace apprenant
+
+Le bloc Iomad « Mes cours » possède un modèle métier distinct de `core_myoverview`. Les cours disponibles, en cours, terminés ou obligatoires, la progression, les certificats et les accès conditionnés par les licences ne sont pas de simples variantes cosmétiques d'une même liste.
+
+Project N peut réutiliser un langage visuel commun entre Moodle et Iomad, mais doit conserver les états métier et les données fournis par le composant source. Les tests doivent vérifier les transitions entre onglets, les listes vides, les cours indisponibles, les cours terminés, les certificats et les droits de lancement.
+
+### 53.6 Limites de preuve et vérifications à terminer
+
+| Point | Statut |
+|---|---|
+| Organisation historique et namespacée des classes Iomad | Observée statiquement sur les branches consultées ; tous les contrats ne sont pas comparés exhaustivement. |
+| Règles d'autorisation et restrictions tenant | Décrites par lecture des sources ; non validées par tests d'accès runtime. |
+| Menus d'administration dynamiques | Structure et mécanisme identifiés ; non testés avec un ensemble représentatif de plugins installés. |
+| Isolation multi-entreprises | Exigence architecturale documentée ; aucune preuve runtime de cloisonnement à ce stade. |
+| Compatibilité 4.5/5.0/5.1/5.2 | Analyse par génération en cours ; ne pas extrapoler à Iomad 5.3, qui n'est pas une cible vérifiée. |
+| Accessibilité | Aucun résultat axe-core ou test manuel ne peut être déduit de cette cartographie statique. |
+
+**Conclusion :** l'intégration Iomad de Project N doit rester un adaptateur mince au service de la présentation, en s'appuyant sur les API et contrôles natifs. Le développement reste bloqué jusqu'à la clôture de la cartographie P0 des espaces apprenant, formateur, administration Moodle et administration Iomad.
