@@ -1363,3 +1363,116 @@ Une surcharge doit être supprimée lorsqu'une évolution du cœur fournit nativ
 - [Course format — rendu des sections et fragments du cours](https://docs.moodle.org/en/Development%3ACourse_formats)
 
 Ces références décrivent les mécanismes généraux Moodle. Elles ne remplacent pas la vérification du code exact de chaque branche ciblée, en particulier pour les changements de chemins introduits dans Moodle 5.x et les adaptations propres à Iomad.
+
+
+## 48. Rendu natif des cours — sections, activités et formats de cours
+
+### 48.1 Architecture de rendu observée
+
+Le rendu des sections et activités ne relève pas d'un simple template de thème. Il s'appuie sur le composant core_courseformat :
+
+- les classes output de section et d'activité implémentent renderable et named_templatable ;
+- les classes output exportent les données destinées aux templates Mustache ;
+- la classe de format de cours fournit les classes output spécialisées via get_output_classname() ;
+- les templates sont organisés en composants réutilisables : section, en-tête, disponibilité, résumé, liste d'activités, activité, menu de contrôle et visibilité.
+
+La classe output content\section délègue plusieurs parties du rendu à des classes distinctes, et non à un unique renderer monolithique. Elle calcule notamment l'état de visibilité, les sections orphelines/stealth, les restrictions, la section courante, les contrôles d'édition et l'état replié. La classe output content\cm prépare les données de chaque activité : nom, disponibilité, contenu alternatif, dates, achèvement, mode groupe, visibilité, menu de contrôle et bouton d'ajout.
+
+**Conséquence :** Project N doit travailler avec cette architecture de composants. Il ne faut pas reconstruire la liste des activités ni recalculer côté thème les droits, les restrictions, les états de complétion ou la disponibilité.
+
+### 48.2 Templates et points d'extension réels
+
+Le template core_courseformat/local/content/section est un wrapper autour de section/content. Il expose notamment un bloc Mustache nommé core_courseformat/local/content/section/content, ainsi qu'un bloc pour l'insertion d'une section. Cette composition permet de personnaliser une partie du rendu sans recopier nécessairement tout le template.
+
+Les fichiers examinés montrent les responsabilités suivantes :
+
+| Composant | Responsabilité observée |
+|---|---|
+| section.mustache | Conteneur de section, attributs d'identification, composition du contenu |
+| section/content.mustache | En-tête, badges, restrictions, repli/dépli, résumé et liste d'activités |
+| section/cmitem.mustache | Élément d'activité dans la liste |
+| cm.mustache | Carte/conteneur d'activité, contrôles d'édition et activity chooser |
+| section/header.mustache | Titre et métadonnées de section |
+| section/cmlist.mustache | Liste des activités d'une section |
+| section/availability.mustache | Informations de disponibilité et restrictions |
+| section/controlmenu.mustache | Actions de gestion de section |
+
+Les blocs Mustache et les composants partiels constituent des points d'extension plus fins que la copie de la page complète. Leur disponibilité et leur contenu doivent néanmoins être contrôlés dans chaque branche cible.
+
+### 48.3 Contrats DOM à préserver
+
+Les templates contiennent des attributs consommés par les mécanismes de cours et les modules JavaScript. Parmi ceux relevés :
+
+- section : data-for="section", data-sectionid, data-id, data-number, data-sectionname ;
+- informations de section : data-region="sectionbadges", data-for="sectioninfo" ;
+- activité : data-region="activity-card", data-for="cmitem", data-id et l'ancre d'activité ;
+- édition et sélection groupée : structures et attributs propres aux contrôles de l'éditeur de cours.
+
+Ils ne sont pas des attributs décoratifs. Une surcharge qui les supprime ou les déplace peut casser le déplacement d'activités, l'édition, les mises à jour partielles, les sélecteurs Behat ou les interactions du cours.
+
+Les contrôles de repli/dépli utilisent également un état accessible (aria-expanded) et des attributs d'interaction. Les libellés, l'état annoncé et le comportement clavier doivent rester cohérents. La présence d'un lien portant role="button" dans le template historique doit être réévaluée dans le contexte exact de la version ; ne pas reproduire ce motif par défaut dans les nouveaux composants Project N.
+
+### 48.4 Comparaison vérifiée des quatre branches
+
+Les SHA ci-dessous proviennent des fichiers des forks personnels au moment de la consultation.
+
+| Fichier | Moodle 4.5 | Iomad 4.5 | Moodle 5.3 | Iomad 5.2 |
+|---|---|---|---|---|
+| Output section.php | 0f6928b5 | identique Moodle 4.5 | 889a092b | bf6ea5c5 |
+| Output cm.php | d5e9abc4 | identique Moodle 4.5 | 7bfc6068 | 914b28b4 |
+| Template section.mustache | 110eed2c | identique Moodle 4.5 | 63e35dff | 4138fd21 |
+| Template section/content.mustache | fa170060 | identique Moodle 4.5 | 871a6a59 | b57667d8 |
+| Template cm.mustache | 0a9a80ad | identique Moodle 4.5 | 0c5f73d9 | identique Moodle 5.3 |
+| Template section/cmitem.mustache | be1cba56 | identique Moodle 4.5 | f95bacb4 | identique Moodle 5.3 |
+| Renderer section_renderer.php | ab985687 | non comparé ici | 93ba5aeb | 1714cf3e |
+
+Constats précis :
+
+1. **Moodle 4.5 et Iomad 4.5 :** les classes output section.php et cm.php, ainsi que les templates examinés, ont des SHA identiques. Pour ce périmètre, les fichiers comparés sont communs.
+2. **Moodle 5.3 :** section.php ajoute returnoptions, sérialisé depuis get_return_options(), et marque sectionreturnnum comme déprécié depuis Moodle 5.3 (MDL-86284). Le template section.mustache ajoute l'attribut data-returnoptions.
+3. **Iomad 5.2 :** le section.php examiné ne contient pas ce champ returnoptions, et son template section.mustache ne contient pas l'attribut data-returnoptions. Il ne faut donc pas recopier sans adaptation le template Moodle 5.3 dans Iomad 5.2.
+4. **Activités :** Moodle 5.3 ajoute dans cm.php le recours à get_return_options() pour construire le lien historique de déplacement YUI lorsque le format ne prend pas en charge les composants. Cette évolution n'apparaît pas dans le fichier Iomad 5.2 consulté.
+5. **Templates partagés :** les templates cm.mustache et section/cmitem.mustache ont les mêmes SHA entre Moodle 5.3 et Iomad 5.2, alors que les templates d'enveloppe et de contenu de section diffèrent. Une compatibilité doit donc être établie fichier par fichier, pas par simple numéro de version.
+
+### 48.5 Évolution du renderer et de la classe de format
+
+Le renderer de section Moodle 4.5 contient 445 lignes et de nombreuses méthodes de présentation historiques (titres, contrôles, en-têtes/pieds de section, résumé, disponibilité, navigation, affichage mono/multipage). Le renderer Moodle 5.3 est réduit à 275 lignes et ne conserve qu'un ensemble plus ciblé de méthodes. Le renderer Iomad 5.2 possède lui aussi 275 lignes et une liste de méthodes publiques comparable à Moodle 5.3, mais son SHA est différent : il ne faut pas conclure à une identité de code.
+
+La classe core_courseformat\base évolue également. Moodle 5.3 expose notamment des méthodes supplémentaires liées à l'état du cours, aux mises à jour, aux actions, aux options de retour et à la navigation linéaire. Iomad 5.2 ne présente pas exactement la même surface de méthodes dans la branche examinée : en particulier, les méthodes get_page_section() et uses_linear_navigation() observées dans Moodle 5.3 ne figurent pas dans la liste Iomad 5.2 consultée. Les classes output Moodle 5.3 et Iomad 5.2 ne doivent donc pas être considérées comme interchangeables.
+
+### 48.6 Formats de cours natifs et stratégie UX
+
+Le répertoire course/format contient les formats natifs topics, weeks, singleactivity et social. Project N doit conserver la compatibilité avec ces formats et avec les formats tiers. Il ne doit pas supposer qu'un cours est toujours structuré en sections thématiques ou hebdomadaires.
+
+Pour les trois espaces Project N :
+
+- **Apprenant :** améliorer la lisibilité des sections et activités, l'identification des échéances, les états de progression et l'accès à l'activité suivante, sans masquer les restrictions ni les informations natives de disponibilité.
+- **Formateur :** faciliter l'ajout et l'organisation d'activités, la compréhension des actions de section et le passage entre présentation simplifiée et réglages avancés, sans remplacer l'éditeur natif ni son système de capacités.
+- **Gestionnaire Iomad :** préserver les vues et fonctions de gestion spécifiques à l'entreprise ; ne pas déduire le périmètre d'une entreprise à partir du seul rendu du cours.
+
+Le format mono-activité et le format social ne doivent pas être forcés dans une présentation en sections identique aux formats topics/weeks. L'interface globale peut rester cohérente, mais la composition centrale doit respecter les capacités et le modèle de chaque format.
+
+### 48.7 Décisions de conception pour Project N
+
+1. Commencer par les styles et les composants natifs, puis les blocs Mustache déjà exposés ; ne copier un template complet qu'en dernier recours.
+2. Préserver les classes output et leurs données : visibilité, disponibilité, restrictions, complétion, dates, groupes, édition et navigation.
+3. Traiter les formats de cours comme des fournisseurs de comportement et de composition, et non comme de simples variantes CSS.
+4. Conserver tous les contrats DOM utilisés par l'éditeur de cours et les mises à jour partielles.
+5. Ne pas reprendre directement un template Moodle 5.3 dans Iomad 5.2 sans comparer ses données d'export et ses classes output.
+6. Prévoir des tests par format de cours, par rôle (apprenant/formateur/gestionnaire) et par version, incluant les états cachés, restrictions d'accès, sections orphelines, cours multipages, mode édition, déplacement et repli/dépli.
+7. Pour l'accessibilité, contrôler les niveaux de titres, noms accessibles des actions, état développé/replié, ordre de focus, navigation clavier, annonces des mises à jour AJAX, zoom 200 % et reflow à 320 CSS px. Les cartes d'activité ne doivent pas créer de zones cliquables imbriquées ou de contrôles sans nom accessible.
+
+### 48.8 Fichiers sources comparés
+
+- [Moodle 4.5 — output section](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/classes/output/local/content/section.php)
+- [Moodle 5.3 — output section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/section.php)
+- [Iomad 4.5 — output section](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/course/format/classes/output/local/content/section.php)
+- [Iomad 5.2 — output section](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/output/local/content/section.php)
+- [Moodle 4.5 — template section](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/course/format/templates/local/content/section.mustache)
+- [Moodle 5.3 — template section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/section.mustache)
+- [Moodle 5.3 — contenu de section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/section/content.mustache)
+- [Iomad 5.2 — contenu de section](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/templates/local/content/section/content.mustache)
+- [Moodle 5.3 — classe de format](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/base.php)
+- [Iomad 5.2 — classe de format](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/course/format/classes/base.php)
+
+Cette section décrit une analyse statique de fichiers identifiés et comparés dans les forks. Elle ne constitue pas un test d'installation, un test des interactions AJAX/éditeur de cours, ni une validation axe-core, clavier, NVDA ou TalkBack.
