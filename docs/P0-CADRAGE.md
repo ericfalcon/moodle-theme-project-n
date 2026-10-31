@@ -302,7 +302,7 @@ La CI ne doit pas simuler une matrice complète qu'elle ne peut pas réellement 
 
 | ID | Décision | Méthode |
 |---|---|---|
-| D-P0-01 | Navigation mobile : tiroir Boost adapté ou navigation Project N dédiée | Prototype comparatif et tests clavier/tactiles |
+| D-P0-01 | **Décidée : approche hybride** — navigation globale Project N et navigation contextuelle native Moodle | Voir [Architecture de navigation](P0-NAVIGATION.md) ; prototypes et tests encore requis |
 | D-P0-02 | Étendue des layouts spécifiques | Cartographie des pages et prototype |
 | D-P0-03 | Composants Moodle réutilisés / personnalisés | Inventaire par parcours et versions |
 | D-P0-04 | Périmètre exact du MVP formateur | Tests de tâches et estimation |
