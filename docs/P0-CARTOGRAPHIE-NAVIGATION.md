@@ -417,3 +417,79 @@ Le layout Boost ne porte donc pas ces adaptations : elles se trouvent dans le re
 - [Iomad 5.2 — core renderer](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/output/core_renderer.php)
 - [Iomad 5.2 — layout drawers](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/layout/drawers.php)
 - [Iomad 5.2 — template drawers](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/templates/drawers.mustache)
+
+
+## 19. Navigation primaire : différence directe Moodle / Iomad
+
+La comparaison des fichiers `primary.php` confirme une adaptation Iomad présente dès Iomad 4.5 et maintenue dans les branches 5.1 et 5.2.
+
+Après le déclenchement du hook `core\\hook\\navigation\\primary_extend`, Iomad ajoute lui-même une entrée « Tableau de bord » entreprise si l'utilisateur possède au moins une des capacités de gestion pertinentes :
+- gestion entreprise ;
+- gestion utilisateurs ;
+- gestion cours ;
+- gestion licences ;
+- gestion compétences ;
+- administration e-commerce ;
+- microlearning ;
+- rapports Iomad.
+
+Le code utilise :
+- Iomad 4.5 : classe globale `iomad` et `\\core\\context\\company` ;
+- Iomad 5.1/5.2 : `local_iomad\\iomad` et `local_iomad\\custom_context\\context_company`.
+
+Le hook est déclenché **avant** l'ajout du nœud Iomad. Project N peut donc ajouter ses destinations globales via le hook sans empêcher l'ajout du tableau de bord Iomad, à condition de ne pas remplacer la vue primaire ni de supprimer les nœuds inconnus.
+
+Le point d'attention est l'identifiant du nœud Iomad `ioaddashboardnode`. Le thème doit le laisser disponible ou le présenter dans l'espace gestionnaire sans créer un doublon. L'entrée Iomad reste conditionnée par les capacités et le contexte d'entreprise construits par Iomad.
+
+## 20. JavaScript des tiroirs : différences de comportement et d'accessibilité
+
+### 20.1 Évolution Moodle 4.5 → 5.2 → 5.3
+
+Les modules AMD `theme_boost/drawers` gèrent :
+- ouverture/fermeture des tiroirs ;
+- synchronisation des attributs ARIA ;
+- gestion du focus ;
+- mémorisation des préférences utilisateur ;
+- fermeture lors de l'ouverture d'un autre tiroir ou d'un changement de taille d'écran ;
+- événements permettant aux autres composants de réagir.
+
+Différence importante :
+- Moodle 4.5 et Moodle/Iomad 5.2 utilisent une logique avec verrouillage du focus (`core/local/aria/focuslock`) dans certaines configurations ;
+- Moodle 5.3 fait évoluer cette logique. Le code indique explicitement que sur petit écran les tiroirs ne sont pas modaux et que le focus n'est pas piégé à l'intérieur. Le module surveille le focus et évite qu'un tiroir ouvert recouvre l'élément qui reçoit le focus.
+
+Le fichier `drawers.js` Moodle 5.3 est donc plus récent et plus long que celui de Moodle/Iomad 5.2. Le fichier Iomad 5.2 possède exactement le même blob que Moodle 5.2 pour ce module ; il ne faut pas comparer Iomad 5.2 directement au comportement Moodle 5.3 et conclure à une divergence propre à Iomad.
+
+### 20.2 Conséquences pour Project N
+
+- Ne pas réimplémenter le moteur de tiroirs Boost.
+- Ne pas supposer que le comportement du focus est identique sur toutes les versions.
+- Si Project N introduit un tiroir global, le construire sur les composants/contrats disponibles dans la version cible, ou prévoir une adaptation isolée par version.
+- Tester ouverture, fermeture, retour du focus, déplacement du focus hors du tiroir, redimensionnement, rotation mobile, clavier et TalkBack/NVDA.
+- Vérifier les cas où un tiroir est déjà ouvert au chargement : Moodle 5.3 documente précisément le risque de déplacer le focus sans interaction utilisateur.
+- Ne pas transformer arbitrairement un tiroir non modal mobile en dialogue modal : cela changerait le modèle d'interaction et le comportement d'accessibilité natif.
+
+Les attributs `aria-controls`, `aria-expanded`, les boutons de fermeture et les libellés accessibles sont gérés par les templates et modules Boost. Une surcharge Mustache doit conserver leur synchronisation et les attributs attendus par le JavaScript.
+
+## 21. Conséquence spécifique Iomad pour la navigation Project N
+
+L'ajout du tableau de bord entreprise après le hook primaire signifie que la navigation Project N doit être conçue comme une extension et une réorganisation visuelle, pas comme une liste exhaustive qui remplacerait les destinations natives.
+
+Règles :
+1. conserver les entrées primaires natives non explicitement remplacées ;
+2. conserver le nœud `ioaddashboardnode` et ses conditions d'affichage ;
+3. ne pas recalculer la liste des capacités Iomad dans le thème ;
+4. ne pas dupliquer les menus entreprise, boutique et menus personnalisés déjà traités par Iomad ;
+5. vérifier l'ordre visuel et la hiérarchie entre espace gestionnaire Project N et tableau de bord Iomad ;
+6. tester Moodle standard et Iomad séparément, car la vue primaire n'est pas identique dans les forks.
+
+## 22. Sources de code — navigation et tiroirs
+
+- [Iomad 4.5 — primary.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/classes/navigation/views/primary.php)
+- [Moodle 4.5 — primary.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/classes/navigation/views/primary.php)
+- [Iomad 5.1 — primary.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/lib/classes/navigation/views/primary.php)
+- [Iomad 5.2 — primary.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/navigation/views/primary.php)
+- [Moodle 5.2 — drawers.js](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/theme/boost/amd/src/drawers.js)
+- [Moodle 5.3 — drawers.js](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/amd/src/drawers.js)
+- [Iomad 5.2 — drawers.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/amd/src/drawers.js)
+- [Moodle 4.5 — drawer.js](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/theme/boost/amd/src/drawer.js)
+- [Moodle 5.3 — template drawer](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/theme/boost/templates/drawer.mustache)
