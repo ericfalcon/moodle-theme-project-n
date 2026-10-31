@@ -787,3 +787,145 @@ Cette tranche reste une analyse statique partielle des forks personnels. Elle n'
 - exécuter les tests clavier, NVDA/TalkBack, axe-core, zoom et reflow sur des installations réelles.
 
 Aucun résultat d'exécution ou de test utilisateur n'est revendiqué par cette mise à jour.
+
+
+## 39. Création et modification des activités — structure des formulaires
+
+Les formulaires de configuration restent construits avec Moodle Forms / QuickForm (definition(), addElement(), règles de validation et aides contextuelles). Les paramètres ne sont donc pas un simple ensemble de champs HTML que le thème pourrait réordonner librement sans risque.
+
+### Devoir (mod_assign)
+
+Les sections observées dans les quatre formulaires sont : général, disponibilité, paramètres de remise, remise en groupes et notifications.
+
+| Branche | Taille du fichier | Éléments addElement() | Aides addHelpButton() |
+|---|---:|---:|---:|
+| Moodle 4.5 | 18,7 Ko | 32 | 24 |
+| Moodle 5.3 | 30,2 Ko | 43 | 28 |
+| Iomad 4.5 | 18,7 Ko | 32 | 24 |
+| Iomad 5.2 | 25,3 Ko | 39 | 27 |
+
+Moodle 4.5 et Iomad 4.5 ont exactement le même blob pour ce formulaire. Les versions 5.x ont évolué ; les écarts de taille et de nombre d'éléments ne suffisent pas à établir la nature de chaque évolution ni une amélioration ergonomique.
+
+Le formulaire mobilise notamment des éditeurs et gestionnaires de fichiers. La remise de l'apprenant peut dépendre du type de remise activé (texte en ligne, fichiers ou plugins), des dates, des tentatives, des groupes et des notifications.
+
+### Test (mod_quiz)
+
+Les sections de formulaire observées couvrent : général, temps et dates, mise en page, comportement des questions, options de relecture, affichage, sécurité et feedback global.
+
+| Branche | Taille du fichier | Éléments addElement() | Aides addHelpButton() |
+|---|---:|---:|---:|
+| Moodle 4.5 | 32,0 Ko | 34 | 22 |
+| Moodle 5.3 | 33,7 Ko | 36 | 25 |
+| Iomad 4.5 | 32,0 Ko | 34 | 22 |
+| Iomad 5.2 | 32,8 Ko | 35 | 23 |
+
+Le formulaire expose des paramètres pédagogiques et des paramètres de sécurité/accès qui ne doivent pas être masqués par une création guidée : durée, dates, tentatives, méthode de notation, comportement des questions, relecture, mot de passe et restrictions d'accès notamment.
+
+### Décisions Project N
+
+1. Créer un parcours guidé en deux niveaux : choix de l'intention et configuration essentielle, puis accès explicite à tous les réglages natifs.
+2. Ne pas supprimer les champs, options, validations, règles conditionnelles ni aides Moodle.
+3. Ne pas réécrire les formulaires QuickForm dans le thème et ne pas injecter de formulaires parallèles.
+4. Si un regroupement visuel est souhaité, le réaliser seulement après vérification des groupes natifs, de l'ordre DOM, des dépendances JS, des erreurs et de la restauration des valeurs.
+5. Conserver un accès permanent et compréhensible aux paramètres avancés ; ne pas les rendre dépendants d'un survol ou d'un geste uniquement tactile.
+6. Ne pas interpréter le nombre de champs comme une mesure de complexité pédagogique : les types de remise, plugins de questions et réglages conditionnels modifient les besoins.
+
+## 40. Affichage apprenant — devoirs
+
+Le point d'entrée mod/assign/view.php est très mince : il vérifie la connexion, récupère le cours et le module, exige mod/assign:view, met à jour la consultation et les accès effectifs, puis délègue l'affichage à l'objet métier assign. Le rendu réel ne se trouve donc pas dans ce contrôleur ni dans l'ancien renderer.php (déprécié depuis Moodle 4.0).
+
+Conséquences :
+- ne pas reconstruire une page de devoir à partir du seul contrôleur ;
+- cartographier les classes output, templates et actions AMD réellement utilisées avant toute personnalisation ;
+- distinguer clairement consigne, disponibilité, état de remise, fichiers déposés, soumission définitive, statut de correction, note et feedback ;
+- ne jamais présenter un fichier encore en brouillon comme une remise finalisée ;
+- préserver les conditions d'accès, dates limites, tentatives, groupes et notifications.
+
+Le même fichier d'entrée view.php a le même blob dans Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Cette identité ne prouve pas que toutes les classes de rendu et dépendances du module sont identiques.
+
+## 41. Affichage apprenant — tests
+
+Le contrôleur du test prépare un objet de page, vérifie les capacités de consultation, tentative, prévisualisation et relecture, contrôle les règles d'accès, récupère les tentatives précédentes et une éventuelle tentative inachevée, calcule les notes et prépare le formulaire de contrôle préalable.
+
+Éléments métier à conserver impérativement dans l'interface :
+- nombre de tentatives et possibilité réelle d'en commencer/reprendre une ;
+- dates, durée, délai, restrictions d'accès et éventuelles conditions préalables ;
+- présence d'une tentative inachevée et action de reprise ;
+- note, feedback et informations de relecture selon les droits et réglages ;
+- distinction entre prévisualisation formateur et tentative apprenant ;
+- état d'accès refusé ou test indisponible, avec explication exploitable.
+
+Le rendu doit rester piloté par les capacités et règles d'accès natives. Le thème peut améliorer la hiérarchie visuelle et la lisibilité mobile, mais ne doit jamais afficher un bouton « commencer » lorsque le moteur d'accès refuse la tentative.
+
+Différences repérées dans les fichiers d'entrée :
+- Moodle 4.5 et Iomad 4.5 ont le même blob mod/quiz/view.php ;
+- Iomad 5.2 possède un fichier différent de Moodle 5.3, à analyser au niveau du diff avant d'attribuer cet écart à une adaptation Iomad.
+
+## 42. Affichage apprenant — forums, pages et H5P
+
+### Forums
+
+Le contrôleur du forum s'appuie sur des services internes (vaults, factories, capability manager), tient compte du type de forum, du mode d'affichage, des groupes, des discussions, des abonnements et du suivi de lecture. Il utilise des templates dédiés et des renderers spécialisés. Le type « forum unique » possède un traitement distinct des forums à discussions multiples.
+
+Pistes d'amélioration visuelle :
+- faciliter la lecture des fils longs sur petit écran ;
+- distinguer visuellement sujet, auteur, date, réponse et actions ;
+- rendre les actions répondre, s'abonner/se désabonner et suivre accessibles sans menus difficiles à atteindre ;
+- préserver les groupes, discussions privées, permissions, évaluations et notifications ;
+- éviter de remplacer le moteur de rendu ou de simplifier les modes de discussion sans tests fonctionnels.
+
+Le contrôleur mod/forum/view.php observé possède le même blob dans Moodle 4.5 et Moodle 5.3, ainsi que dans les branches Iomad 4.5 et 5.2 examinées.
+
+### Pages et ressources
+
+La page (mod_page) et la ressource fichier (mod_resource) doivent être traitées comme des contenus pédagogiques, non comme de simples cartes de liens. Le thème peut améliorer le conteneur, la largeur de lecture, les métadonnées et les actions, mais ne doit pas altérer le contenu, les filtres, les restrictions d'accès, les téléchargements, les paramètres d'ouverture ou les exigences de sécurité.
+
+Le fichier mod/page/view.php d'Iomad 5.2 a été consulté ; une comparaison exhaustive des contrôleurs, templates et rendus de page/ressource sur les quatre branches reste à effectuer avant de conclure à une identité de comportement.
+
+### H5P
+
+Le contrôleur mod/h5pactivity/view.php d'Iomad 5.2 a été repéré. La personnalisation doit distinguer le conteneur Moodle et le contenu interactif H5P lui-même. Project N peut améliorer le contexte, les consignes et les informations de suivi autour de l'activité, mais ne doit pas casser le rendu embarqué, les événements de complétion, les tentatives, les rapports ni les interactions clavier propres au contenu H5P.
+
+Le rendu et les contrôles d'accessibilité d'un contenu H5P dépendent aussi du type de contenu et de sa version : un audit du seul thème ou du seul conteneur n'est pas suffisant.
+
+## 43. Synthèse de conception et limites de cette tranche
+
+### Ce que Project N peut raisonnablement transformer
+
+- le regroupement visuel des informations de l'activité ;
+- la hiérarchie titre / consigne / disponibilité / action principale ;
+- la lisibilité et la largeur de lecture sur smartphone ;
+- la présentation des états (à faire, disponible, remis, en cours, corrigé, indisponible) à condition qu'ils proviennent de données natives fiables ;
+- la position et la taille des actions principales, sans supprimer les actions secondaires ;
+- l'accès aux réglages avancés du formateur, sans en changer la sémantique.
+
+### Ce que Project N doit laisser au moteur Moodle
+
+- contrôles d'accès, capacités, contextes et groupes ;
+- règles d'ouverture/fermeture et restrictions ;
+- gestion des tentatives, soumissions, notes et feedbacks ;
+- validation des formulaires et sauvegarde ;
+- rendu des questions, éditeurs, dépôts et contenus interactifs ;
+- suivi d'achèvement et événements pédagogiques.
+
+### Accessibilité à valider pour chaque parcours
+
+- ordre de lecture et de tabulation cohérent ;
+- titres et landmarks non redondants ;
+- labels, descriptions, erreurs et aides associés aux champs ;
+- état des contrôles communiqué sans dépendre uniquement de la couleur ;
+- actions principales accessibles au clavier et aux lecteurs d'écran ;
+- focus visible et restitué après dialogues, soumission et navigation ;
+- zones tactiles confortables, sans action uniquement au survol ;
+- reflow à 320 CSS px et zoom 200 % ;
+- test des contenus H5P et éditeurs séparément du shell du thème.
+
+### Limites
+
+Cette tranche est une analyse statique des contrôleurs et formulaires dans les forks personnels. Elle ne constitue pas un audit exhaustif des templates, classes output, modules AMD/ESM, plugins tiers, dépôts, types de questions ou contenus H5P. Aucun test runtime, axe-core, clavier, NVDA, TalkBack ou test sur smartphone réel n'a été exécuté.
+
+Les prochaines lectures ciblées doivent couvrir :
+- les classes output et templates de mod_assign et mod_quiz ;
+- les formulaires et rendus mod_forum, mod_page, mod_resource et mod_h5pactivity sur les quatre branches ;
+- les composants AMD/ESM et les dialogues de remise/tentative ;
+- les plugins de remise, types de questions et types de contenus H5P réellement utilisés dans les environnements clients.
