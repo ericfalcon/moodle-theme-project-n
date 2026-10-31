@@ -57,7 +57,7 @@ Points vérifiés dans les fichiers `UPGRADING.md` des branches Moodle `MOODLE_4
 - Moodle 5.2 : les templates `flat_navigation.mustache` et `nav-drawer.mustache` de Boost sont supprimés (MDL-87425) ; la navigation latérale de Boost passe désormais par les partiels de `drawers.mustache` ;
 - Moodle 5.3 : la police d'interface par défaut de Boost passe de la pile système à Noto Sans (MDL-88412), ce qui modifie le rendu des thèmes enfants qui s'appuyaient sur le repli système ;
 - Moodle 5.3 : le bloc `drawerheadercontent` du tiroir `theme_boost/drawer` est supprimé et remplacé par `drawercontrols` (MDL-89050) ;
-- Moodle 5.3 : les modes de couleur clair/sombre sont ajoutés (attribut `data-bs-theme` sur `html`) ; un thème enfant qui rend sa propre barre de navigation doit intégrer `theme_boost\\colour_mode::render_menu()` pour proposer le sélecteur natif (MDL-68037) ;
+- Moodle 5.3 : les modes de couleur clair/sombre sont ajoutés (attribut `data-bs-theme` sur `html`) ; un thème enfant qui rend sa propre barre de navigation doit intégrer `theme_boost\colour_mode::render_menu()` pour proposer le sélecteur natif (MDL-68037) ;
 - Moodle 5.3 : les variables `$dialogue-*` prennent les propriétés personnalisées du design system (MDL-89735), et le chargement direct des sous-modules Bootstrap est déprécié (MDL-88766). Pour les modules AMD, l'import public passe de `theme_boost/index` (jusqu'à 5.2) à `bootstrap` (à partir de 5.3) pour les composants Bootstrap concernés ;
 - Moodle 5.0 à 5.2 : suppression des variables `$activity-icon-*-filter`, dépréciation de `bs4-compat` (SCSS et module JS), suppression des styles `mod_chat` et `mod_survey` du thème (MDL-83725, MDL-80519, MDL-84450, MDL-82457).
 
