@@ -52,20 +52,28 @@ Références :
 ### 3.2 Risques de compatibilité identifiés
 
 Les versions de Moodle ne doivent pas être considérées comme un continuum sans rupture :
-- Moodle 5.1 introduit une évolution de l'héritage des thèmes et layouts ;
-- Moodle 5.2 retire notamment certains templates de navigation de Boost, dont `flat_navigation.mustache` et `nav-drawer.mustache` ;
-- Moodle 5.2 introduit aussi un mécanisme de surcharge des composants React, mais la résolution de ces composants ne retombe pas automatiquement sur le thème parent.
+Points vérifiés dans `public/theme/boost/UPGRADING.md` (branche `main` de Moodle) :
+- Moodle 5.1 : les layouts peuvent être hérités du grand-parent et des parents, le thème enfant restant prioritaire (MDL-79319) ;
+- Moodle 5.2 : les templates `flat_navigation.mustache` et `nav-drawer.mustache` de Boost sont supprimés (MDL-87425) ; la navigation latérale de Boost passe désormais par les partiels de `drawers.mustache` ;
+- Moodle 5.3 : la police d'interface par défaut de Boost passe de la pile système à Noto Sans (MDL-88412), ce qui modifie le rendu des thèmes enfants qui s'appuyaient sur le repli système ;
+- Moodle 5.3 : le bloc `drawerheadercontent` du tiroir `theme_boost/drawer` est supprimé et remplacé par `drawercontrols` (MDL-89050) ;
+- Moodle 5.3 : les modes de couleur sont ajoutés (`data-bs-theme` sur `html`, `render_menu()`) ; un thème enfant qui rend sa propre barre de navigation doit les prendre en compte (MDL-68037) ;
+- Moodle 5.3 : les variables `$dialogue-*` prennent les propriétés personnalisées du design system (MDL-89735), et le chargement direct des sous-modules Bootstrap est déprécié (MDL-88766) ;
+- Moodle 5.0 à 5.2 : suppression des variables `$activity-icon-*-filter`, dépréciation de `bs4-compat` (SCSS et module JS), suppression des styles `mod_chat` et `mod_survey` du thème (MDL-83725, MDL-80519, MDL-84450, MDL-82457).
+
+Non vérifié : la documentation React indique que Moodle 5.2 introduit un mécanisme de surcharge des composants React et que la résolution ne retombe pas automatiquement sur le thème parent. Cette affirmation n'a pas pu être confirmée (documentation moodledev.io inaccessible depuis la session) et doit être vérifiée avant d'être retenue.
 
 Conséquences :
 - ne pas fonder la navigation Project N sur une copie de `nav-drawer.mustache` ou `flat_navigation.mustache` ;
+- intégrer les changements 5.3 ci-dessus à l'inventaire de P1 (design system, typographie, navigation, modes de couleur) ;
 - inventorier les composants et templates sur chaque branche de version ciblée ;
 - éviter les surcharges de composants React tant qu'un besoin fonctionnel précis ne les justifie ;
-- si une surcharge React devient nécessaire, prévoir un test spécifique par version, car l'héritage du parent ne s'applique pas de la même manière ;
+- si une surcharge React devient nécessaire, prévoir un test spécifique par version, après vérification du comportement de repli (voir ci-dessus) ;
 - réaliser un prototype minimal sur Moodle 4.5 et une version 5.x récente avant de figer l'architecture.
 
 Références :
 - [Boost — UPGRADING.md](https://github.com/moodle/moodle/blob/main/public/theme/boost/UPGRADING.md)
-- [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming)
+- [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming) (à vérifier)
 
 ### 3.3 Architecture technique proposée
 
@@ -314,4 +322,4 @@ P0 ne sera terminé que lorsque :
 - [MoodleDocs — Creating a theme based on Boost](https://docs.moodle.org/dev/Creating_a_theme_based_on_boost)
 - [MoodleDocs — Moving your theme to use Boost as a parent](https://docs.moodle.org/dev/Moving_your_theme_to_use_boost_as_a_parent_theme)
 - [Boost upgrade notes](https://github.com/moodle/moodle/blob/main/public/theme/boost/UPGRADING.md)
-- [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming)
+- [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming) (à vérifier)
