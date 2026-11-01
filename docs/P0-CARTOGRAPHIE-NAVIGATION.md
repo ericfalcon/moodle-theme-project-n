@@ -1970,3 +1970,134 @@ Cette tranche approfondit le tableau de bord, l'aperçu des cours, la page de co
 Les sections antérieures 40 à 46 documentent déjà plusieurs activités (devoir, test, forum, page, fichier, H5P) et doivent être considérées comme un premier inventaire, pas comme une couverture exhaustive. Les sections 37 et 43 restent les principes de parcours et de séparation entre présentation et logique métier.
 
 **Nature des preuves :** analyse statique des fichiers Moodle 5.3 listés ci-dessus. Aucune installation, aucun parcours réel, aucun test axe-core, clavier, lecteur d'écran ou appareil mobile n'a été exécuté dans cette tranche.
+
+
+## 55. Espace apprenant Moodle natif — profil, préférences, notes, messagerie et calendrier
+
+**Périmètre de cette tranche :** Moodle `MOODLE_503_STABLE`. Analyse statique des contrôleurs principaux de profil, préférences, notes, messagerie, notifications et calendrier. Cette tranche complète la section 54 ; elle ne prétend pas couvrir toutes les pages de chaque activité ni tous les plugins de communication.
+
+### 55.1 Profil : page publique et modification du compte sont deux fonctions distinctes
+
+Moodle distingue au moins trois destinations :
+- `/user/profile.php?id=...` : consultation d'un profil public ;
+- `/user/edit.php?id=...` : modification des informations du compte, sous réserve des règles du plugin d'authentification ;
+- `/user/preferences.php?userid=...` : réglages personnels regroupés par catégories.
+
+La page de profil public s'appuie sur une page personnelle de type `MY_PAGE_PUBLIC`, avec régions de blocs et possibilité de personnalisation selon les capacités. Elle peut afficher le profil d'un autre utilisateur. La visibilité dépend de `core_user::can_view_profile()`, de la configuration de connexion obligatoire et des règles Moodle. Le contrôleur prévoit un rendu limité qui ne divulgue pas le nom de l'utilisateur lorsque le profil n'est pas consultable.
+
+La modification du profil ne se résume pas à un formulaire générique :
+- le plugin d'authentification détermine si le profil est modifiable et peut fournir une URL externe ;
+- l'utilisateur peut modifier son propre profil avec `moodle/user:editownprofile` ;
+- la modification d'un autre compte requiert `moodle/user:editprofile` dans le contexte utilisateur ;
+- les champs personnalisés, intérêts/tags, description avec éditeur et image de profil sont préparés par les API dédiées ;
+- certains comptes distants ou comptes invités suivent des traitements spécifiques.
+
+**Conséquence Project N :** conserver les champs, aides, erreurs, avertissements, règles de disponibilité et soumissions du formulaire Moodle. Ne pas fabriquer un formulaire de profil parallèle dans le thème. La page de consultation et la page de modification doivent rester clairement différenciées dans la navigation.
+
+### 55.2 Préférences : une page agrégée à partir de la navigation des réglages
+
+`/user/preferences.php` n'est pas un formulaire statique. Le contrôleur construit des groupes à partir des nœuds de `settingsnav`, puis rend un objet `preferences_groups`. Les catégories visibles dépendent donc des réglages réellement exposés à l'utilisateur et des plugins présents.
+
+La page vérifie notamment :
+- que l'utilisateur cible est réel ;
+- que l'utilisateur est connecté et n'est pas invité ;
+- les droits permettant de consulter ou modifier les préférences d'un autre utilisateur ;
+- les entrées disponibles dans la navigation des réglages.
+
+Le thème doit préserver la structure de groupes, les liens vers chaque réglage, les droits et l'extension par les plugins. Il ne doit pas figer une liste de préférences supposée exhaustive, ni masquer les réglages ajoutés par un plugin.
+
+### 55.3 Notes : rapport utilisateur dans le contexte d'un cours
+
+Le rapport utilisateur des notes est accessible via `/grade/report/user/index.php?id=...`. Il s'agit d'un rapport de notes de cours, pas d'une synthèse globale de toutes les formations.
+
+Le contrôleur :
+- charge le cours et impose la connexion à ce cours ;
+- exige `gradereport/user:view` dans le contexte du cours ;
+- distingue la consultation de ses propres notes, la consultation de toutes les notes et la consultation du rapport d'un autre utilisateur ;
+- tient compte de `moodle/grade:view`, `moodle/grade:viewall` et du paramètre de cours `showgrades` ;
+- mémorise certaines préférences de présentation du rapport ;
+- déclenche si nécessaire le recalcul des notes finales avant leur affichage.
+
+**Conséquence Project N :** le thème ne doit ni exposer un lien Notes lorsque les capacités ou le paramétrage du cours l'interdisent, ni interpréter lui-même les notes. Il doit conserver les distinctions entre note brute, note pondérée, note finale, élément masqué, catégorie et total, telles que préparées par le carnet de notes. La lisibilité mobile des tableaux et des informations de calcul constitue un point de contrôle spécifique ; une transformation en simples cartes ne doit pas faire perdre les relations hiérarchiques et les totaux.
+
+### 55.4 Messagerie : interface applicative et règles de communication Moodle
+
+La page `/message/index.php` :
+- exige une connexion et exclut les invités ;
+- respecte le réglage global `$CFG->messaging` ;
+- valide que l'utilisateur cible est réel ;
+- vérifie l'appartenance de l'utilisateur courant à une conversation ;
+- vérifie la possibilité d'envoyer un message à un utilisateur cible ;
+- délègue le rendu à `core_message\\helper::render_messaging_widget()`.
+
+La page est rendue dans le layout `mydashboard`. Il ne s'agit pas d'une page HTML traditionnelle dont le thème maîtriserait seul le contenu : le widget de messagerie porte l'essentiel de l'interface et de ses interactions.
+
+Le thème peut agir sur l'enveloppe, les marges, les largeurs, les titres et la cohérence de navigation. Il doit éviter de reconstruire les conversations, les contacts, les états de lecture ou les interactions asynchrones. Le rendu doit être vérifié avec les vues conversation, liste, absence de conversation et messagerie désactivée.
+
+### 55.5 Préférences de notification : ne pas les confondre avec les préférences générales
+
+`/message/notificationpreferences.php` utilise un renderer spécifique `core/message` et la méthode `render_user_notification_preferences()`. Les règles d'accès distinguent la modification de son propre profil de messagerie et la modification du profil d'un autre utilisateur, avec des capacités dédiées.
+
+Ces réglages concernent les canaux et modalités de notification exposés par Moodle et ses composants. Leur contenu peut dépendre des plugins de message installés et de leurs fournisseurs de notification.
+
+**Conséquence Project N :** ne pas fusionner cette page avec les préférences générales ni coder en dur les canaux disponibles. Préserver les états activé/désactivé, les modalités par canal, les libellés accessibles et les éventuelles descriptions d'aide. Tester les cas où un fournisseur est absent, désactivé ou indisponible.
+
+### 55.6 Calendrier : vues et contexte
+
+Le contrôleur `/calendar/view.php` distingue notamment les vues `day`, `month` et `upcoming`. Il accepte le contexte d'un cours ou d'une catégorie, et prépare l'objet `calendar_information` à partir du temps, du cours et de la catégorie.
+
+Le calendrier peut donc représenter :
+- les événements personnels ;
+- les événements de cours ;
+- les événements de groupe ;
+- les événements de catégorie ou du site, selon le contexte et les droits.
+
+Le contrôleur adapte la navigation selon le contexte : depuis un calendrier de cours, la navigation active peut rester celle du cours ; depuis une catégorie, le lien actif peut renvoyer à la catégorie. Le calendrier utilise le fuseau horaire et les fonctions de date Moodle ; les paramètres temporels et la navigation entre périodes ne doivent pas être recalculés dans le thème.
+
+La vue `upcoming` ne doit pas être assimilée à la vue mensuelle, ni le calendrier complet au bloc calendrier mensuel de la section 54. Le thème doit conserver les trois vues et leurs changements de période, les filtres/contexte disponibles, les liens vers les événements et les formulaires d'ajout ou de modification lorsque les capacités le permettent.
+
+### 55.7 Décisions de conception Project N
+
+1. Traiter profil public, édition du profil, préférences générales et préférences de notification comme quatre fonctions distinctes.
+2. S'appuyer sur les capacités et les API Moodle ; la visibilité d'un lien ne constitue jamais une autorisation.
+3. Conserver les groupes de préférences dynamiques et les réglages ajoutés par les plugins.
+4. Garder le rapport de notes dans son contexte de cours et préserver sa structure de données.
+5. Respecter le widget de messagerie Moodle et ses interactions ; ne pas créer une messagerie parallèle.
+6. Conserver les vues jour, mois et événements à venir du calendrier, ainsi que leur contexte cours/catégorie.
+7. Prévoir une navigation cohérente vers le profil, les préférences, les messages, les notifications, les notes et le calendrier sans transformer ces pages en un écran unique surchargé.
+
+### 55.8 Contrôles d'accessibilité et d'ergonomie à réaliser
+
+- Profil : ordre des titres, alternatives de l'image, libellés des champs personnalisés, restitution des erreurs et des champs obligatoires.
+- Préférences : navigation clavier entre groupes, association des libellés et contrôles, conservation du contexte après modification.
+- Notes : lecture des tableaux complexes au lecteur d'écran, identification des en-têtes, totaux, notes masquées et informations de calcul ; reflow sans perte d'association.
+- Messagerie : navigation clavier dans les conversations, annonce des nouveaux messages et changements d'état, gestion du focus lors du changement de conversation et des mises à jour asynchrones.
+- Notifications : compréhension des choix de canal et de leurs états sans dépendre uniquement de la couleur ou d'une icône.
+- Calendrier : accès clavier aux jours/événements, annonce de la date complète, distinction des événements par texte et non par couleur seule, navigation entre périodes et reflow mobile.
+- Toutes les pages : focus visible, zoom 200 %, largeur 320 CSS px, contrastes, cibles tactiles et absence de piège clavier.
+
+### 55.9 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/user/profile.php` | `3f5fc6a142abf9138139e0f410d8badb5fda6f3b` |
+| `public/user/edit.php` | `d3f6d80ea22527ad2776be7bc9e7310925c686be` |
+| `public/user/preferences.php` | `9abd5706b3668609bf9b615e2ed3664e55df8c22` |
+| `public/grade/report/user/index.php` | `9bae87674fce052f52d4e1a4a23adfbad58bda13` |
+| `public/message/index.php` | `5d9262e81f15519b96954bf423e0b0466590650b` |
+| `public/message/notificationpreferences.php` | `cc02b9c7c6ec408efa3e8776237c4b51d60f2fe5` |
+| `public/calendar/view.php` | `b167199f2a67c46a32bae16999df3b3b4f9c1411` |
+| `public/calendar/classes/local/event/data_access/event_vault.php` | `f7c513307a3dee93faffafe841779d4c6618e56d` |
+
+### 55.10 Limites et suite
+
+Cette tranche est une analyse statique des contrôleurs et classes indiqués sur Moodle 5.3. Elle ne valide ni le rendu effectif des composants, ni les droits dans une installation, ni l'accessibilité réelle.
+
+Restent à cartographier côté apprenant :
+- les pages de consultation des activités et leurs états (devoir, test, forum, leçon, atelier, feedback, sondage, SCORM, H5P, etc.), en distinguant les activités déjà inventoriées aux sections antérieures ;
+- les restrictions d'accès : affichage des conditions, disponibilité, dates, groupes, notes, achèvement et messages d'indisponibilité ;
+- le détail des notifications et événements déclenchés par les activités ;
+- les différences de code entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3 ;
+- les parcours runtime et contrôles d'accessibilité.
+
+**Nature des preuves :** analyse statique Moodle 5.3. Aucun test d'installation, de droits runtime, de parcours, axe-core, clavier, lecteur d'écran ou appareil mobile n'a été exécuté dans cette tranche.
