@@ -1814,3 +1814,159 @@ Project N peut réutiliser un langage visuel commun entre Moodle et Iomad, mais 
 | Accessibilité | Aucun résultat axe-core ou test manuel ne peut être déduit de cette cartographie statique. |
 
 **Conclusion :** l'intégration Iomad de Project N doit rester un adaptateur mince au service de la présentation, en s'appuyant sur les API et contrôles natifs. Le développement reste bloqué jusqu'à la clôture de la cartographie P0 des espaces apprenant, formateur, administration Moodle et administration Iomad.
+
+
+## 54. Espace apprenant Moodle natif — tableau de bord, cours et suivi
+
+**Périmètre de cette tranche :** Moodle `MOODLE_503_STABLE`, analyse statique des contrôleurs, blocs, classes output et templates. Cette section reprend les constats apprenant déjà présents aux sections 37, 40 à 43, 44.3, 45 et 52, les recentre sur Moodle standard et ajoute les mécanismes du tableau de bord et de l'aperçu des cours. Elle ne constitue pas encore une cartographie exhaustive de toutes les activités.
+
+### 54.1 Distinguer les pages personnelles Moodle
+
+Moodle expose plusieurs destinations qu'il ne faut pas confondre :
+
+| Destination | Entrée | Fonction |
+|---|---|---|
+| Tableau de bord personnel | `/my/index.php` | Page personnelle configurable, constituée de blocs ; l'utilisateur peut organiser les blocs selon ses droits et les réglages du site |
+| Vue « Mes cours » | `/my/courses.php` | Page dédiée à l'aperçu des cours, avec le bloc `block_myoverview` fixé dans la zone centrale ; la page verrouille les blocs |
+| Page d'accueil du site | `/` | Page du site, dont l'accès et le rôle dépendent du paramétrage Moodle |
+| Page de cours | `/course/view.php?id=...` | Accès au contenu pédagogique, aux sections et aux activités du cours |
+
+Le tableau de bord et « Mes cours » sont donc deux pages différentes, avec des layouts et des règles de personnalisation distincts. La page `/my/index.php` peut être désactivée ou redirigée selon la configuration de la page d'accueil ; `/my/courses.php` peut également être désactivée. Project N doit respecter ces réglages et les redirections natives, plutôt que supposer que chaque utilisateur dispose toujours des deux pages.
+
+### 54.2 Tableau de bord personnel : architecture par blocs
+
+Le contrôleur `public/my/index.php` :
+- exige une authentification, sauf traitement spécifique de l'invité ;
+- détermine le contexte utilisateur et les droits de gestion des blocs ;
+- récupère la page personnelle ou copie la page système par défaut ;
+- utilise le layout `mydashboard` et la région de blocs `content` ;
+- gère l'état d'édition et la réinitialisation de la page personnelle.
+
+Le tableau de bord n'est donc pas une page monolithique dont le thème pourrait fixer seul les contenus. Il s'appuie sur le système de pages et de blocs Moodle. La personnalisation doit préserver les régions, les possibilités de déplacement et les droits d'édition des blocs, ainsi que la distinction entre page système par défaut et page privée de l'utilisateur.
+
+### 54.3 « Mes cours » : bloc `block_myoverview`
+
+La page `public/my/courses.php` utilise le layout `mycourses`, ajoute la classe de page `page-mycourses`, verrouille les blocs et rend la région centrale. Le contenu principal est produit par `block_myoverview`, qui délègue à une classe output puis à des templates Mustache.
+
+La classe `block_myoverview\\output\\main` prend en charge des préférences utilisateur distinctes :
+- regroupement des cours (tous, en cours, à venir, passés, favoris, masqués, selon les options activées et les champs personnalisés) ;
+- tri ;
+- mode d'affichage ;
+- pagination ;
+- valeur de regroupement par champ personnalisé.
+
+Le bloc prévoit notamment :
+- une vue en cartes ;
+- une vue en liste ;
+- des sélecteurs de regroupement, recherche, tri et présentation ;
+- un menu d'actions sur les cours ;
+- une barre de progression lorsque la donnée est disponible ;
+- un état vide lorsque l'utilisateur n'a aucun cours à afficher.
+
+Les préférences sont stockées côté utilisateur. Le thème doit les respecter et ne pas créer un deuxième système de filtres, de favoris ou de mémorisation de présentation concurrent. Les données de progression sont préparées par le bloc : le thème ne doit pas les recalculer à partir des activités visibles.
+
+### 54.4 Accès récents et échéances
+
+Deux autres blocs peuvent compléter le parcours apprenant :
+- `block_recentlyaccessedcourses` : accès rapide aux cours récemment consultés ;
+- `block_timeline` : échéances et activités à venir ou en retard.
+
+Dans Moodle 5.3, le bloc Timeline monte directement un composant React `@moodle/lms/block_timeline/Timeline`. Il transmet notamment des préférences de filtre (tout, en retard, 7 jours, 30 jours, 3 mois, 6 mois), de tri (date ou cours) et de limite d'éléments. Le thème ne doit pas supposer que ce bloc repose sur un template Mustache classique ni remplacer son composant React par une liste construite indépendamment.
+
+Ces blocs restent des composants distincts : l'accès récent répond à « où reprendre ? », la timeline à « que dois-je faire et pour quand ? », et l'aperçu des cours à « quels cours suivre ? ». Leur présentation peut être harmonisée, mais leur fonction et leurs données ne doivent pas être fusionnées.
+
+### 54.5 Page de cours : source de vérité pédagogique
+
+Le contrôleur `public/course/view.php` confirme plusieurs principes :
+- l'accès au cours est contrôlé par `require_login($course)` et les capacités associées au contexte du cours ;
+- la visibilité d'une section et son accessibilité sont évaluées à partir des informations de cours et des restrictions ;
+- le format de cours est chargé dynamiquement avec `course_get_format()` ;
+- le layout est `course`, puis le type de page dépend du format ;
+- les capacités d'édition, de gestion d'activités, de visibilité et de déplacement sont déclarées selon les possibilités du format.
+
+La page de cours n'est donc pas une simple liste de sections que le thème peut reconstruire à sa convenance. Le format de cours est un plugin qui possède ses propres règles de présentation et de comportement. Le thème doit prendre en charge les formats activés sur le site, y compris les formats tiers, sans coder en dur une structure unique « sections + activités ».
+
+Le thème peut améliorer la hiérarchie visuelle des sections, l'identification des activités, les espacements, les états et les actions principales. Il doit conserver :
+- les URL et ancres des sections et activités ;
+- les états visibles/masqués et les restrictions de disponibilité ;
+- les capacités et commandes d'édition ;
+- les contrats DOM et JavaScript des formats de cours ;
+- les informations de complétion fournies par Moodle.
+
+### 54.6 Achèvement et progression
+
+Le cœur Moodle fournit un objet output `core_course\\output\\completion_status`, qui délègue les détails à `core_completion\\cm_completion_details` puis à `activity_completion`. Cela confirme que l'état d'achèvement d'une activité est contextualisé et préparé par le cœur, et qu'il ne doit pas être inféré de sa seule présence dans la page.
+
+Conséquences :
+1. Distinguer achèvement d'activité, achèvement de cours et progression pédagogique affichée.
+2. Ne pas assimiler une activité consultée à une activité achevée.
+3. Conserver les conditions automatiques, manuelles, les critères de note, de consultation, de durée ou les conditions combinées selon le paramétrage.
+4. Rendre l'état autrement que par une couleur ou une icône isolée ; fournir un libellé compréhensible.
+5. Ne pas présenter une progression calculée par le thème si Moodle ne fournit pas cette information.
+
+### 54.7 Calendrier et échéances
+
+Le bloc calendrier mensuel utilise l'API `core_calendar`, construit les informations du calendrier en fonction du contexte de page et rend un template du composant calendrier. Il active également le module AMD `core_calendar/popover`. La présentation du calendrier et de ses fenêtres contextuelles dépend donc de composants Moodle et de leur JavaScript.
+
+Le calendrier, la Timeline et les dates affichées dans les activités peuvent représenter des informations proches, mais ne sont pas interchangeables. Project N doit éviter les calculs de dates parallèles et conserver les fuseaux horaires, les événements de cours/groupe/utilisateur et les liens vers les activités sources.
+
+### 54.8 Décisions de conception pour Project N
+
+1. Préserver les pages natives et leurs règles de disponibilité : tableau de bord, Mes cours, page de cours et calendrier.
+2. Construire une hiérarchie de navigation cohérente entre ces destinations, sans supprimer les pages ni les préférences Moodle.
+3. Traiter l'aperçu des cours, les accès récents et la Timeline comme trois fonctions complémentaires.
+4. Harmoniser visuellement cartes, listes, badges d'état et progression sans modifier les règles métier ni recalculer les données.
+5. Préserver les préférences utilisateur de tri, regroupement, pagination et présentation.
+6. Ne pas imposer un format de cours unique ; le format actif reste maître de la structure des sections.
+7. Respecter les blocs configurables du tableau de bord personnel et le caractère verrouillé de la page Mes cours.
+8. Prévoir des états vides utiles et différenciés : aucun cours, aucun cours correspondant au filtre, aucune échéance, aucun accès récent.
+9. Sur smartphone, hiérarchiser les informations et actions sans masquer les dates, les restrictions, les consignes ni les états de complétion.
+
+### 54.9 Accessibilité et responsive — contrôles à mener
+
+- Vérifier les noms accessibles des contrôles de recherche, tri, regroupement et présentation.
+- Vérifier la restitution des changements de filtre et de pagination dans le bloc React Timeline.
+- Vérifier la sémantique des cartes de cours, liens, menus d'action et états de progression.
+- Vérifier l'accès clavier aux blocs déplaçables et aux commandes d'édition du tableau de bord.
+- Vérifier la hiérarchie des titres, les landmarks et l'absence de navigation redondante.
+- Vérifier les états de cours masqué, à venir, passé, favori et sans progression.
+- Vérifier le reflow à 320 CSS px, le zoom 200 %, les cibles tactiles et l'absence de défilement horizontal non maîtrisé.
+- Tester séparément les composants React et les interactions asynchrones.
+
+### 54.10 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/my/index.php` | `51063d56943703855982bb3829bde71a86ce0a90` |
+| `public/my/courses.php` | `7aa2dec2e679472eba9178af08763ae806e9993f` |
+| `public/blocks/myoverview/block_myoverview.php` | `a801f302cb2462292683ee62650abd54c9b8d499` |
+| `public/blocks/myoverview/classes/output/main.php` | `49638baa7c560ca41ddbdcda8419e8e7a94ba778` |
+| `public/blocks/myoverview/classes/output/renderer.php` | `f902390ab7493310dc8057e3c908ae8226510673` |
+| `public/blocks/myoverview/templates/main.mustache` | `a0950275614da11cab883f86f21c99556654fae8` |
+| `public/blocks/myoverview/templates/courses-view.mustache` | `c63f4ab63963b0b55ac00b038378b785e67a3111` |
+| `public/blocks/myoverview/templates/view-cards.mustache` | `b82bb74f12b4bf5cc21b32f08541dad4ab7a73b1` |
+| `public/blocks/myoverview/templates/view-list.mustache` | `4e8a021364910975a07e5c86f35718ee48bbcf69` |
+| `public/blocks/myoverview/templates/progress-bar.mustache` | `c3ec947ecc874164096d7432544f383b0cead6a3` |
+| `public/blocks/myoverview/templates/zero-state.mustache` | `7d221d58f4e64102364a3bac2445dbcec64ac8be` |
+| `public/blocks/timeline/block_timeline.php` | `510fb44cb4eadd269d3931a076fc49a62e3a5f46` |
+| `public/blocks/timeline/lib.php` | `4ff8079019000c52da5133376e3fec6011ad3cab` |
+| `public/blocks/recentlyaccessedcourses/classes/output/main.php` | `0534d17670e8d138e68711a9960e2326674031a8` |
+| `public/course/view.php` | `5e37e611053ba670eb0c72a8bd2b20197cf80395` |
+| `public/course/format/classes/base.php` | `18f4787123a6c110fd34838235e9b81ca6f9b2be` |
+| `public/course/classes/output/completion_status.php` | `fbe9117d00f0b5d3fc76e49c24c77db046404f13` |
+| `public/blocks/calendar_month/block_calendar_month.php` | `96350fd51195fa08a1ddd2ec6cd6aa5e47095fe0` |
+
+### 54.11 Limites et suite de la cartographie apprenant
+
+Cette tranche approfondit le tableau de bord, l'aperçu des cours, la page de cours, les formats, la complétion et les blocs d'accès/échéances. Elle ne couvre pas encore de façon exhaustive :
+- les pages de profil et préférences apprenant ;
+- les notes et le rapport utilisateur de notes ;
+- les notifications, messages et préférences de communication ;
+- les pages de consultation de chaque activité et leurs états particuliers ;
+- les restrictions d'accès et leur restitution complète ;
+- les vues calendrier jour/semaine/mois et leurs composants ;
+- les différences de code Moodle 4.5 / 5.0 / 5.1 / 5.2 / 5.3.
+
+Les sections antérieures 40 à 46 documentent déjà plusieurs activités (devoir, test, forum, page, fichier, H5P) et doivent être considérées comme un premier inventaire, pas comme une couverture exhaustive. Les sections 37 et 43 restent les principes de parcours et de séparation entre présentation et logique métier.
+
+**Nature des preuves :** analyse statique des fichiers Moodle 5.3 listés ci-dessus. Aucune installation, aucun parcours réel, aucun test axe-core, clavier, lecteur d'écran ou appareil mobile n'a été exécuté dans cette tranche.
