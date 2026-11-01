@@ -2101,3 +2101,102 @@ Restent à cartographier côté apprenant :
 - les parcours runtime et contrôles d'accessibilité.
 
 **Nature des preuves :** analyse statique Moodle 5.3. Aucun test d'installation, de droits runtime, de parcours, axe-core, clavier, lecteur d'écran ou appareil mobile n'a été exécuté dans cette tranche.
+
+
+## 56. Espace apprenant Moodle natif — consultation des activités et disponibilité conditionnelle
+
+**Périmètre :** Moodle `MOODLE_503_STABLE`. Cette tranche examine les points d'entrée de plusieurs activités et le moteur de disponibilité conditionnelle. Elle complète l'inventaire des sections 40 à 46 sans prétendre analyser l'intégralité des workflows internes de chaque module.
+
+### 56.1 Un point d'entrée commun, des expériences pédagogiques différentes
+
+Les contrôleurs d'activité partagent certains invariants : résolution du cours et du module, authentification dans le contexte du cours, vérification des capacités, initialisation de la page et délégation du rendu au module. En revanche, le contenu et le déroulement sont propres à chaque activité. Le thème ne doit donc pas chercher à imposer une page d'activité universelle.
+
+| Activité | Entrée examinée | Contrat de rendu / comportement constaté |
+|---|---|---|
+| Devoir | `mod/assign/view.php` | Résolution du cours et du module, `mod/assign:view`, mise à jour de l'accès effectif, puis délégation à l'objet `assign` et à sa méthode `view()`. La page peut présenter les consignes, l'état de remise et les actions disponibles selon l'utilisateur et la période. |
+| Test | `mod/quiz/view.php` | Utilise `quiz_settings`, `access_manager`, les tentatives et les objets output dédiés. Distingue notamment accès invité, utilisateur non inscrit, possibilité de tentative, prévisualisation et révision de ses tentatives. |
+| Forum | `mod/forum/view.php` | Construit la liste des discussions à partir des services/vaults du module ; prend en charge tri, pagination, recherche, groupes et modes d'affichage. Peut marquer les discussions comme lues selon le suivi et les réglages. |
+| Leçon | `mod/lesson/view.php` | Parcours séquentiel et conditionnel piloté par le module : pages, navigation, réponses, progression et page de fin. Le contrôleur gère aussi le temps et le traitement de fin. |
+| Atelier | `mod/workshop/view.php` | Affiche le plan utilisateur et la phase courante du processus d'atelier ; la phase et les actions dépendent du workflow d'évaluation par les pairs. Le module active son JavaScript dédié. |
+| Feedback | `mod/feedback/view.php` | Vérifie l'ouverture et la possibilité de soumettre ; distingue activité fermée/non ouverte et réponse déjà soumise. Utilise le renderer du module et les règles de complétion de feedback. |
+| SCORM | `mod/scorm/view.php` | Présente l'introduction, les tentatives et leur état, puis le lancement du paquet si disponible. Peut dépendre de JavaScript, d'une fenêtre popup et du runtime SCORM. |
+| H5P activité | `mod/h5pactivity/view.php` | Charge le paquet et les options de présentation via le manager, puis délègue la lecture à `core_h5p\\player`. Le suivi des tentatives et le rapport dépendent de l'activation du tracking et des droits. |
+
+Les exemples confirment que « consulter une activité » peut signifier lire une ressource, réaliser une tentative, participer à une discussion, suivre un parcours, remettre un travail ou effectuer une évaluation par les pairs. Les actions visibles et les états ne sont pas transposables d'un module à l'autre.
+
+### 56.2 États et actions : ne pas réduire une activité à son titre
+
+Pour chaque activité, Project N doit préserver les informations réellement préparées par le module :
+- consignes et description ;
+- dates d'ouverture, de fermeture et échéances ;
+- disponibilité et raisons d'indisponibilité ;
+- état de participation ou de tentative ;
+- état de remise, de correction ou de révision ;
+- nombre de tentatives et possibilité de réessai ;
+- note et feedback lorsque l'utilisateur est autorisé à les consulter ;
+- progression et achèvement ;
+- actions possibles à cet instant précis.
+
+Une carte d'activité dans une page de cours peut fournir un résumé, mais ne remplace pas la page de l'activité. Le thème ne doit pas dupliquer dans la carte des états métier approximatifs qui divergeraient de la page source.
+
+### 56.3 Disponibilité conditionnelle : moteur natif, arbre de conditions et restitution
+
+Le cœur `core_availability` expose une architecture générique pour la disponibilité des sections et modules. La classe `core_availability\\info` porte notamment le cours, la visibilité, la configuration de disponibilité et les groupes concernés. La classe `core_availability\\tree` représente l'arbre logique des conditions.
+
+La structure permet des combinaisons logiques (ET, OU et négations), avec des règles de restitution distinctes :
+- une activité peut être totalement masquée si la condition échoue ;
+- elle peut rester visible avec une information expliquant pourquoi elle n'est pas disponible ;
+- dans les groupes de conditions, certaines causes d'échec peuvent être affichées ou masquées selon la configuration.
+
+Les conditions peuvent porter sur plusieurs dimensions : dates, note obtenue, achèvement d'une autre activité, appartenance à un groupe ou à un groupement, profil utilisateur et extensions fournies par des plugins. La disponibilité réelle peut aussi dépendre de la visibilité du module, de l'inscription au cours et d'autres contrôles du module.
+
+**Point de vigilance :** disponibilité conditionnelle et autorisation d'accès ne sont pas synonymes. L'affichage d'une raison d'indisponibilité ne doit jamais permettre d'accéder à une ressource qui reste protégée côté serveur. Inversement, une activité masquée ne doit pas être réintroduite par une navigation ou une recherche indépendante du thème.
+
+### 56.4 Décisions de conception Project N
+
+1. Conserver les renderers, templates, formulaires et scripts propres à chaque module ; privilégier une harmonisation de l'enveloppe plutôt qu'une réécriture du contenu.
+2. Ne pas imposer un gabarit unique aux activités qui ont des workflows distincts.
+3. Préserver les messages d'accès, de disponibilité, de fermeture et de droits fournis par le module.
+4. Distinguer dans les vues de cours les états « masqué », « visible mais indisponible », « disponible », « commencé », « remis », « évalué » et « terminé » lorsque le module fournit ces états.
+5. Ne pas afficher de raison de restriction si Moodle ou le module ne la communique pas à l'utilisateur.
+6. Ne pas recalculer les conditions d'accès côté thème et ne jamais considérer une condition d'affichage comme un contrôle de sécurité.
+7. Concevoir les pages d'activité avec leurs besoins spécifiques : tableaux et filtres pour le forum, navigation séquentielle pour la leçon, lecteur intégré pour H5P/SCORM, formulaires de réponse pour feedback, interfaces de tentative pour test et devoir.
+8. Préserver les comportements JavaScript et les contrats DOM des modules ; vérifier particulièrement les activités utilisant un lecteur intégré, un popup ou des interactions asynchrones.
+
+### 56.5 Contrôles d'accessibilité à mener par famille d'activité
+
+- **Devoir / feedback :** libellés, aides, erreurs de formulaire, pièces jointes, dépôt de fichiers, confirmation de soumission et restitution des états.
+- **Test :** navigation entre questions, temps restant, avertissements, validation, sauvegarde, changement de page et annonces des états de tentative.
+- **Forum :** hiérarchie des discussions/réponses, pagination, filtres, suivi lu/non lu, menus d'action et notifications.
+- **Leçon :** ordre de lecture, alternatives aux interactions, compréhension des choix, navigation avant/arrière et restitution de la progression.
+- **Atelier :** identification de la phase, consignes d'évaluation, formulaires de notation et distinction des travaux à évaluer.
+- **SCORM / H5P :** clavier dans le contenu embarqué, focus à l'entrée/sortie, alternatives accessibles, zoom, comportement sans JavaScript et compatibilité avec les lecteurs d'écran. L'accessibilité du contenu auteur ne peut pas être garantie par le seul thème.
+- **Toutes les activités :** ne pas supprimer les messages d'état, maintenir le focus après une action, éviter les interactions dépendantes du survol, contrôler le reflow et les contrastes.
+
+### 56.6 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/mod/assign/view.php` | `830fec3a11c2128c3fb529f4415a87f9fc6ca868` |
+| `public/mod/quiz/view.php` | `9e3d7701701eeb0676e04e4ca1948ef1ed43d9ad` |
+| `public/mod/forum/view.php` | `8504bb2b08d05feab825caf8eee6183a8e259ec5` |
+| `public/mod/lesson/view.php` | `51add9ad2e7ea8007162c669683e6e6d59b8c2f7` |
+| `public/mod/workshop/view.php` | `074eacdf7dd5dd0774a07a5895a015e451a1f2a7` |
+| `public/mod/feedback/view.php` | `3fb2adbbbf88b97959b98eb45b47847077628716` |
+| `public/mod/scorm/view.php` | `2cb4563fe70b749dad2af31b1bcd0c7cd4360cff` |
+| `public/mod/h5pactivity/view.php` | `2976f8cfd93c1bb8b20bf7de695852e896c2ac9f` |
+| `public/availability/classes/info.php` | `8fa2ea0d7315fc507b358a1e557064618a37e4da` |
+| `public/availability/classes/tree.php` | `1280ef24330750838a20d4de1fa1aba15852114f` |
+
+### 56.7 Limites et suite de l'analyse
+
+Cette tranche porte sur les contrôleurs d'entrée et deux classes du moteur de disponibilité. Elle ne constitue pas une lecture exhaustive des renderers, templates, formulaires, services AJAX et scripts de chaque activité.
+
+Les prochaines analyses doivent approfondir :
+- les contrats de rendu de chaque module (Output API, renderers, templates, formulaires, AMD/JavaScript) ;
+- les conditions de disponibilité effectivement prises en charge par chaque type d'activité ;
+- les différences de comportement entre générations Moodle 4.5, 5.0, 5.1, 5.2 et 5.3 ;
+- les parcours de remise, tentative, participation et consultation de feedback ;
+- les mécanismes de fichiers et d'éditeurs intégrés aux activités.
+
+**Nature des preuves :** analyse statique Moodle 5.3 des fichiers listés. Aucun test runtime, test d'accès direct, test axe-core, clavier, lecteur d'écran ou test de contenu SCORM/H5P n'a été exécuté dans cette tranche.
