@@ -53,6 +53,19 @@ Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). I
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
+### Priorité de la cartographie restante
+
+La cartographie technique doit désormais privilégier **Moodle standard**. Les travaux déjà réalisés sur Iomad constituent une base suffisante pour suspendre l'approfondissement de son administration, sauf lorsqu'un écart Iomad conditionne directement un parcours Moodle ou une décision d'architecture.
+
+Ordre de priorité pour la suite de P0 :
+1. terminer la cartographie des parcours natifs apprenant et formateur dans Moodle ;
+2. approfondir les mécanismes Moodle qui structurent ces parcours : page de cours et édition, activités/ressources, évaluations et corrections, banque de questions, éditeurs, gestion des fichiers, formulaires, notifications et navigation contextuelle ;
+3. relever les contrats techniques à préserver (capabilities, formulaires, Output API, renderers, templates, AMD/JavaScript, événements et attributs DOM) et les différences entre Moodle 4.5 et les générations 5.x ;
+4. analyser ensuite les écarts Iomad strictement nécessaires, en comparant les mêmes générations Moodle ;
+5. maintenir distincts les constats issus de l'analyse statique et les validations qui nécessitent une installation, des scénarios runtime ou des tests d'accessibilité.
+
+Cette priorité ne réduit pas le périmètre Iomad du projet : elle remet simplement Moodle natif au centre de l'analyse, conformément à l'objectif d'un thème Moodle compatible Iomad.
+
 Livrables :
 - cartographie des parcours pertinents de Chamilo et Moodle : principes ergonomiques retenus, éléments écartés ;
 - parcours détaillés des trois espaces, avec priorités et tâches réalisables sur smartphone ;
