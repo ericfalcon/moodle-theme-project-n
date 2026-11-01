@@ -623,3 +623,92 @@ Le formulaire dynamique `company_license_form` distingue une licence autonome d'
 | Accessibilité des formulaires et interactions | Non testée |
 
 **Prochaine tranche :** lire les formulaires complets d'affectation cours/utilisateurs et de gestion des licences, puis les API métier de création de cours, d'inscription, de consommation de licences et de programmes. Il faudra ensuite comparer les fichiers équivalents entre les branches Iomad 4.5, 5.0, 5.1 et 5.2.
+
+
+## 12. Affectations cours/utilisateurs, licences et table des utilisateurs — approfondissement Iomad 5.2
+
+**Périmètre :** branche `IOMAD_502_STABLE`. Analyse statique des fichiers, sans exécution Moodle, test d'accessibilité ni comparaison interversions.
+
+### 12.1 Fichiers et empreintes vérifiés
+
+| Fichier | SHA |
+|---|---|
+| `public/blocks/iomad_company_admin/classes/forms/company_course_users_form.php` | `4d21101a2ce2f11042fe3249787656bd268522a2` |
+| `public/blocks/iomad_company_admin/classes/forms/company_users_course_form.php` | `6d17fdff2da46d65b8aecef8cffd1394c10d502f` |
+| `public/blocks/iomad_company_admin/classes/forms/company_license_users_form.php` | `b688ddcaf848ed6c5552259bd0bba72469a324c7` |
+| `public/blocks/iomad_company_admin/classes/forms/company_uploaduser_form3.php` | `24a336dc504fa00e277c2a088aeb5a5a27d32d81` |
+| `public/blocks/iomad_company_admin/classes/tables/editusers_table.php` | `e934760fb6cd77d3b44a09cd8ef687e16d6ea33e` |
+| `public/local/iomad/classes/company.php` | `73d2678b440c6c8806f703243e3d178144661b80` |
+| `public/local/iomad/classes/company_user.php` | `f4ef072b9179007dc7ee773166b339ed652039c6` |
+
+Le fichier `company_license.php` n'existe pas à l'emplacement testé dans cette branche. Les opérations de licences sont notamment portées par `local_iomad\\company`, `local_iomad\\company_user`, les formulaires et les tables associées.
+
+### 12.2 Affectation en lot de cours aux utilisateurs
+
+Le formulaire `company_course_users_form` construit deux sélecteurs : utilisateurs déjà inscrits et utilisateurs potentiels. Il reçoit l'entreprise, le département et la sélection de cours. Le département par défaut est déterminé à partir du niveau hiérarchique de l'utilisateur courant, sauf capacité `edit_all_departments`.
+
+Les opérations d'inscription/désinscription vérifient le jeton de session (`confirm_sesskey()`). Pour les lots, le formulaire crée des tâches ad hoc `enroluserstask` et `unenroluserstask`. Pour les opérations unitaires, il revalide l'appartenance avec `company::check_valid_user()`, puis délègue à `company_user::enrol()` ou `company_user::unenrol()`. La date d'échéance est transmise au traitement.
+
+**Conséquence Project N :** préserver les sélecteurs, leurs états, les confirmations et les retours d'opération, ainsi que la distinction entre traitement immédiat et tâche différée. Ne pas remplacer ces actions par une bascule visuelle optimiste.
+
+### 12.3 Affectation individuelle des cours
+
+Le formulaire `company_users_course_form` reprend les deux sélecteurs pour un utilisateur déterminé. Il vérifie le jeton de session et délègue les inscriptions/désinscriptions à `company_user::enrol()` et `company_user::unenrol()`. Le contrôleur associé contrôle en amont la validité du département et l'appartenance de l'utilisateur à l'entreprise.
+
+### 12.4 Affectation des licences aux utilisateurs
+
+Le formulaire `company_license_users_form` utilise les sélecteurs `potential_license` et `current_license`. Il prend en compte le département, la licence sélectionnée, les cours inclus et le caractère éventuel de programme.
+
+Constats statiques :
+- contrôle de la disponibilité temporelle de la licence et affichage des volumes alloués/utilisés ;
+- validation de la date d'échéance par rapport aux dates de début et de fin de licence ;
+- refus d'une allocation qui dépasserait le quota disponible ;
+- nouvelle vérification de l'appartenance de chaque utilisateur avec `company::check_valid_user()` ;
+- enregistrement des associations utilisateur/licence et déclenchement de l'événement `user_license_assigned` ;
+- parcours distincts de retrait, avec événements associés ;
+- disponibilité des actions conditionnée notamment par `instant` et le type de licence ;
+- décompte et affichage adaptés pour les programmes et leurs cours.
+
+Le code observé contient des requêtes SQL directes sur les tables de licences et d'associations Iomad. Un thème ne doit ni recopier ces requêtes ni se substituer aux formulaires/API métier : noms de tables et règles de consommation sont sensibles aux versions.
+
+### 12.5 API métier : inscriptions et licences
+
+La classe `local_iomad\\company_user` expose notamment `create()`, `edit()`, `delete()`, `suspend()`, `unsuspend()`, `enrol()`, `unenrol()`, `auto_allocate_license()` et des méthodes de gestion des groupes et rattachements. Sa méthode `create()` combine les valeurs par défaut de l'entreprise, la création du compte Moodle, les règles de nom d'utilisateur, les conflits d'identité, les mécanismes de mot de passe temporaire et le rattachement à l'entreprise. Le compte Moodle et son rattachement Iomad restent deux niveaux distincts.
+
+La classe `local_iomad\\company` expose notamment `create_course()`, `assign_course_to_department()`, `update_license_usage()`, `license_ok_to_use()`, `get_recursive_departments_licenses()`, `get_course_licenses()`, `get_courses_by_license()`, `create_license()` et `allocate_license()`. La gestion des licences est répartie entre la classe entreprise, la classe utilisateur, les formulaires et les tables d'association. Cette lecture identifie les points d'entrée, mais ne constitue pas une spécification exhaustive des transitions de statut et de la comptabilité de consommation.
+
+### 12.6 Liste des utilisateurs et actions disponibles
+
+La table `editusers_table` adapte les colonnes et les actions selon les capacités Iomad et le contexte de l'entreprise. Les colonnes examinées couvrent notamment nom, département, type de gestionnaire, adresse électronique, dernier accès et entreprise.
+
+Points importants :
+- les statuts suspendus du compte Moodle et du rattachement entreprise sont traités séparément dans les rendus ;
+- les fonctions gestionnaire, gestionnaire de département, éducateur et responsable des rapports sont rendues selon les capacités et les paramètres Iomad ;
+- édition, suppression, suspension/réactivation, changement de mot de passe, inscriptions et licences sont des actions distinctes ;
+- certaines actions sur les gestionnaires sont conditionnées par la capacité `editmanagers` ;
+- les actions d'inscription et de licence dépendent respectivement de `company_course_users` et `company_license_users`, ou de la capacité plus large `editallusers` ;
+- suspension et suppression utilisent des attributs `data-action` pour des interactions JavaScript de confirmation.
+
+Cette table matérialise donc des opérations Iomad conditionnées par le rôle métier, le périmètre entreprise et les capacités, et non une simple liste de comptes Moodle.
+
+### 12.7 Import CSV : troisième étape
+
+Le formulaire `company_uploaduser_form3` ne contient que le bouton de lancement du téléversement du nouveau fichier. Il ne porte pas la logique d'import, qui reste dans le contrôleur et les étapes précédentes. SHA vérifié : `24a336dc504fa00e277c2a088aeb5a5a27d32d81`.
+
+### 12.8 Limites et suites nécessaires
+
+| Sujet | État après cette lecture |
+|---|---|
+| Affectation en lot de cours | Sélecteurs, contrôles de session, tâches différées et délégations métier identifiés |
+| Affectation individuelle de cours | Contrôles d'appartenance et API d'inscription identifiés |
+| Allocation/retrait de licences | Quotas, dates, événements et sélecteurs repérés ; transitions métier à spécifier complètement |
+| API de création et gestion de compte | Points d'entrée et règles principales de création identifiés |
+| API de création/consommation des licences | Méthodes identifiées ; lecture détaillée de chaque méthode encore nécessaire |
+| Table des utilisateurs et actions | Colonnes, capacités et actions conditionnelles identifiées |
+| Import CSV, étape 3 | SHA et rôle limité du formulaire vérifiés |
+| Contrôleur complet `editusers.php` et traitement de chaque action | À approfondir |
+| Comparaison Iomad 4.5/5.0/5.1/5.2 | À effectuer |
+| Accessibilité clavier/lecteur d'écran et tests axe-core | Non testées |
+| Tests runtime et cloisonnement multi-entreprise | Non effectués |
+
+**Prochaine tranche :** terminer la lecture des méthodes métier de licences et des actions de `editusers.php`, puis comparer les fichiers structurants avec Iomad 4.5, 5.0 et 5.1. Les conclusions de cette section restent limitées à Iomad 5.2 et à l'analyse statique.
