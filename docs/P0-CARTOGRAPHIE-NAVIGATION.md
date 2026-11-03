@@ -2381,3 +2381,106 @@ Le formulaire `mod_feedback\complete_form` conserve des paramètres de progressi
 Cette tranche est une analyse statique ciblée. Elle n'a pas exécuté les activités, leurs contenus embarqués, les formulaires ni les scripts en navigateur. Elle ne démontre donc ni le bon fonctionnement d'une surcharge de thème, ni la compatibilité runtime, ni l'accessibilité effective.
 
 **Suite immédiate :** cartographier les mécanismes transversaux de fichiers et d'éditeurs utilisés dans les activités (File API, dépôts, zones de dépôt, gestionnaires de fichiers, éditeurs, pièces jointes, fichiers intégrés et contextes de fichiers), puis comparer les contrats et changements entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3.
+
+
+## 59. Mécanismes transversaux — fichiers, dépôts, gestionnaires et éditeurs
+
+**Périmètre :** Moodle `MOODLE_503_STABLE` (Moodle 5.3), analyse statique ciblée de la File API, des formulaires Moodle, du sélecteur de fichiers, des dépôts et de l'éditeur TinyMCE. Cette section établit les contrats à préserver dans les activités et les formulaires ; elle ne décrit pas toutes les implémentations de plugins de dépôt ou d'éditeur.
+
+### 59.1 File API : identité d'un fichier et séparation des espaces
+
+Le stockage Moodle ne se résume pas à un chemin physique. Les fichiers sont identifiés par leur contexte, composant, zone de fichiers (`filearea`), identifiant d'élément (`itemid`), chemin interne et nom. La classe `file_storage` gère le stockage et les objets `stored_file` représentent les fichiers stockés ; la documentation du code distingue explicitement l'accès aux fichiers propres à une zone de celui des fichiers d'autres composants, qui passe par les mécanismes de navigation et d'autorisation prévus.
+
+Les zones de brouillon (`draft`) jouent un rôle intermédiaire lors de l'édition d'un formulaire. Le fichier n'est pas nécessairement déjà enregistré dans sa zone métier définitive : l'enregistrement du formulaire et les fonctions de préparation/transfert assurent la transition entre brouillon et zone cible. Les identifiants de contexte et d'élément ne sont donc pas interchangeables.
+
+**Implication pour le thème :** ne jamais construire des URL de fichiers, déplacer des fichiers ou déduire leur visibilité à partir de leur seul nom ou chemin. Le thème présente les liens et contrôles produits par Moodle ; il ne remplace ni les fonctions de stockage, ni le contrôle d'accès, ni la gestion des brouillons.
+
+### 59.2 Formulaires : éditeur, filemanager et filepicker sont trois contrats distincts
+
+Les éléments QuickForm Moodle `editor`, `filemanager` et `filepicker` ont des classes et des templates propres :
+
+- `editor` : champ de contenu avec format, éditeur préféré et options de fichiers intégrés ; il peut fonctionner avec Tiny ou une zone de texte selon la configuration.
+- `filemanager` : gestion d'un ensemble de fichiers, avec options de contexte, nombre et taille maximale, types acceptés et contenu initial.
+- `filepicker` : sélection d'un fichier pour un usage ponctuel, avec un contexte et des options de dépôts.
+
+Leurs templates (`element-editor`, `element-filemanager`, `element-filepicker`) s'insèrent dans le template générique des éléments de formulaire. Le thème doit donc préserver le label, les aides, les erreurs, les indications obligatoires, les attributs et les identifiants qui relient l'élément à son comportement JavaScript.
+
+### 59.3 Dépôts et sélecteur de fichiers
+
+Le sélecteur est une interface commune aux dépôts Moodle : dépôt du serveur, fichiers récents, fichiers personnels, fichiers de cours et plugins externes selon les dépôts activés et les droits. Le script `repository/filepicker.js` gère la navigation et l'affichage des fichiers ; les requêtes passent notamment par `filepicker.php` et `repository_ajax.php`. Le contexte, l'élément de brouillon, l'environnement d'ouverture et l'identifiant du dépôt font partie des paramètres techniques.
+
+Les dépôts sont des plugins : les fonctionnalités et les vues proposées varient selon les instances configurées (par exemple stockage local ou dépôts distants). Il ne faut pas supposer que la liste des dépôts, les actions ou les métadonnées sont fixes. Les opérations AJAX sont distinctes de la page qui héberge le formulaire.
+
+**Implication pour le thème :** le sélecteur doit rester une interface Moodle fonctionnelle, avec ses vues, navigation, sélection, prévisualisation, dépôt et retour au formulaire. Une adaptation de style peut viser les panneaux, listes, boutons, états actifs et responsive, mais ne doit pas remplacer la logique de sélection ni supposer un fournisseur particulier. Tester plusieurs dépôts et plusieurs types de fichiers.
+
+### 59.4 Dépôt et glisser-déposer
+
+Le script `lib/form/dndupload.js` initialise une zone de dépôt et transmet notamment les options de contexte, identifiant de brouillon, types acceptés, nombre maximal de fichiers et taille maximale. Le glisser-déposer est un raccourci d'interaction, pas le seul moyen d'ajouter un fichier : l'interface doit conserver une action explicite de sélection et un fonctionnement utilisable au clavier et sur écran tactile.
+
+Les scripts de gestionnaire de fichiers et de sélecteur ont leurs propres événements et états. Masquer visuellement la zone de dépôt, déplacer son bouton ou supprimer son conteneur peut interrompre l'initialisation ou les retours de progression.
+
+### 59.5 Éditeur TinyMCE : configuration par contexte et intégration au thème
+
+Dans Moodle 5.3, Tiny est implémenté par `editor_tiny\editor` et son gestionnaire de plugins. La configuration dépend notamment du contexte, des options du champ, des options du sélecteur de fichiers et des plugins activés. L'éditeur récupère également la feuille de style du thème via `$PAGE->theme->editor_css_url()`. Le JavaScript principal lit le mode de couleur Bootstrap depuis l'attribut `data-bs-theme` du document ; l'éditeur adapte ainsi son apparence au mode clair/sombre sans que cela soit une simple surcharge CSS globale.
+
+Le module d'upload de Tiny utilise le sélecteur de fichiers et un mécanisme d'envoi asynchrone ; il gère les notifications de début/fin et les erreurs d'envoi. Les plugins Tiny (lien, média, image, H5P, équation, accessibilité, etc.) peuvent ajouter leurs propres commandes, fenêtres et interactions.
+
+**Implication pour le thème :** conserver l'URL de CSS éditeur, les options du contexte et l'initialisation JavaScript. Ne pas imposer à Tiny une palette ou des règles qui contredisent le mode de couleur, les plugins ou les contenus intégrés. Les styles de contenu édité et les styles de l'interface de l'éditeur doivent être traités séparément. Le thème ne doit pas dépendre d'un seul plugin Tiny activé.
+
+### 59.6 Atto et autres éditeurs : ne pas figer l'implémentation
+
+Le formulaire Moodle choisit l'éditeur selon la configuration et les préférences disponibles ; le thème ne doit pas présumer que Tiny est toujours le seul éditeur actif. Les options de compatibilité, les zones de texte simples et les éditeurs alternatifs doivent continuer à fonctionner. La présente tranche approfondit Tiny car c'est l'éditeur moderne identifié dans Moodle 5.3, mais ne démontre pas la compatibilité visuelle de chaque éditeur alternatif.
+
+### 59.7 Contrats de présentation à préserver
+
+1. Les identifiants, attributs et conteneurs utilisés par les modules AMD/YUI sont des contrats fonctionnels ; ne pas les renommer ou les déplacer sans vérification.
+2. Un fichier en brouillon n'est pas encore nécessairement un fichier métier enregistré ; ne pas afficher un lien définitif avant la finalisation du formulaire.
+3. Les limites de taille, types acceptés, permissions et options de dépôt sont calculées côté Moodle et peuvent varier selon le contexte.
+4. Les messages de progression, d'erreur, de remplacement, de suppression et de sélection font partie du parcours utilisateur.
+5. Le sélecteur doit être utilisable au clavier, avec lecteur d'écran, au toucher et sans glisser-déposer.
+6. Les éditeurs peuvent être initialisés dans des formulaires chargés dynamiquement ; le DOM peut être modifié après le chargement initial.
+7. Les contenus intégrés (images, médias, H5P, liens) ont leurs propres règles d'affichage et ne doivent pas hériter aveuglément des styles d'interface.
+
+### 59.8 Scénarios de vérification pour le prototype
+
+- Éditeur Tiny avec texte seul, image déposée, image choisie dans un dépôt, lien, média, équation et plugin H5P si activé.
+- Zone de texte simple ou éditeur alternatif selon la configuration.
+- Filepicker ponctuel et filemanager multi-fichiers.
+- Dépôts locaux et distants effectivement configurés, avec droits différents.
+- Fichiers autorisés, refusés, trop volumineux, renommés, remplacés et supprimés.
+- Brouillon abandonné, formulaire soumis, formulaire invalide et retour après erreur.
+- Glisser-déposer, bouton de sélection, navigation clavier et usage tactile.
+- Formulaire chargé dynamiquement, fenêtre modale, mode sombre et zoom.
+- Vérifier qu'aucun lien de fichier ne contourne les contrôles d'accès Moodle.
+
+### 59.9 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/lib/form/editor.php` | `6b4b40b5357132f3c5640e24319730e86637f3e6` |
+| `public/lib/form/filemanager.php` | `a7b31c7c0afc5d6dde1c7333365e2eb3bbaefaed` |
+| `public/lib/form/filepicker.php` | `c86a29b55c352c6ab9b4e7c9c9b5e6e19ea34f44` |
+| `public/lib/form/dndupload.js` | `edf2b8c398f06c9a2f15115e4aa7405fd95f1b18` |
+| `public/lib/form/templates/element-editor.mustache` | `6f02ca05f26815521566d32a72298f7edae8f8cf` |
+| `public/lib/form/templates/element-filemanager.mustache` | `425b7b8737937a054d182dedc840183da2aa30de` |
+| `public/lib/form/templates/element-filepicker.mustache` | `7c4e99b06c0ab7d73c8feef193b6dd5a1933e5d4` |
+| `public/repository/filepicker.js` | `3e6879533d595e6d754cb8f602fd2f687f026193` |
+| `public/repository/filepicker.php` | `fcdb2ab9182b03a4e784691f34dcf0934ef88d98` |
+| `public/repository/draftfiles_ajax.php` | `65c4fea95634b18880349f1cb3c4e079762e8216` |
+| `public/repository/draftfiles_manager.php` | `99019a7df2f067ca9288ec32936a69d83f76909` |
+| `public/repository/repository_ajax.php` | `37c40264b5166b53d2ac356317bf0791e6f10760` |
+| `public/repository/lib.php` | `60ec0d301d871a4699032024a10a04ee59b19a6c` |
+| `public/lib/editor/tiny/classes/editor.php` | `7e06fb0381722ee6d2a782e5dbfc6500d78a54c3` |
+| `public/lib/editor/tiny/classes/manager.php` | `29d29e25cc48e9a448f3997f7214144a126aa4c1` |
+| `public/lib/editor/tiny/amd/src/editor.js` | `3f59087a3cf28d97461c179e1df930d3f0abe92b` |
+| `public/lib/editor/tiny/amd/src/uploader.js` | `4f11d80bb3ee40101f9d4f48c407027413a674db` |
+| `public/lib/editor/tiny/plugins/h5p/amd/src/plugin.js` | `ea055cf60e628fd8ce25ec800657b451356289c7` |
+| `public/lib/filelib.php` | `679e4bcb4231e71c6362ca465b5906176409eac3` |
+| `public/lib/filestorage/file_storage.php` | `5e7b06e64ad319a2c6c9d224959d38074689f9e2` |
+| `public/lib/filestorage/stored_file.php` | `9702fbcae3ac4f27ef9c9408ffbc29e7cdde40cb` |
+
+### 59.10 Limites et suite
+
+Cette tranche repose sur l'analyse statique de Moodle 5.3. Elle ne teste pas les dépôts réellement configurés, les éditeurs en navigateur, les droits sur des fichiers réels, ni les interactions clavier et lecteur d'écran. Elle ne démontre pas non plus la compatibilité des éventuelles surcharges de thème.
+
+**Suite :** comparer ces contrats et ceux des activités entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3, en distinguant les changements de version du socle Moodle des adaptations IOMAD. Ensuite, poursuivre la cartographie des autres mécanismes transversaux du parcours apprenant avant de passer à l'espace formateur.
