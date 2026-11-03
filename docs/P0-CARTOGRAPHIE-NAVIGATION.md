@@ -2601,3 +2601,45 @@ Cette comparaison repose sur les fichiers listés et leurs empreintes, complét�
 - 4.5 `mod/feedback/classes/complete_form.php` : `36be27a70f9e2c16eb4ebd47e32f053ac2a9fe7f`
 - 5.3 `public/mod/feedback/classes/complete_form.php` : `eae37ffd03ecd4ce2c786961407100978e920be8`
 - Barre d’action et résumé : SHA identiques entre les deux branches (voir fichiers correspondants).
+
+
+## 62. Comparaison sémantique Moodle 4.5–5.3 — activité SCORM
+
+**Périmètre et méthode.** Comparaison des contrôleurs `mod/scorm/view.php` et `player.php`, ainsi que de `locallib.php`, entre `MOODLE_405_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Analyse statique des différences réelles ; aucune exécution de paquet SCORM ni validation runtime n’a été effectuée.
+
+### Page d’accès et lancement (`view.php`)
+
+- Les deux versions acceptent l’identifiant du module (`id`) ou celui de l’instance (`a`), vérifient les enregistrements associés, imposent la connexion au cours et préparent les données nécessaires au lecteur.
+- Le lancement automatique lié à `skipview` reste conditionné par la configuration, la capacité `mod/scorm:skipview`, l’absence de capacité de consultation des rapports et l’existence éventuelle de traces antérieures.
+- Changement significatif en 5.3 : lorsque la navigation linéaire du cours est activée, l’URL de retour du lecteur popup est la page de l’activité SCORM elle-même, avec `preventskip=1`. Cela évite de relancer automatiquement le lecteur à sa fermeture et permet de poursuivre vers l’activité suivante.
+- Sans navigation linéaire, Moodle conserve les règles antérieures liées au format de cours, notamment le format `singleactivity` et le retour à la section.
+
+### Lecteur et sortie (`player.php`)
+
+- Le lecteur conserve la validation du SCO, de l’organisation, du mode et du numéro de tentative, puis vérifie la connexion, la visibilité et la disponibilité de l’activité.
+- En 5.3, Moodle désactive explicitement le pied de page de navigation de la page du lecteur (`set_show_navigation_footer(false)`). Le lecteur SCORM garde ainsi son propre dispositif de navigation et de sortie.
+- La logique de sortie est remaniée : elle prend en compte la navigation linéaire, le format du cours et l’option d’affichage des sections (`coursedisplay`). En navigation linéaire, la sortie revient à la page de l’activité avec `preventskip=1`. Sinon, Moodle distingue notamment le cours en affichage multipage (retour à la section avec paramètre `sr`) et l’affichage sur une seule page (retour à l’ancre de section).
+- Le mécanisme de keepalive en cas de perte réseau évolue également : l’URL de redirection est explicitée et le nom de chaîne varie selon l’activation du service web mobile.
+
+### Bibliothèque SCORM (`locallib.php`)
+
+- Le fichier conserve le même nombre de lignes entre les deux branches et les différences textuelles ciblées identifient ici le remplacement de la classe utilitaire `sr-only` par `visually-hidden` pour le texte signalant l’ouverture dans une nouvelle fenêtre.
+- Les fonctions de lancement, de récupération de la table des matières, de gestion des tentatives et de suivi ne doivent pas être remplacées ou recalculées par le thème. Le suivi repose sur le runtime SCORM et les données de tentatives/SCO.
+
+### Conséquences pour Project N
+
+1. Traiter le lecteur SCORM comme une interface applicative autonome, et non comme une simple page de cours à réorganiser. Préserver ses dimensions, son mode popup/embedded, ses scripts, ses fenêtres et ses contrats de communication.
+2. Ne pas intercepter ou réécrire les sorties du lecteur : elles dépendent de la navigation linéaire, du format de cours, du mode d’affichage et des règles `skipview`.
+3. Ne pas ajouter un second pied de page de navigation au lecteur ; Moodle le désactive explicitement en 5.3.
+4. Conserver les états et informations de tentative, SCO, organisation et suivi produits par Moodle. Le thème peut améliorer l’enveloppe de la page d’accès, mais ne doit pas simuler l’achèvement SCORM.
+5. Prendre en compte les classes utilitaires d’accessibilité qui évoluent (`sr-only` vers `visually-hidden`) et vérifier le rendu sur chaque version cible.
+
+**Limites.** L’analyse ne couvre pas l’exécution de contenus SCORM 1.2/2004, les comportements des API JavaScript du paquet, les fenêtres popup selon les navigateurs, ni les tests de reprise après perte réseau. Ces aspects nécessitent des paquets de test et des essais runtime sur les versions réellement supportées.
+
+**Empreintes des fichiers comparés.**
+- 4.5 `mod/scorm/view.php` : `61e655cb7771dcc5e5e214295a5355fbc58e76cb`
+- 5.3 `public/mod/scorm/view.php` : `2cb4563fe70b749dad2af31b1bcd0c7cd4360cff`
+- 4.5 `mod/scorm/player.php` : `28b5fe66056b1d4a2b5e65485eb2f3c1c2c6f3f4`
+- 5.3 `public/mod/scorm/player.php` : `080be1607bc8a0dc1f7eba128a371e7df9da4fee`
+- 4.5 `mod/scorm/locallib.php` : `1c1149e1ceee53e2c0a8e406913978ceb55460d8`
+- 5.3 `public/mod/scorm/locallib.php` : `d2208ace2f244823692a8b67cc0f256bf7c784c1`
