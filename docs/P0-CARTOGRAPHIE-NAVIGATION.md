@@ -2200,3 +2200,85 @@ Les prochaines analyses doivent approfondir :
 - les mécanismes de fichiers et d'éditeurs intégrés aux activités.
 
 **Nature des preuves :** analyse statique Moodle 5.3 des fichiers listés. Aucun test runtime, test d'accès direct, test axe-core, clavier, lecteur d'écran ou test de contenu SCORM/H5P n'a été exécuté dans cette tranche.
+
+
+## 57. Contrats de rendu des activités — Output API, Mustache et JavaScript (première tranche)
+
+**Périmètre :** Moodle `MOODLE_503_STABLE`. Lecture ciblée de renderables, renderers et templates pour devoir, test et forum. Il s'agit d'une première tranche représentative, pas d'une cartographie exhaustive de tous les modules.
+
+### 57.1 Devoir : un état de remise riche, construit côté module
+
+La classe `mod_assign\\output\\assign_submission_status` est un objet de rendu qui transporte bien davantage qu'un simple statut. Ses propriétés couvrent notamment :
+- dates d'ouverture, échéance, date limite et éventuelle extension ;
+- remise individuelle ou en équipe, groupe de remise et membres qui doivent encore remettre ;
+- activation, verrouillage, correction et statut de notation ;
+- plugins de remise et informations de contexte ;
+- possibilités effectives de modifier, remettre ou consulter.
+
+Le renderer du module assure des rendus spécialisés, notamment l'arborescence des fichiers de remise, qui peut initialiser du JavaScript Moodle. Les templates d'action séparent également les actions de remise et les actions de correction.
+
+**Implication :** une carte « devoir » dans Project N ne peut pas déduire un état à partir de la seule échéance. Le statut doit provenir des données du module, en tenant compte des remises de groupe, extensions, verrouillages, plugins et capacités. La vue de détail doit préserver les composants et formulaires natifs.
+
+### 57.2 Test : plusieurs interfaces et contrats distincts
+
+La classe `mod_quiz\\output\\view_page` rassemble les informations de la page d'accueil du test : tentatives précédentes, notes, feedback, possibilité de réessayer, tentative inachevée, messages d'empêchement et texte du bouton de démarrage. Elle n'est pas elle-même un objet templatable : elle transmet des données au renderer.
+
+Le renderer du test traite plusieurs vues différentes : page d'accueil, tentative, résumé, relecture et navigation entre questions. Il s'appuie sur les objets du moteur de questions et les options d'affichage. Les tentatives peuvent être paginées et les options de relecture varient selon les droits et les paramètres du test.
+
+Le template du minuteur utilise un rôle ARIA `timer`, des propriétés d'annonce et un bouton contrôlant sa visibilité. Ce composant ne doit pas être remplacé par un simple compte à rebours décoratif : sa relation avec la tentative, le temps restant et les annonces accessibles est fonctionnelle.
+
+**Implication :** ne pas uniformiser la page d'accueil du test, l'écran de tentative et la relecture. Toute modification visuelle du minuteur, de la navigation des questions ou des formulaires doit être testée avec clavier et lecteur d'écran, notamment en situation chronométrée.
+
+### 57.3 Forum : templates Mustache et interactions imbriquées
+
+Le rendu des discussions du forum s'appuie sur des objets renderables, dont `mod_forum\\output\\forum_post`, qui exportent leurs données vers les templates Mustache. Les templates observés montrent plusieurs contrats :
+- la liste des discussions expose un tableau avec légende, pagination, actions de création, notation et filtres selon les capacités ;
+- la discussion imbriquée affiche les publications préparées par le module, les notifications et les contrôles de discussion ;
+- le template `forum_discussion_nested_v2` initialise le module AMD `mod_forum/discussion_nested_v2` sur un conteneur identifié.
+
+Le forum possède plusieurs présentations de discussions (liste, fil, imbriquée, versions alternatives) et des interactions telles que réponses, favoris, abonnement, verrouillage, épinglage, marquage comme lu et navigation entre discussions.
+
+**Implication :** la surcharge CSS doit préserver les structures sémantiques, les identifiants et attributs attendus par JavaScript, ainsi que les contrôles produits par les capacités. Transformer systématiquement les tableaux en cartes ou réécrire les fils de discussion risquerait de casser pagination, repères de lecture et interactions.
+
+### 57.4 Conséquences transversales pour l'architecture du thème
+
+1. Le thème intervient prioritairement sur les variables visuelles, les composants Boost et les styles de l'enveloppe ; il ne remplace pas les règles métier des modules.
+2. Un renderer PHP peut générer directement du HTML, déléguer à Mustache ou combiner les deux. Il faut identifier le contrat réel avant toute surcharge.
+3. Les templates Mustache peuvent contenir des régions de surcharge, des partiels et des blocs JavaScript ; le nom du template ne suffit pas à connaître toutes ses dépendances.
+4. Les classes CSS, identifiants, attributs `data-*`, rôles ARIA et sélecteurs utilisés par les scripts sont des contrats techniques à préserver.
+5. Les actions et leur disponibilité sont préparées par les capacités et les données du module. Le thème ne doit pas reproduire ces décisions.
+6. Les plugins d'activité et de remise peuvent étendre les états et composants ; toute présentation doit tolérer des extensions et des données absentes.
+7. Les vues complexes doivent être vérifiées à plusieurs largeurs : un tableau responsive ne garantit pas à lui seul une bonne expérience mobile ni une lecture accessible.
+
+### 57.5 Contrôles techniques et accessibilité à intégrer au futur prototype
+
+- Comparer le DOM avant/après surcharge et repérer les sélecteurs JavaScript supprimés ou déplacés.
+- Vérifier que les régions Mustache et partiels restent présents, notamment lorsqu'ils sont injectés par le module.
+- Tester les formulaires avec erreurs, confirmation, dépôt de fichiers et états verrouillés.
+- Tester les tentatives de test, le minuteur, la navigation entre questions et la relecture.
+- Tester les discussions longues, les réponses imbriquées, la pagination et les actions de forum.
+- Contrôler les noms accessibles, l'ordre de tabulation, le focus après action et les annonces dynamiques.
+- Tester l'affichage à 320 CSS px, le zoom 200 %, le clavier seul et un lecteur d'écran.
+- Ne pas conclure à la conformité sur la seule lecture des attributs ARIA : le comportement doit être testé en runtime.
+
+### 57.6 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/mod/assign/classes/output/assign_submission_status.php` | `7be979424df357c17978984daaa6cbc91be83ad7` |
+| `public/mod/assign/classes/output/renderer.php` | `a2f9593546ca9c2e4e8df82c8bab640e61816ec0` |
+| `public/mod/assign/templates/submission_actionmenu.mustache` | `da65dbc345d72dee8ad52d8d1b9b74b12b9ceca2` |
+| `public/mod/quiz/classes/output/view_page.php` | `a1e9ed55b39a20c7a8bb55b96f702fb158c8d9b8` |
+| `public/mod/quiz/classes/output/renderer.php` | `f29f14edb845bd716e4095ed045b6507d1c86f9d` |
+| `public/mod/quiz/templates/timer.mustache` | `eecf99b5fa32ea09b196ec0d35c62faa6f7c1c65` |
+| `public/mod/forum/classes/output/forum_post.php` | `52c51bc8d8e0e44b691a5467281d76900c7f0ef4` |
+| `public/mod/forum/templates/discussion_list.mustache` | `50146a73bcf6b28629ab80d1eaa3adc1b9c2618c` |
+| `public/mod/forum/templates/forum_discussion_nested_v2.mustache` | `82a39370acb8e382bd6c09c457e5c97beff2e8e3` |
+
+### 57.7 Limites et suite
+
+Cette tranche n'analyse pas encore les formulaires internes de dépôt et de tentative, les plugins de remise, le moteur de questions, les services AJAX, ni l'ensemble des templates et scripts du forum. Les activités leçon, atelier, feedback, SCORM et H5P restent à traiter sur le même niveau de profondeur.
+
+La suite doit étendre l'analyse des contrats de rendu à ces modules, puis couvrir les mécanismes transversaux de fichiers et d'éditeurs utilisés dans les activités. Les écarts entre Moodle 4.5 et 5.3 devront être établis par comparaison des fichiers correspondants, sans extrapolation à partir de la seule branche 5.3.
+
+**Nature des preuves :** analyse statique des neuf fichiers listés sur Moodle 5.3. Aucun test runtime, test de surcharge de thème, test axe-core, clavier ou lecteur d'écran n'a été exécuté.
