@@ -2282,3 +2282,102 @@ Cette tranche n'analyse pas encore les formulaires internes de dépôt et de ten
 La suite doit étendre l'analyse des contrats de rendu à ces modules, puis couvrir les mécanismes transversaux de fichiers et d'éditeurs utilisés dans les activités. Les écarts entre Moodle 4.5 et 5.3 devront être établis par comparaison des fichiers correspondants, sans extrapolation à partir de la seule branche 5.3.
 
 **Nature des preuves :** analyse statique des neuf fichiers listés sur Moodle 5.3. Aucun test runtime, test de surcharge de thème, test axe-core, clavier ou lecteur d'écran n'a été exécuté.
+
+
+## 58. Contrats de rendu des activités — Leçon, Atelier, Feedback, SCORM et H5P
+
+**Périmètre :** Moodle `MOODLE_503_STABLE` (Moodle 5.3), lecture statique ciblée des contrôleurs, renderers, classes de sortie, formulaires, templates Mustache et scripts identifiés ci-dessous. Cette tranche complète la première analyse des activités, sans constituer une revue exhaustive de chaque branche fonctionnelle.
+
+### 58.1 Leçon (`mod_lesson`) : parcours à embranchements et formulaires dépendants de la page
+
+La page d'entrée `mod/lesson/view.php` traite plusieurs états avant et pendant le parcours : activité indisponible, protection par mot de passe, dépendances entre leçons, session chronométrée interrompue, reprise ou poursuite. Le renderer historique `mod/lesson/renderer.php` fournit notamment l'en-tête, les messages d'inaccessibilité et le formulaire de connexion.
+
+Les pages sont typées et implémentées dans `mod/lesson/pagetypes` : branche, cluster, fin de branche/cluster, essai, appariement, choix multiple, numérique, réponse courte et vrai/faux. Les réponses et transitions ne sont donc pas une simple succession de blocs éditoriaux. La correction d'une question de type essai possède son propre formulaire et un éditeur de commentaires ; la vue sans réponses utilise un formulaire avec navigation vers la page suivante. Le script `timer.js` actualise le compte à rebours.
+
+**Implication pour le thème :** préserver les formulaires et leurs champs cachés de navigation, les retours de correction, les messages de dépendance et les états de reprise. Ne pas transformer les pages de questions en composants génériques qui feraient disparaître le type de question, le feedback ou la transition. Le compte à rebours doit rester perceptible et intelligible ; son comportement réel doit être vérifié au clavier et avec lecteur d'écran.
+
+### 58.2 Atelier (`mod_workshop`) : workflow par phases, dépôt et évaluation par les pairs
+
+L'atelier suit un workflow de phases (configuration, remise, évaluation, notation/fermeture) qui détermine les actions et les vues accessibles. `view.php` construit le plan utilisateur et la phase courante, délègue l'affichage au renderer, puis initialise `mod_workshop/workshopview`. Le renderer expose notamment une barre d'action via `mod_workshop/action_bar` et des rendus spécifiques de messages et de remises.
+
+Le formulaire de remise peut combiner un éditeur de texte et un gestionnaire de fichiers. Ces deux modes sont configurables indépendamment et peuvent être désactivés, facultatifs ou obligatoires. La page d'évaluation charge la remise, contrôle l'accès, prépare les éditeurs et gestionnaires de fichiers des commentaires, puis enregistre l'évaluation selon la stratégie configurée. L'identité de l'auteur peut être masquée selon les capacités.
+
+**Implication pour le thème :** une seule carte d'activité ne suffit pas à représenter les phases. Les actions visibles doivent rester celles calculées par le module et le plan de l'utilisateur. Préserver la distinction auteur/évaluateur, l'anonymat éventuel, les formulaires d'évaluation, les pièces jointes et les contrôles de phase. Ne pas supposer que tous les utilisateurs déposent ou évaluent au même moment.
+
+### 58.3 Feedback (`mod_feedback`) : formulaire structuré, progression multi-page et anonymat
+
+`view.php` compose l'interface à partir du contexte du feedback, de la barre d'action et de son état : aperçu, consignes après envoi, périodes d'ouverture/fermeture, restrictions d'accès, cours associés et réponses. Le résumé est un objet rendu par le template `mod_feedback/summary`. Le renderer dédié gère notamment les barres d'action et les titres.
+
+Le formulaire `mod_feedback\complete_form` conserve des paramètres de progression tels que page courante, dernière page et positions des éléments. Il gère également le mode anonyme et des modes distincts (consultation, édition, modèle). Le JavaScript AMD d'édition initialise les composants et utilise le moteur de templates Moodle pour rendre certains éléments enrichis.
+
+**Implication pour le thème :** préserver l'ordre et la progression des éléments, les contrôles de navigation multi-page, les indications d'anonymat, les messages de confirmation et les différences entre réponse et édition de modèle. Le thème ne doit jamais exposer une identité ou des données de réponse que le module masque selon son mode et ses permissions. Tester les formulaires longs, les erreurs et la reprise de navigation sur petit écran.
+
+### 58.4 SCORM (`mod_scorm`) : lecteur externe, API de suivi et fenêtres de lancement
+
+`view.php` présente l'introduction, l'état des tentatives et les possibilités de lancement ou de reprise ; elle tient compte notamment des paramètres de navigation linéaire du cours. Le lancement est distinct, dans `player.php`, qui prépare le lecteur et l'API de communication avec le paquet. Les scripts `view.js`, `player.js`, `module.js` et `request.js` participent à l'ouverture, au suivi et à la fermeture du lecteur, aux tentatives et aux échanges avec le contenu SCORM. Le renderer expose des éléments de rapport et des barres d'action, dont certaines sont produites par Mustache.
+
+**Implication pour le thème :** ne pas traiter le lecteur SCORM comme un simple iframe décoratif ni déplacer ses contrôles hors du contexte attendu. Préserver les scripts, identifiants, fenêtres/popup éventuelles, mécanismes de sortie et transmission des données de suivi. Le contenu du paquet peut imposer ses propres dimensions et styles : le thème doit éviter les règles CSS globales qui débordent dans le lecteur ou en perturbent le redimensionnement. Les tests doivent inclure lancement, reprise, sortie normale, fermeture de fenêtre et remontée des données de progression/score.
+
+### 58.5 H5P (`mod_h5pactivity`) : contenu interactif, tentatives et résultats xAPI
+
+`view.php` prépare le contexte de l'activité et les messages d'état avant de rendre le contenu H5P. Les classes de sortie `attempt` et `result` sont des objets `renderable` et `templatable` : elles exportent les données d'une tentative ou d'un résultat vers les templates. Les templates identifiés comprennent les tentatives, les résultats, les listes de tentatives et les vues de révision/rapport. Le module dispose également de classes locales d'exécution et d'un sous-système xAPI ; le contenu interactif et la collecte de résultats ne se réduisent donc pas à la présentation du rapport.
+
+**Implication pour le thème :** distinguer l'affichage du contenu H5P, l'état de tentative et le rapport de résultats. Préserver les dimensions et le contexte d'exécution du contenu, les contrôles internes H5P, les messages d'état et les liens de revue. Éviter de cibler globalement les éléments internes au contenu H5P sans vérifier les conséquences sur ses bibliothèques. Tester plusieurs types de contenus, les tentatives sans score, les résultats partiels et la consultation des rapports selon les capacités.
+
+### 58.6 Conséquences transversales
+
+1. Ces cinq activités ont des modèles d'interaction très différents : embranchements et questions pour Leçon, phases et évaluation par les pairs pour Atelier, questionnaire multi-page pour Feedback, lecteur/API de suivi pour SCORM, contenu interactif et résultats xAPI pour H5P.
+2. Le thème doit d'abord travailler sur l'enveloppe de page, la hiérarchie visuelle, les espaces et les composants Boost. Toute surcharge du contenu interne doit être justifiée par un contrat identifié.
+3. Les formulaires Moodle (éditeur, gestionnaire de fichiers, champs cachés, validation et boutons) doivent rester fonctionnels. Une apparence commune ne doit pas effacer les différences métier.
+4. Les messages d'indisponibilité, d'erreur, de confirmation, de progression et de reprise sont des informations fonctionnelles, pas du bruit visuel.
+5. Les extensions et réglages d'activité peuvent modifier les composants présents. Une surcharge doit tolérer des éléments facultatifs, des plugins additionnels et des contenus inconnus.
+6. La présence d'un template Mustache ne signifie pas que toute la page passe par ce template : les contrôleurs et renderers peuvent produire directement du HTML et initialiser du JavaScript en complément.
+
+### 58.7 Points de contrôle à prévoir au prototype
+
+- Leçon : chaque type de question, branchement, dépendance, mot de passe, essai à corriger, session chronométrée et reprise.
+- Atelier : chaque phase, dépôt texte/fichier, évaluation, anonymat, commentaires et actions autorisées.
+- Feedback : formulaire anonyme et nominatif, multi-page, questions conditionnelles, validation, confirmation et consultation des réponses.
+- SCORM : lancement, reprise, popup, sortie, redimensionnement et remontée du suivi.
+- H5P : plusieurs types de contenus, contrôles internes, tentative, résultat, rapport et révision.
+- Pour tous : 320 CSS px, zoom 200 %, navigation clavier, focus après action, erreurs de formulaire, lecteur d'écran, mode sombre et contraste.
+
+### 58.8 Fichiers Moodle 5.3 examinés
+
+| Fichier | SHA |
+|---|---|
+| `public/mod/lesson/view.php` | `51add9ad2e7ea8007162c669683e6e6d59b8c2f7` |
+| `public/mod/lesson/renderer.php` | `02b01f8b60cff4d0d83104049f76032c925973f1` |
+| `public/mod/lesson/essay_form.php` | `a1ab40c5cff785acc33407ef2ab6ab9085154314` |
+| `public/mod/lesson/view_form.php` | `db30a3b922ca5944d45a22ee4fbd11ab78310a53` |
+| `public/mod/lesson/timer.js` | `3f3c8f0d9ed16dd5377be044330c6bc7045c7e5b` |
+| `public/mod/lesson/templates/edit_action_buttons.mustache` | `94124a2cce9806518ac3b3428cc44f8b70dfb9c6` |
+| `public/mod/workshop/view.php` | `074eacdf7dd5dd0774a07a5895a015e451a1f2a7` |
+| `public/mod/workshop/renderer.php` | `f702e26395a159d5da14695dd2aa762f85661a72` |
+| `public/mod/workshop/submission_form.php` | `a2cbb845422d1cc9fa57ab537caca654ff3a284c` |
+| `public/mod/workshop/assessment.php` | `cc5aa3184cb38de9d436d01721573e494759bc89` |
+| `public/mod/workshop/amd/src/workshopview.js` | `d1d4c56f3921c78a5d331f35b6b8ede7213ed145` |
+| `public/mod/workshop/templates/action_bar.mustache` | `fd47b2b821b6e932e3d5c61c7e435bd7e921e957` |
+| `public/mod/feedback/view.php` | `3fb2adbbbf88b97959b98eb45b47847077628716` |
+| `public/mod/feedback/classes/output/renderer.php` | `4fa2a42bf2e4cc0085a909b23a331539aa7d928a` |
+| `public/mod/feedback/classes/complete_form.php` | `eae37ffd03ecd4ce2c786961407100978e920be8` |
+| `public/mod/feedback/amd/src/edit.js` | `faacbdd65edd38f3f8a8f6d019e80911c39e45d3` |
+| `public/mod/feedback/templates/summary.mustache` | `4c4f0f9970b2bd283759c668e208a73b5caf7066` |
+| `public/mod/scorm/view.php` | `2cb4563fe70b749dad2af31b1bcd0c7cd4360cff` |
+| `public/mod/scorm/player.php` | `080be1607bc8a0dc1f7eba128a371e7df9da4fee` |
+| `public/mod/scorm/renderer.php` | `632bd1d00d573927c4a2609c5003ed1c476f2bc6` |
+| `public/mod/scorm/view.js` | `6060daf4ee9836b6edfa44205053cdc5289a657c` |
+| `public/mod/scorm/player.js` | `20dd6c08b0e84dca8941741aeeadb2c43ad582a3` |
+| `public/mod/scorm/templates/player_exitbar.mustache` | `c73865949bf881d036566a1041f04e1daa4dc8e8` |
+| `public/mod/scorm/classes/output/actionbar.php` | `cac0f8a672a9c412945ec71e5ad523fa9b2148ed` |
+| `public/mod/h5pactivity/view.php` | `2976f8cfd93c1bb8b20bf7de695852e896c2ac9f` |
+| `public/mod/h5pactivity/classes/output/attempt.php` | `2b1911fb163a0986fe41ed97133c49b17ca0ba1d` |
+| `public/mod/h5pactivity/classes/output/result.php` | `ad722a3a5a5efb00521c5356b3b686cc1e85bdc7` |
+| `public/mod/h5pactivity/templates/attempt.mustache` | `faa97b39a055dc3dd9fbe317230bde692c3af7be` |
+| `public/mod/h5pactivity/templates/reviewattempts.mustache` | `c0cfa5c99e5fb74d585bcc21b70480b03d68d3f6` |
+
+### 58.9 Limites et suite
+
+Cette tranche est une analyse statique ciblée. Elle n'a pas exécuté les activités, leurs contenus embarqués, les formulaires ni les scripts en navigateur. Elle ne démontre donc ni le bon fonctionnement d'une surcharge de thème, ni la compatibilité runtime, ni l'accessibilité effective.
+
+**Suite immédiate :** cartographier les mécanismes transversaux de fichiers et d'éditeurs utilisés dans les activités (File API, dépôts, zones de dépôt, gestionnaires de fichiers, éditeurs, pièces jointes, fichiers intégrés et contextes de fichiers), puis comparer les contrats et changements entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3.
