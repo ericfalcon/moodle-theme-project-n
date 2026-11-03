@@ -2558,3 +2558,46 @@ Les empreintes ci-dessous sont relevées directement dans les branches du fork M
 Cette comparaison repose sur les fichiers listés et leurs empreintes, complétée par une lecture ciblée des points de code. Elle n'est pas un diff complet de chaque module ni une comparaison exhaustive de tous les templates et scripts dépendants. Aucun test runtime, test navigateur, test clavier, lecteur d'écran ou test d'accessibilité n'a été exécuté. Les empreintes sont celles du dépôt forké `ericfalcon/moodle` et doivent être revalidées si les branches sont mises à jour.
 
 **Suite :** approfondir les diffs sémantiques des fichiers ayant changé (en priorité Feedback, SCORM, Leçon 5.3 et File API), puis étendre la comparaison aux autres mécanismes du parcours apprenant. Ne passer à l'espace formateur qu'après avoir terminé cette cartographie transversale.
+
+
+## 61. Comparaison sémantique Moodle 4.5–5.3 — activité Feedback
+
+**Périmètre et méthode.** Comparaison des fichiers réels des branches `MOODLE_405_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Pour Moodle 5.3, les chemins sont préfixés par `public/`. Analyse statique des contrôleurs, du moteur de complétion, du formulaire et des objets de rendu ; aucun test runtime ni test d’accessibilité n’a été exécuté.
+
+### Contrôleur `mod/feedback/view.php`
+
+- 4.5 et 5.0 : la page affiche la description dans `feedback_description`, puis la barre d’action principale à l’intérieur de cette enveloppe.
+- 5.2 et 5.3 : la description et cette enveloppe disparaissent de cette page ; la barre d’action est rendue directement après l’en-tête.
+- 5.3 : lorsque l’activité est fermée ou que la réponse a déjà été envoyée, le bouton de retour au cours est conditionné à la désactivation de la navigation linéaire du cours (`core_courseformat\\local\\linearnavigationsettings`). En 5.0–5.2, ce bouton est rendu sans ce test.
+- Le contrôleur conserve le contrôle d’accès au cours, le contrôle de correspondance des Feedback placés sur la page d’accueil, les capacités `mod/feedback:edititems`, `mod/feedback:viewreports` et `mod/feedback:mapcourse`, ainsi que la construction du résumé et l’appel à l’événement de consultation.
+
+### Moteur de complétion et formulaire
+
+- `classes/completion.php` conserve la même structure et le même nombre de lignes entre 4.5 et 5.3 ; le diff textuel ciblé identifie une modification d’appel à `has_capability()` : le quatrième argument `false` est désormais explicite pour le contrôle de `mod/feedback:complete`. Il s’agit d’une précision dans l’appel d’autorisation, pas d’une nouvelle règle métier démontrée.
+- `classes/complete_form.php` conserve sa structure ; le diff ciblé remplace la classe utilitaire `sr-only` par `visually-hidden` pour le libellé d’accessibilité des éléments obligatoires. Le thème ne doit donc pas supposer que l’ancienne classe est toujours présente.
+- Le formulaire reste un `moodleform` multi-page. Il porte les identifiants de module et de cours, la page courante, les positions d’items et les commandes précédent/suivant/enregistrer. Les éléments sont produits par les types d’items Feedback ; les dépendances conditionnelles et la reprise des réponses temporaires relèvent de `mod_feedback_completion`.
+
+### Barre d’action et résumé
+
+- `classes/output/standard_action_bar.php` et `classes/output/summary.php` ont le même SHA Git entre 4.5 et 5.3 dans le fork examiné : leur contenu est identique sur ces deux branches.
+- La barre d’action expose selon les capacités : modification des questions, prévisualisation pour les personnes pouvant modifier ou consulter les rapports, et accès au formulaire ou reprise à la page mémorisée.
+- Le résumé exporte notamment le nombre de réponses terminées pour le groupe sélectionné et le nombre de questions. Le template Mustache utilise les classes `feedback_info` et `feedback_info_value`.
+
+### Conséquences pour Project N
+
+1. Ne pas remplacer le moteur de complétion ni reconstruire les états « pas encore ouvert », « fermé », « déjà répondu », « réponse en cours » et « réponse terminée » à partir de données visuelles.
+2. Préserver les formulaires Moodle, leurs éléments typés, leurs boutons de navigation, leurs champs cachés et leurs classes fonctionnelles ; la mise en page mobile doit s’adapter sans modifier leur sémantique.
+3. Ne pas cibler exclusivement `.sr-only` pour les contenus masqués accessibles ; prendre en compte les classes utilitaires Bootstrap/Moodle de la version cible.
+4. Ne pas imposer un bouton « retour au cours » : en 5.3, Moodle le supprime dans certains cas lorsque la navigation linéaire est active.
+5. Garder la barre d’action et le résumé sous le contrôle des objets Output API et du template Moodle. Le thème peut les styliser, mais ne doit pas reconstruire les liens en contournant les capacités.
+
+**Limites.** Cette comparaison porte sur les fichiers ciblés et les branches indiquées. Les états précis de disponibilité dépendent également des méthodes de `mod_feedback_structure`, des paramètres de l’activité, des groupes et des capacités effectives. Les différences relevées ne constituent pas une validation runtime ou une preuve de compatibilité visuelle.
+
+**Empreintes des fichiers comparés.**
+- 4.5 `mod/feedback/view.php` : `f4d972d50951e5200b1f43c377c2a4448f954db8`
+- 5.3 `public/mod/feedback/view.php` : `3fb2adbbbf88b97959b98eb45b47847077628716`
+- 4.5 `mod/feedback/classes/completion.php` : `860d822594f125d684e58f0f50bf5ae36021ae77`
+- 5.3 `public/mod/feedback/classes/completion.php` : `ccc72ddc3d921a06f37c7234eb882d9564b9e6f4`
+- 4.5 `mod/feedback/classes/complete_form.php` : `36be27a70f9e2c16eb4ebd47e32f053ac2a9fe7f`
+- 5.3 `public/mod/feedback/classes/complete_form.php` : `eae37ffd03ecd4ce2c786961407100978e920be8`
+- Barre d’action et résumé : SHA identiques entre les deux branches (voir fichiers correspondants).
