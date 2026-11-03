@@ -2484,3 +2484,77 @@ Le formulaire Moodle choisit l'éditeur selon la configuration et les préféren
 Cette tranche repose sur l'analyse statique de Moodle 5.3. Elle ne teste pas les dépôts réellement configurés, les éditeurs en navigateur, les droits sur des fichiers réels, ni les interactions clavier et lecteur d'écran. Elle ne démontre pas non plus la compatibilité des éventuelles surcharges de thème.
 
 **Suite :** comparer ces contrats et ceux des activités entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3, en distinguant les changements de version du socle Moodle des adaptations IOMAD. Ensuite, poursuivre la cartographie des autres mécanismes transversaux du parcours apprenant avant de passer à l'espace formateur.
+
+
+## 60. Comparaison interversions — activités, formulaires et éditeur (Moodle 4.5 à 5.3)
+
+**Périmètre :** comparaison statique des fichiers sources de Moodle `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE`. Les chemins des sources sont préfixés par `public/` dans les branches 5.1 à 5.3 examinées. Les empreintes SHA permettent d'identifier les fichiers identiques ou modifiés ; elles ne remplacent pas une comparaison sémantique exhaustive des diffs.
+
+### 60.1 Constat général
+
+La comparaison ne montre pas de réécriture globale des parcours d'activités entre 4.5 et 5.3. Les contrats fonctionnels structurants restent reconnaissables : Leçon conserve son moteur de pages et de tentatives, Atelier son workflow par phases, SCORM son lecteur et son suivi, H5P son contenu et ses tentatives. En revanche, plusieurs fichiers évoluent ponctuellement, et Feedback présente des changements successifs de son contrôleur de vue.
+
+Il faut donc éviter deux conclusions abusives :
+- un fichier modifié ne signifie pas nécessairement une rupture d'interface ou de contrat ;
+- un fichier inchangé ne prouve pas que toutes ses dépendances, templates, styles ou scripts sont inchangés.
+
+### 60.2 Éléments relativement stables
+
+- `mod/workshop/view.php` conserve la même empreinte dans les branches 4.5 à 5.3 examinées : le contrôleur reste stable sur cette période, sans préjuger de l'évolution des classes, templates ou scripts qu'il appelle.
+- `mod/h5pactivity/view.php` conserve la même empreinte entre 4.5 et 5.3 dans les versions comparées.
+- `mod/lesson/view.php` conserve l'empreinte observée en 4.5, 5.0, 5.1 et 5.2 ; la branche 5.3 présente une empreinte différente. Il faudra examiner le diff exact avant d'attribuer un impact visuel ou fonctionnel à cette évolution.
+- Les éléments principaux du workflow Atelier et des tentatives H5P peuvent donc être considérés comme des contrats à préserver, mais pas comme des composants dont le HTML serait garanti identique.
+
+### 60.3 Évolutions identifiées dans les contrôleurs d'activités
+
+**Feedback.** `mod/feedback/view.php` possède une empreinte différente en 4.5, 5.0, 5.1, 5.2 et 5.3. C'est le signal le plus régulier de cette sélection. La page mérite une comparaison sémantique ciblée des changements : états d'affichage, contrôles d'accès, barre d'action, cours associés, résumé et transitions de réponse. La différence d'empreinte ne permet pas à elle seule de conclure à un changement de DOM.
+
+**SCORM.** `mod/scorm/player.php` est identique entre 4.5 et 5.0, puis change en 5.1, 5.2 et 5.3. Les passages examinés confirment que la logique de tentative, de mode, de disponibilité, de table des matières et de suivi reste présente. Les lignes de suivi évoluent dans le fichier, mais il faut comparer les diffs complets avant de déterminer les conséquences exactes pour le lecteur, les fenêtres ou l'API de communication.
+
+**Leçon.** Le changement d'empreinte de `view.php` en 5.3 doit être vérifié au niveau des pages typées, des formulaires de réponse et du rendu des tentatives. Il ne justifie pas de modifier préventivement les composants de présentation.
+
+### 60.4 Évolutions de la File API de formulaire
+
+Les fichiers `lib/form/editor.php` et `lib/form/filemanager.php` changent d'empreinte au cours de la période :
+- `editor.php` évolue entre 4.5 et 5.0, puis à nouveau entre 5.1 et 5.2 ; les versions 5.2 et 5.3 ont la même empreinte pour ce fichier.
+- `filemanager.php` évolue entre 4.5 et 5.0, reste identique en 5.1, puis évolue en 5.2 ; les versions 5.2 et 5.3 ont la même empreinte.
+
+La structure générale reste celle de contrôles QuickForm Moodle templatisés et alimentés par des identifiants de brouillon. Les changements appellent une vérification des options exportées vers Mustache, des attributs HTML, des limites de taille et des retours de dépôt avant toute surcharge CSS ou JavaScript. Il ne faut pas coder des sélecteurs spécifiques à une seule version sur la base d'une observation 5.3.
+
+### 60.5 Éditeur Tiny : adaptation au mode de couleur du thème
+
+Le fichier `lib/editor/tiny/classes/editor.php` garde la même empreinte de 4.5 à 5.3 dans les branches comparées ; il continue notamment à transmettre la feuille de style du thème via `editor_css_url()`.
+
+En revanche, le JavaScript `lib/editor/tiny/amd/src/editor.js` évolue entre les branches 4.5, 5.0, 5.1, 5.2 et 5.3. Une évolution importante est visible en 5.3 : le script lit `data-bs-theme` sur le document, choisit le skin Tiny clair ou sombre et propage le mode de couleur aux conteneurs et documents internes de l'éditeur. Ce point crée une exigence concrète pour Project N : le mode sombre du thème doit être cohérent avec l'éditeur, et non se limiter à recolorer la page Moodle.
+
+**Décision de conception :** privilégier les mécanismes de thème prévus par Moodle et Bootstrap, dont `data-bs-theme` et `editor_css_url()`. Ne pas piloter Tiny par des sélecteurs CSS fragiles ciblant son DOM interne. Vérifier aussi que les dialogues et contenus édités restent lisibles en mode sombre.
+
+### 60.6 Tableau des empreintes de référence
+
+Les empreintes ci-dessous sont relevées directement dans les branches du fork Moodle examiné. Elles identifient les fichiers, mais ne constituent pas une preuve de compatibilité d'exécution.
+
+| Fichier | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 |
+|---|---|---|---|---|---|
+| `mod/lesson/view.php` | `16f8e4d3efaf` | `16f8e4d3efaf` | `16f8e4d3efaf` | `16f8e4d3efaf` | `51add9ad2e7e` |
+| `mod/workshop/view.php` | `074eacdf7dd5` | `074eacdf7dd5` | `074eacdf7dd5` | `074eacdf7dd5` | `074eacdf7dd5` |
+| `mod/feedback/view.php` | `f4d972d50951` | `5d7e4efe0b1a` | `5d7e4efe0b1a` | `1e2e96031126` | `3fb2adbbbf88` |
+| `mod/scorm/player.php` | `28b5fe66056b` | `28b5fe66056b` | `01d1699990db` | `a4fef6572c0f` | `080be1607bc8` |
+| `mod/h5pactivity/view.php` | `2976f8cfd93c` | `2976f8cfd93c` | `2976f8cfd93c` | `2976f8cfd93c` | `2976f8cfd93c` |
+| `lib/form/editor.php` | `8106a9994d6b` | `5b85e8e0c43d` | `5b85e8e0c43d` | `6b4b40b53571` | `6b4b40b53571` |
+| `lib/form/filemanager.php` | `c8422d94aa0b` | `dfe37f273841` | `dfe37f273841` | `a7b31c7c0afc` | `a7b31c7c0afc` |
+| `lib/editor/tiny/classes/editor.php` | `7e06fb038172` | `7e06fb038172` | `7e06fb038172` | `7e06fb038172` | `7e06fb038172` |
+| `lib/editor/tiny/amd/src/editor.js` | `a16666f6c639` | `1eadfe0b0008` | `a16666f6c639` | `a3ca5e26d17a` | `3f59087a3cf2` |
+
+### 60.7 Conséquences pour Project N
+
+1. La base d'interface doit rester compatible avec les contrats Moodle, et non dépendre d'un HTML supposé identique entre toutes les versions.
+2. Les surcharges doivent être minimales, ciblées et versionnées seulement lorsqu'une différence vérifiée l'exige.
+3. Tiny doit être traité comme un composant intégré au système de thèmes : mode de couleur, CSS éditeur et dialogues doivent être vérifiés ensemble.
+4. Les formulaires d'éditeur et de fichiers doivent être testés sur au moins 4.5, 5.0 et 5.3, puis les changements intermédiaires 5.1/5.2 doivent être couverts par des contrôles ciblés.
+5. La stabilité de certains contrôleurs ne dispense pas d'inspecter leurs renderers, templates, AMD/ESM et feuilles de style.
+
+### 60.8 Limites de cette comparaison
+
+Cette comparaison repose sur les fichiers listés et leurs empreintes, complétée par une lecture ciblée des points de code. Elle n'est pas un diff complet de chaque module ni une comparaison exhaustive de tous les templates et scripts dépendants. Aucun test runtime, test navigateur, test clavier, lecteur d'écran ou test d'accessibilité n'a été exécuté. Les empreintes sont celles du dépôt forké `ericfalcon/moodle` et doivent être revalidées si les branches sont mises à jour.
+
+**Suite :** approfondir les diffs sémantiques des fichiers ayant changé (en priorité Feedback, SCORM, Leçon 5.3 et File API), puis étendre la comparaison aux autres mécanismes du parcours apprenant. Ne passer à l'espace formateur qu'après avoir terminé cette cartographie transversale.
