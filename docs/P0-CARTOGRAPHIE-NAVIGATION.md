@@ -2643,3 +2643,53 @@ Cette comparaison repose sur les fichiers listés et leurs empreintes, complét�
 - 5.3 `public/mod/scorm/player.php` : `080be1607bc8a0dc1f7eba128a371e7df9da4fee`
 - 4.5 `mod/scorm/locallib.php` : `1c1149e1ceee53e2c0a8e406913978ceb55460d8`
 - 5.3 `public/mod/scorm/locallib.php` : `d2208ace2f244823692a8b67cc0f256bf7c784c1`
+
+
+## 63. Comparaison sémantique Moodle 4.5–5.3 — activité Leçon
+
+**Périmètre et méthode.** Comparaison des fichiers `mod/lesson/view.php`, `renderer.php` et `locallib.php` entre `MOODLE_405_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Analyse statique des différences réelles. Elle ne remplace pas des essais de parcours avec des leçons configurées en pages de contenu, questions, embranchements et clusters.
+
+### Contrôleur `view.php` et navigation
+
+- Le contrôleur conserve la même architecture générale : chargement du cours et du module, authentification, application des dérogations d’accès, contrôle des dates et du mot de passe, gestion du mode révision, choix de la page et traitement des réponses.
+- En 5.3, l’affichage du bouton « retour au cours » est conditionné à la désactivation de la navigation linéaire. En 4.5, le bouton est créé sans cette condition.
+- Cette évolution s’inscrit dans la même logique que Feedback et SCORM : Moodle protège son parcours linéaire entre activités et évite que le thème ou un bouton de retour parallèle ne détourne l’apprenant de la progression prévue.
+
+### Renderer et sorties de fin de leçon
+
+- Le renderer 5.3 ajoute un contrôle de navigation linéaire dans la sortie des informations et actions de fin de leçon. Lorsque cette navigation est active, il retourne la sortie sans afficher les liens d’activité, le retour au cours ou l’accès aux notes, afin de ne pas interférer avec le parcours linéaire.
+- Cette règle concerne la navigation et les actions annexes, pas le contenu pédagogique des pages de Leçon.
+- Le renderer conserve la responsabilité de produire l’en-tête, les boutons d’édition, les pages de questions et les sorties propres à l’activité. Le thème doit préserver ces composants et leurs contrats.
+
+### Pages typées, réponses et embranchements
+
+- Le modèle Leçon n’est pas une succession de pages HTML homogènes. Les pages ont un type et des réponses associées ; le moteur interprète les réponses, les sauts et les destinations.
+- Les constantes de navigation couvrent notamment la page courante, la page suivante, la page précédente, la fin de leçon, les pages non vues ou non répondues correctement, les pages aléatoires, les branches et les clusters.
+- Les types de questions et leurs contrôles de réponse déterminent les champs attendus, la validation, le feedback et le saut suivant. Le thème ne doit ni aplatir ces pages dans un composant générique, ni reconstruire les règles de navigation à partir du DOM.
+- Les restrictions de temps, mot de passe, nombre de tentatives, reprise et mode révision influencent les états présentés. Ils restent gérés par l’activité et son moteur.
+
+### Évolutions de `locallib.php`
+
+- Le fichier passe de 5 363 à 5 439 lignes dans la comparaison ciblée. Les changements visibles incluent une adaptation des cases à cocher de sélection multiple des tentatives aux classes Bootstrap (`form-check-input`, conteneur `form-check)).
+- Le contrôle du nombre maximal de tentatives est explicité : la limite n’est appliquée que si `maxattempts > 0`, ce qui rend explicite le sens de zéro comme tentatives illimitées.
+- Des méthodes de comptage des soumissions, des participants ayant tenté la leçon et des participants ayant accès à la leçon sont ajoutées dans le fichier 5.3. Elles utilisent les inscriptions, capacités et groupes pour construire les effectifs ; elles ne doivent pas être remplacées par des comptages côté thème.
+- Ces ajouts sont surtout pertinents pour les vues de suivi/gestion, et ne constituent pas une transformation du modèle de page pédagogique.
+
+### Conséquences pour Project N
+
+1. Conserver chaque type de page et son rendu spécifique ; ne pas créer une interface universelle de question qui masquerait les différences de réponse, de validation ou de saut.
+2. Ne pas recalculer les embranchements, les pages aléatoires, les clusters, les tentatives, les restrictions ou la progression.
+3. Préserver les formulaires et contrôles de réponse, les champs cachés, les boutons précédent/suivant et les messages de feedback.
+4. Respecter la navigation linéaire Moodle 5.3 : ne pas réintroduire les liens de retour ou de consultation des notes que le renderer retire volontairement.
+5. Pour l’espace formateur, conserver les filtres de groupes, les capacités et les effectifs calculés par les méthodes métier ; ne pas déduire le nombre de participants d’une liste partielle affichée.
+6. Tester sur smartphone des pages de contenu, questions à choix, réponses courtes, associations, embranchements, clusters, reprises et fin de leçon ; le responsive ne doit pas modifier l’ordre ni le sens des contrôles.
+
+**Limites.** Cette section décrit les évolutions du contrôleur, du renderer et de la bibliothèque locale. Elle ne constitue pas une comparaison exhaustive de chaque type de question ni des templates/styles associés. Les comportements doivent être vérifiés en runtime avec des leçons couvrant les différents types de pages et les paramètres d’accès.
+
+**Empreintes des fichiers comparés.**
+- 4.5 `mod/lesson/view.php` : `16f8e4d3efaf8f81c9dc9f9468792a6d5109a7c1`
+- 5.3 `public/mod/lesson/view.php` : `51add9ad2e7ea8007162c669683e6e6d59b8c2f7`
+- 4.5 `mod/lesson/renderer.php` : `562e812da7279708ce21cddaa871ca0576a7beb1`
+- 5.3 `public/mod/lesson/renderer.php` : `02b01f8b60cff4d0d83104049f76032c925973f1`
+- 4.5 `mod/lesson/locallib.php` : `1f0ae12095bdb9ed63b94f4d9cb5d07d579bf133`
+- 5.3 `public/mod/lesson/locallib.php` : `77f9fa84a31886e77f4a91db943e985c24ff4c58`
