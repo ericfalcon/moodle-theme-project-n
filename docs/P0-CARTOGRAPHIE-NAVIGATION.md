@@ -2795,3 +2795,56 @@ Cette comparaison repose sur les fichiers listés et leurs empreintes, complét�
 - 5.3 `public/mod/lesson/locallib.php` : `77f9fa84a31886e77f4a91db943e985c24ff4c58`
 - 4.5 `mod/lesson/renderer.php` : `562e812da7279708ce21cddaa871ca0576a7beb1`
 - 5.3 `public/mod/lesson/renderer.php` : `02b01f8b60cff4d0d83104049f76032c925973f1`
+
+
+## 63. Comparaison sémantique Moodle 4.5–5.3 — activité Leçon
+
+**Périmètre et méthode.** Comparaison des branches `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Analyse statique des contrôleurs, de la bibliothèque métier et de types de pages représentatifs. Pas de test runtime de parcours de leçon.
+
+### Contrôleur `mod/lesson/view.php`
+
+- Le fichier est strictement identique de Moodle 4.5 à 5.2 (même SHA). Il évolue en 5.3.
+- Le changement fonctionnel identifié concerne le lien « Retour au cours » présenté à la fin d’une tentative : en 5.3, il n’est créé que si la navigation linéaire du cours est désactivée. En navigation linéaire, Moodle évite ce retour direct pour laisser le mécanisme de navigation du cours guider l’apprenant.
+- Le reste du flux principal est conservé : connexion au cours, chargement de la leçon, vérification de l’accès, gestion du mode de relecture, reprise éventuelle d’une session interrompue, gestion du chronomètre, préparation de la page courante et affichage du contenu.
+- Le contrôleur conserve la prise en charge des tentatives hors ligne lorsque l’activité l’autorise, et la distinction entre une tentative en cours, une relecture et une reprise.
+
+### Bibliothèque métier `mod/lesson/locallib.php`
+
+Le fichier conserve 5 363 lignes en 4.5 et passe à 5 439 lignes en 5.3. Les différences ciblées montrent plusieurs évolutions :
+
+- Les cases à cocher de sélection globale des tentatives et celles des lignes de tableau sont explicitement dotées des classes Bootstrap `form-check-input` et `form-check-label`. L’enveloppe de certaines cases est également adaptée. Le thème doit donc éviter de remplacer les styles natifs des contrôles de sélection.
+- Le calcul de la reprise après une réponse incorrecte prend désormais explicitement en compte `maxattempts = 0) comme nombre illimité de tentatives. Il ne faut pas reproduire cette logique côté thème ni déduire la page de reprise à partir du seul dernier écran affiché.
+- Trois méthodes de comptage sont ajoutées : nombre total de soumissions, nombre de participants ayant tenté la leçon et nombre de participants ayant accès à la leçon. Elles filtrent les inscrits selon la capacité `mod/lesson:view` et les groupes ; le comptage des participants exclut les gestionnaires de la leçon. Ces méthodes sont des données de reporting métier, pas des indicateurs que le thème doit recalculer à partir des utilisateurs visibles.
+- Le fichier utilise l’accès à la base via le conteneur de dépendances Moodle pour ces nouveaux comptages.
+
+### Pages typées et formulaires de réponse
+
+Les pages de Leçon ne constituent pas un formulaire générique. Elles sont pilotées par des classes de types de page et des traitements propres à chaque type : choix multiple, vrai/faux, réponse courte, numérique, appariement, essai, table de branchement, cluster et fins de branche/cluster.
+
+Contrôle comparatif ciblé : les fichiers `pagetypes/multichoice.php`, `pagetypes/essay.php` et `pagetypes/branchtable.php` ont un SHA identique entre 4.5 et 5.3. Cela confirme la stabilité de ces trois implémentations représentatives, mais ne constitue pas une preuve d’identité de tous les types de page.
+
+Conséquences fonctionnelles à préserver :
+- les réponses peuvent produire un feedback et une destination de navigation dépendant du type de page, de la réponse, des sauts configurés et du nombre de tentatives ;
+- les tables de branchement et les clusters définissent des parcours non linéaires ; l’ordre des pages ne suffit pas à reconstituer le chemin ;
+- les essais peuvent être corrigés automatiquement ou nécessiter une évaluation humaine (notamment le type essai) ;
+- la relecture d’une tentative ne doit pas créer une nouvelle tentative ni modifier les traces ;
+- le chronomètre, les tentatives, les réponses, les notes et les conditions de reprise sont gérés par le module.
+
+### Conséquences pour Project N
+
+1. Traiter Leçon comme un moteur de parcours pédagogique non linéaire, pas comme une suite de pages ou de questions standardisées.
+2. Préserver les contenus et formulaires générés par les types de page ; ne pas remplacer leurs contrôles, leurs boutons de réponse, leurs feedbacks ou leurs destinations.
+3. Ne pas calculer la progression, les tentatives restantes, la reprise ou l’achèvement à partir du DOM. Utiliser les états et données fournis par Moodle.
+4. Respecter les états de tentative, relecture, reprise après interruption, tentative hors ligne et fin de leçon.
+5. Ne pas ajouter un lien de retour au cours qui contredirait la navigation linéaire de Moodle 5.3.
+6. Pour l’espace formateur, s’appuyer sur les comptages Moodle filtrés par groupes et capacités, plutôt que sur des décomptes du thème. Leur présence en 5.3 doit être prise en compte dans les vues de suivi, sans supposer qu’ils existent dans les versions antérieures.
+7. Conserver les classes fonctionnelles Bootstrap des cases à cocher et vérifier les styles de formulaire sur chaque version prise en charge.
+
+**Limites.** L’analyse des pages typées est un échantillonnage ciblé, non une comparaison exhaustive de tous les fichiers `pagetypes`. Les scénarios de branchement, de reprise, d’essai à corriger, de chronométrage et d’usage hors ligne restent à valider par des tests fonctionnels sur les environnements Moodle réellement disponibles.
+
+**Empreintes des fichiers comparés.**
+- `view.php` 4.5, 5.0, 5.1 et 5.2 : `16f8e4d3efaf8f81c9dc9f9468792a6d5109a7c1`
+- `public/mod/lesson/view.php` 5.3 : `51add9ad2e7ea8007162c669683e6e6d59b8c2f7`
+- 4.5 `mod/lesson/locallib.php` : `1f0ae12095bdb9ed63b94f4d9cb5d07d579bf133`
+- 5.3 `public/mod/lesson/locallib.php` : `77f9fa84a31886e77f4a91db943e985c24ff4c58`
+- `pagetypes/multichoice.php`, `pagetypes/essay.php` et `pagetypes/branchtable.php` : SHA respectivement identiques 4.5/5.3 (`565b66420cfdab122ab2d24f87a6f081a756e5fb`, `ae4107d0bbf463a95a4bbbb6b802746f2e99a2a3`, `6f0f5155d591445feea3ac246b0d320ba49b69d7`).
