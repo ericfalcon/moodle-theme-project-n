@@ -2848,3 +2848,63 @@ Conséquences fonctionnelles à préserver :
 - 4.5 `mod/lesson/locallib.php` : `1f0ae12095bdb9ed63b94f4d9cb5d07d579bf133`
 - 5.3 `public/mod/lesson/locallib.php` : `77f9fa84a31886e77f4a91db943e985c24ff4c58`
 - `pagetypes/multichoice.php`, `pagetypes/essay.php` et `pagetypes/branchtable.php` : SHA respectivement identiques 4.5/5.3 (`565b66420cfdab122ab2d24f87a6f081a756e5fb`, `ae4107d0bbf463a95a4bbbb6b802746f2e99a2a3`, `6f0f5155d591445feea3ac246b0d320ba49b69d7`).
+
+
+## 64. Comparaison sémantique Moodle 4.5–5.3 — File API, filepicker, filemanager et éditeurs
+
+**Périmètre et méthode.** Comparaison des branches `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Fichiers examinés : `lib/form/editor.php`, `lib/form/filemanager.php`, `repository/filepicker.php` et `repository/filepicker.js`. Analyse statique ; aucun upload, dépôt externe ou scénario de brouillon n’a été exécuté.
+
+### Évolution par version
+
+| Fichier | 4.5 | 5.0 | 5.1 | 5.2 | 5.3 |
+|---|---|---|---|---|---|
+| `lib/form/editor.php` | SHA A | SHA B | identique 5.0 | SHA C | identique 5.2 |
+| `lib/form/filemanager.php` | SHA D | SHA E | identique 5.0 | SHA F | identique 5.2 |
+| `repository/filepicker.js` | SHA G | SHA H | SHA I | SHA J | SHA K |
+| `repository/filepicker.php` | identique 4.5/5.3 | — | — | — | identique |
+
+Les empreintes détaillées figurent en fin de section. Les changements d’empreinte ne sont pas à eux seuls une preuve de modification du contrat HTML ; les observations ci-dessous proviennent du diff textuel.
+
+### Élément formulaire Editor
+
+- L’élément `MoodleQuickForm_editor` conserve un contrat de formulaire comprenant le texte, le format et l’identifiant de zone brouillon (`itemid`). Il choisit l’éditeur préféré en fonction du format et transmet au moteur les options de contexte, sous-répertoires, taille maximale, taille maximale de zone, types de fichiers et fonctionnalités d’édition.
+- Les options d’upload sont propagées aux sélecteurs distincts pour images, médias, liens, sous-titres et, lorsque disponible, contenus H5P. Le thème ne doit pas coder en dur un seul type de dépôt ni présumer que tous les éditeurs exposent les mêmes contrôles.
+- Les évolutions 5.0 puis 5.2 touchent notamment le code de l’élément formulaire et sa gestion des valeurs persistantes en mode gelé. En 5.3, le rendu gelé gère explicitement la restitution du contenu et des données persistantes ; le thème ne doit donc pas remplacer le rendu d’un champ gelé par une simple apparence de champ éditable.
+- L’éditeur peut être TinyMCE, Atto ou un éditeur texte simple selon la configuration et le format. Les styles et scripts propres à l’éditeur doivent rester isolés de l’habillage global.
+
+### Élément formulaire Filemanager
+
+- L’élément `MoodleQuickForm_filemanager` reste fondé sur un identifiant de zone brouillon et sur les options `maxbytes`, `areamaxbytes`, `maxfiles`, `accepted_types`, `subdirs`, `mainfile` et le contexte.
+- Les contraintes de taille ne sont pas un simple attribut d’interface : Moodle combine les limites globales, celles du contexte/cours, celles de l’utilisateur et celles de l’élément. Le thème ne doit ni afficher une limite arbitraire ni tenter de valider seul la taille ou le type des fichiers.
+- En 5.3, le rendu gelé du filemanager liste les fichiers de la zone brouillon sous forme de liens et préserve les données persistantes. L’état gelé n’est donc pas équivalent à un gestionnaire actif.
+- La description des types de fichiers évolue : un texte auparavant placé dans un paragraphe est rendu dans un conteneur avec la classe `filetypes-descriptions-intro mt-1`. Éviter les sélecteurs CSS dépendant de la structure ancienne.
+
+### Filepicker et dépôts
+
+- `repository/filepicker.php` est identique entre les branches 4.5 et 5.3 examinées : le point d’entrée serveur n’a pas changé dans ce fichier.
+- `repository/filepicker.js`, en revanche, évolue à chaque génération. En 4.5, les requêtes sont construites avec des paramètres sérialisés et l’API YUI `Y.io`. En 5.3, le code construit une URL avec `URL`, prépare un `FormData`, envoie la requête via `XMLHttpRequest` et gère explicitement la progression d’upload.
+- Le nouveau traitement utilise `FormData.set()` pour certains champs déjà présents dans le formulaire d’upload, afin d’éviter les doublons (`itemid`, types acceptés et paramètres de dépôt). Il gère aussi des callbacks de début, progression et fin d’upload, des erreurs spécifiques et les messages de connexion.
+- Les contrôles de sélection globale évoluent également : les attributs `data-toggle` passent de `master/slave` à `toggler/target`, et la classe d’invisibilité accessible passe de `sr-only` à `visually-hidden`.
+- Le sélecteur peut ouvrir des dépôts différents selon les plugins installés et les droits. Le thème ne doit pas supposer un dépôt local unique, ni figer le contenu du sélecteur dans une structure propriétaire.
+
+### Rappel sur les zones brouillon et la File API
+
+Le formulaire ne manipule pas directement une URL définitive de fichier. Les fichiers sélectionnés sont d’abord associés à une zone brouillon (`user/draft`) identifiée par `itemid`. Lors de l’enregistrement du contenu métier, Moodle transfère ou associe les fichiers à une zone cible caractérisée notamment par le contexte, le composant, la filearea, l’itemid, le chemin et le nom. Les permissions, les dépôts, la validation des types et tailles et la transition brouillon-vers-zone métier restent du ressort des API Moodle.
+
+### Conséquences pour Project N
+
+1. Ne jamais reconstruire les URL de fichiers ou déplacer directement les fichiers en base ; utiliser les mécanismes et rendus Moodle.
+2. Préserver les identifiants cachés, les zones brouillon, les noms de champs, les attributs `data-*`, les callbacks JavaScript et les contrôles clavier du filepicker/filemanager.
+3. Ne pas cibler exclusivement les classes `sr-only` ; prendre en charge `visually-hidden` et les classes de contrôle Bootstrap récentes.
+4. Ne pas imposer TinyMCE : conserver le fonctionnement de l’éditeur préféré et des éditeurs alternatifs.
+5. Ne pas transformer un champ gelé en champ actif, ni masquer les liens de fichiers existants dans les vues en lecture seule.
+6. Pour le mobile, améliorer l’enveloppe et l’espace disponible sans remplacer le dialogue de sélection, les dépôts, la progression d’upload ou les mécanismes de focus.
+7. Tester les limites de taille, types autorisés, fichiers multiples, sous-répertoires, fichiers déjà présents, brouillons abandonnés, éditeur gelé, filemanager gelé et erreurs d’upload sur les versions ciblées.
+
+**Limites.** Cette section ne constitue pas une analyse exhaustive de tous les plugins de dépôt, de toutes les implémentations d’éditeur ni des API de stockage. Les différences JavaScript doivent être validées dans un navigateur réel, notamment pour les lecteurs d’écran, la gestion du focus, les uploads volumineux et les erreurs réseau.
+
+**Empreintes des fichiers comparés.**
+- `lib/form/editor.php` : 4.5 `8106a9994d6b930b3315fd90e9ce6b23f06bbec7` ; 5.0/5.1 `5b85e8e0c43d4c579bde2a77f6ae208ab7adde4a` ; 5.2/5.3 `6b4b40b5357132f3c5640e24319730e86637f3e6`.
+- `lib/form/filemanager.php` : 4.5 `c8422d94aa0baac2bef67c94613e38dba0056693` ; 5.0/5.1 `dfe37f273841dede8e84752b63e91751a5886bf9` ; 5.2/5.3 `a7b31c7c0afc5d6dde1c7333365e2eb3bbaefaed`.
+- `repository/filepicker.js` : 4.5 `326f09b00ab382f79256cde6106c161bf77b0f65` ; 5.0 `ecd649cb17a072e89e174fdaf120951cbba52bf3` ; 5.1 `36ccf3466b1c6897432f19ec6c2258e79f8ed15f` ; 5.2 `873bb085db95343b68556addaf43e502a11eb2de` ; 5.3 `3e6879533d595e6d754cb8f602fd2f687f026193`.
+- `repository/filepicker.php` : SHA identique 4.5/5.3 `fcdb2ab9182b03a4e784691f34dcf0934ef88d98`.
