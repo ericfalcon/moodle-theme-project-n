@@ -2858,10 +2858,10 @@ Conséquences fonctionnelles à préserver :
 
 | Fichier | 4.5 | 5.0 | 5.1 | 5.2 | 5.3 |
 |---|---|---|---|---|---|
-| `lib/form/editor.php` | SHA A | SHA B | identique 5.0 | SHA C | identique 5.2 |
-| `lib/form/filemanager.php` | SHA D | SHA E | identique 5.0 | SHA F | identique 5.2 |
-| `repository/filepicker.js` | SHA G | SHA H | SHA I | SHA J | SHA K |
-| `repository/filepicker.php` | identique 4.5/5.3 | — | — | — | identique |
+| `lib/form/editor.php` | `8106a999` | `5b85e8e0` | identique 5.0 | `6b4b40b5` | identique 5.2 |
+| `lib/form/filemanager.php` | `c8422d94` | `dfe37f27` | identique 5.0 | `a7b31c7c` | identique 5.2 |
+| `repository/filepicker.js` | `326f09b0` | `ecd649cb` | `36ccf346` | `873bb085` | `3e687953` |
+| `repository/filepicker.php` | `fcdb2ab9` | — | — | — | identique |
 
 Les empreintes détaillées figurent en fin de section. Les changements d’empreinte ne sont pas à eux seuls une preuve de modification du contrat HTML ; les observations ci-dessous proviennent du diff textuel.
 
