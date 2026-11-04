@@ -2745,3 +2745,53 @@ Cette comparaison repose sur les fichiers listés et leurs empreintes, complét�
 - `repository/filepicker.php` : SHA identique 4.5/5.3 `fcdb2ab9182b03a4e784691f34dcf0934ef88d98`
 - 4.5 `repository/filepicker.js` : `326f09b00ab382f79256cde6106c161bf77b0f65`
 - 5.3 `public/repository/filepicker.js` : `3e6879533d595e6d754cb8f602fd2f687f026193`
+
+
+## 63. Comparaison sémantique Moodle 4.5–5.3 — activité Leçon
+
+**Périmètre et méthode.** Comparaison des contrôleurs `mod/lesson/view.php`, du moteur `locallib.php`, du renderer et des fichiers de types de page entre `MOODLE_405_STABLE` et `MOODLE_503_STABLE` du fork `ericfalcon/moodle`. Analyse statique ; aucune tentative réelle, correction d’essai ou session chronométrée n’a été exécutée.
+
+### Contrôleur `view.php` : changement ciblé en 5.3
+
+- Le parcours reste piloté par l’identifiant du module et, éventuellement, celui de la page. Moodle construit l’objet `lesson`, applique les dérogations d’accès, puis contrôle les restrictions de date, mot de passe et dépendances avant d’afficher une page.
+- La logique de reprise demeure centrale : nombre de tentatives, dernière page vue, sortie pendant une session chronométrée, reprise ou redémarrage, disponibilité d’une nouvelle tentative et arrivée à la fin de la leçon.
+- Différence ciblée entre 4.5 et 5.3 : lorsque la leçon ne permet pas de nouvelle tentative, le bouton « retour au cours » n’est plus proposé si la navigation linéaire du cours est activée. Le message reste affiché, mais le lien est transmis comme nul au renderer.
+- La différence n’altère pas le moteur de pages ou les réponses : elle évite de concurrencer la navigation linéaire de Moodle.
+
+### Renderer : navigation de fin
+
+- Le renderer 5.3 ajoute le même principe à la fin de la leçon : si la navigation linéaire est activée, il s’arrête après les éventuels liens de révision et messages relatifs aux tentatives. Il ne produit alors ni lien vers l’activité suivante, ni retour au cours, ni lien vers les notes.
+- En navigation non linéaire, les liens habituels restent conditionnés par les données de fin, les capacités et les paramètres de notes.
+- Le thème ne doit donc pas ajouter systématiquement ses propres liens de sortie ou de navigation au terme d’une Leçon.
+
+### Types de pages et formulaires de réponse
+
+- Le répertoire `pagetypes` conserve les types structurants : table de branche, cluster, fin de branche/cluster, dissertation, appariement, choix multiple, numérique, réponse courte et vrai/faux.
+- Dans la comparaison des empreintes des fichiers 4.5/5.3, seuls `matching.php` et `shortanswer.php` diffèrent parmi ces types ; les autres fichiers listés ont des SHA identiques. Cette différence d’empreinte appelle une lecture ciblée des deux diffs avant toute conclusion sur leurs effets visuels ou fonctionnels.
+- Les types de pages portent leurs propres contrats de réponse : champs de formulaire, choix, saisie textuelle ou numérique, feedback, score et saut vers une page. Les pages de branche et de cluster pilotent quant à elles le parcours et les embranchements.
+- La Leçon n’est donc pas un questionnaire uniforme : une même enveloppe graphique ne doit pas masquer les différences de contrôle et de navigation propres à chaque type.
+
+### Moteur, tentatives et suivi
+
+- `locallib.php` conserve la logique de préparation de page, d’évaluation des réponses, de calcul des scores, de progression, de temps, de reprise et de fin de parcours.
+- Le fichier évolue entre 4.5 et 5.3. Les changements identifiés incluent des ajustements de classes de formulaires/checkboxes, une gestion explicite du maximum de tentatives (avec zéro interprété comme illimité dans le bloc concerné) et l’ajout de méthodes de comptage des soumissions, des participants ayant tenté la leçon et des participants ayant accès à la leçon. Ces dernières méthodes filtrent selon les groupes et les capacités ; elles intéressent surtout les vues de suivi/formateur.
+- Ces différences ne justifient pas de calculer les tentatives, les scores ou l’achèvement dans le thème. Les données doivent provenir des mécanismes natifs de la Leçon.
+
+### Conséquences pour Project N
+
+1. Conserver les pages typées et leurs formulaires spécifiques ; ne pas transformer la Leçon en quiz générique ni substituer les formulaires par des composants de thème.
+2. Préserver les embranchements, clusters, sauts, feedback, scores, reprise et limites de tentatives, ainsi que les champs et paramètres qui permettent à Moodle de retrouver l’état du parcours.
+3. Traiter séparément les états de restriction (dates, mot de passe, dépendances), de session chronométrée, de reprise, de fin de leçon et de nouvelle tentative.
+4. Respecter la navigation linéaire : ne pas injecter de liens concurrents « retour au cours », « activité suivante » ou « notes » lorsque Moodle les retire.
+5. Pour l’espace formateur, exploiter les vues et comptages natifs en respectant les groupes et capacités ; ne pas exposer de statistiques globales sans reprendre les filtres de visibilité Moodle.
+6. Prévoir des tests mobiles spécifiques pour chaque famille de page et de réponse, notamment appariement, choix multiple, numérique, réponse courte et dissertation. Vérifier aussi clavier, lecteur d’écran, feedback et focus après validation.
+
+**Limites.** Les empreintes différentes de `matching.php` et `shortanswer.php` n’ont pas encore fait l’objet d’une comparaison sémantique ligne à ligne dans cette section. Les différences de `locallib.php` sont issues d’un diff textuel ciblé et non d’une revue exhaustive de ses milliers de lignes. Les comportements de correction manuelle, de reprise hors ligne et de minuterie nécessitent des tests runtime.
+
+**Empreintes des fichiers comparés.**
+- 4.5 `mod/lesson/view.php` : `16f8e4d3efaf8f81c9dc9f9468792a6d5109a7c1`
+- 5.3 `public/mod/lesson/view.php` : `51add9ad2e7ea8007162c669683e6e6d59b8c2f7`
+- 4.5 `mod/lesson/locallib.php` : `1f0ae12095bdb9ed63b94f4d9cb5d07d579bf133`
+- 5.3 `public/mod/lesson/locallib.php` : `77f9fa84a31886e77f4a91db943e985c24ff4c58`
+- 4.5 `mod/lesson/renderer.php` : `562e812da7279708ce21cddaa871ca0576a7beb1`
+- 5.3 `public/mod/lesson/renderer.php` : `02b01f8b60cff4d0d83104049f76032c925973f1`
