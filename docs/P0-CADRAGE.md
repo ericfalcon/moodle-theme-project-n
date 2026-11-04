@@ -11,7 +11,8 @@ Le périmètre couvre l'interface web Moodle/Iomad utilisée dans un navigateur 
 Cibles envisagées :
 - Moodle 4.5 à 5.3 ;
 - Iomad 4.5 LTS, 5.0 et 5.1 comme versions publiées documentées ; la branche expérimentale Iomad 4.5 doit être distinguée de la branche stable.
-- Iomad 5.2 reste une cible conditionnelle : la branche `IOMAD_502_STABLE` existe dans le fork, mais cela ne prouve pas la publication. Il faut la confirmer dans les notes de publication officielles avant de l'inscrire dans la matrice des versions installables.
+- Iomad 5.2 est une cible confirmée (vérification du 4 novembre 2026) : la branche `IOMAD_502_STABLE` du dépôt officiel `iomad/iomad` porte un commit « IOMAD: 5.2.4 release » du 5 octobre 2026, un `version.php` en `MATURITY_STABLE` (release 5.2.4, build 20261005) et une maintenance active. La page Releases de la documentation officielle ne liste pas encore 5.2, mais elle est en retard (dernière mise à jour le 2 avril 2026, antérieure à la création de la branche 5.2). Reste à confirmer la disponibilité d'un environnement 5.2 réellement installable et testable.
+- À noter : la fin de support d'Iomad 5.0 est annoncée pour octobre 2026 sur la page Releases officielle ; la conserver dans la matrice de tests est possible, mais en connaissance de cause.
 - Iomad 5.3 n'existe pas à ce jour : aucune branche correspondante dans le fork, et confirmation par le porteur du projet.
 
 Aucune version ne devra être déclarée compatible sur la seule base d'une inspection du code.
@@ -76,7 +77,7 @@ Conséquences :
 Références :
 - [Boost — UPGRADING.md](https://github.com/moodle/moodle/blob/main/public/theme/boost/UPGRADING.md)
 - [Moodle Developer — Code restructure (depuis 5.1)](https://moodledev.io/docs/5.3/guides/restructure)
-- [IOMAD — Releases](https://docs.iomad.org/wiki/Releases)
+- [IOMAD — Releases](https://docs.iomad.org/wiki/Releases) (page en retard sur la réalité : dernière mise à jour le 2 avril 2026, elle ne liste pas Iomad 5.2 ; voir la vérification du 4 novembre 2026 en section 1)
 - [IOMAD 5.1 — changements techniques et prérequis](https://docs.iomad.org/wiki/IOMAD_5.1)
 - [Moodle Developer 5.3 — Theming React components](https://moodledev.io/docs/5.3/guides/javascript/react/theming) (à vérifier)
 
@@ -263,7 +264,7 @@ La matrice doit distinguer les versions cibles des versions réellement testées
 | Axe | Couverture minimale à organiser en P0 |
 |---|---|
 | Moodle | 4.5 LTS et versions 5.x ciblées, dont 5.3 si environnement disponible |
-| Iomad | 4.5 LTS, 4.5 expérimentale, 5.0 et 5.1 ; 5.2 uniquement après publication et disponibilité d'un environnement installable |
+| Iomad | 4.5 LTS, 4.5 expérimentale, 5.0, 5.1 et 5.2 (publication confirmée le 4 novembre 2026) ; disponibilité d'environnements installables à vérifier pour chaque génération |
 | Navigateurs desktop | Firefox, Chrome/Chromium, Edge ; Safari si environnement disponible |
 | Navigateurs mobiles | Chrome Android et Safari iOS |
 | Écrans | 320, 390, 768 et 1440 CSS px comme points de contrôle |
@@ -315,7 +316,7 @@ La CI ne doit pas simuler une matrice complète qu'elle ne peut pas réellement 
 | D-P0-03 | Composants Moodle réutilisés / personnalisés | Inventaire par parcours et versions |
 | D-P0-04 | Périmètre exact du MVP formateur | Tests de tâches et estimation |
 | D-P0-05 | Tâches mobiles prioritaires administrateur | Entretiens et analyse des rôles |
-| D-P0-06 | Environnements de test Iomad | Vérification des versions disponibles |
+| D-P0-06 | Environnements de test Iomad | **Partiellement résolu le 4 novembre 2026** : publication d'Iomad 5.2 confirmée par le dépôt officiel (release 5.2.4, `MATURITY_STABLE`) ; reste à constituer les environnements installables, dont Iomad 5.2 |
 | D-P0-07 | CI et outils | Prototype reproductible |
 | D-P0-08 | Licence et stratégie de publication | Vérification juridique et règles Moodle plugins |
 | D-P0-09 | Nom définitif | Recherche d'antériorité et répertoire Moodle |
