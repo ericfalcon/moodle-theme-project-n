@@ -3510,8 +3510,91 @@ Les capacités rencontrées comprennent notamment :
 La capacité de configuration d'une méthode ne donne pas automatiquement les droits d'ajouter ou de retirer des participants. Les capacités sont spécifiques au plugin et évaluées dans le contexte du cours.
 
 Limites :
-- référence de code Moodle `MOODLE_500_STABLE) uniquement ;
+- référence de code Moodle `MOODLE_500_STABLE` uniquement ;
 - comparaison des versions 4.5 à 5.3 non terminée ;
 - méthodes d'inscription externes non étudiées exhaustivement ;
 - droits, synchronisations et interfaces spécifiques Iomad à comparer séparément ;
 - aucun test runtime, mobile, clavier ou lecteur d'écran déclaré réalisé par cette analyse statique.
+
+---
+
+## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
+
+Cette section fixe la méthode obligatoire pour couvrir la cible **Moodle 4.5 à 5.3**. Une analyse effectuée sur une seule branche Moodle ne suffit jamais à conclure à la compatibilité de Project N sur toute cette plage.
+
+### 69.1 Versions cibles
+
+| Plateforme | Génération | Référence de travail | Statut de l'analyse |
+|---|---|---|---|
+| Moodle | 4.5 | branche stable exacte à relever au début de la tranche | À comparer |
+| Moodle | 5.0 | `MOODLE_500_STABLE` | Référence utilisée pour les sections 65 à 68 ; différences interversions à relever |
+| Moodle | 5.1 | branche stable exacte à relever au début de la tranche | À comparer |
+| Moodle | 5.2 | branche stable exacte à relever au début de la tranche | À comparer |
+| Moodle | 5.3 | branche stable exacte à relever au début de la tranche | À comparer |
+| Iomad | 4.5 | branche correspondant à Moodle 4.5 | À comparer |
+| Iomad | 5.0 | branche correspondant à Moodle 5.0, si publiée et maintenue | À vérifier |
+| Iomad | 5.1 | branche correspondant à Moodle 5.1, si publiée et maintenue | À vérifier |
+| Iomad | 5.2 | branche correspondant à Moodle 5.2 | À comparer |
+| Iomad | 5.3 | aucune version disponible selon l'état de référence du projet au 7 novembre 2026 | Non testable à ce stade |
+
+Les numéros de versions ne doivent pas être supposés équivalents entre dépôts. Avant chaque comparaison, relever le nom exact de la branche, le tag ou le commit réellement publié. Une version Iomad n'est comparée qu'à la génération Moodle sur laquelle elle est construite.
+
+### 69.2 Règle de preuve
+
+Pour chaque mécanisme étudié, consigner séparément :
+
+1. **Point commun** : même API, même capacité, même structure de rendu ou même comportement dans toutes les versions examinées.
+2. **Différence** : changement de fichier, classe, méthode, signature, template, sélecteur DOM, comportement ou capacité.
+3. **Ajout / retrait** : mécanisme apparu, supprimé ou devenu obsolète dans une version.
+4. **Condition de disponibilité** : fonctionnalité dépendante d'une configuration, d'un plugin, d'une capacité ou d'une version.
+5. **Incertitude** : élément non vérifié, code inaccessible, branche absente ou comportement qui exige un test runtime.
+
+Une absence de différence observée dans un échantillon ne prouve pas que les versions sont identiques. Les points communs doivent être vérifiés sur chaque branche cible ou explicitement marqués comme non vérifiés.
+
+### 69.3 Fiche de comparaison à appliquer à chaque tranche
+
+Chaque sous-domaine de la cartographie doit comporter une fiche de comparaison structurée :
+
+| Champ | Contenu attendu |
+|---|---|
+| Domaine / parcours | Fonction étudiée et profils concernés |
+| Fichiers de référence | Chemins exacts, classes, templates et modules JS |
+| Versions examinées | Version, branche/tag et commit |
+| Points communs | Mécanismes confirmés identiques |
+| Différences par version | Changements précis et conséquences |
+| Capacités / contextes | Droits et périmètres modifiés ou inchangés |
+| Contrats d'interface | Output API, Mustache, AMD, événements, attributs DOM |
+| Impact thème | Héritage Boost, surcharge éventuelle, compatibilité et risque |
+| Tests nécessaires | PHPUnit, Behat, tests manuels, mobile, clavier, lecteur d'écran |
+| Niveau de preuve | Code comparé, test exécuté, hypothèse ou non vérifié |
+
+Les tableaux synthétiques doivent éviter les formulations vagues (« fonctionne pareil »). Ils indiquent les éléments concrets comparés et les exceptions éventuelles.
+
+### 69.4 Registre transversal des différences
+
+Les différences interversions doivent être consignées au fil de l'eau dans un registre dédié, lié à cette cartographie. Le registre devra permettre de retrouver rapidement :
+- le domaine fonctionnel ;
+- la version d'apparition ou de disparition ;
+- les versions affectées ;
+- le fichier ou symbole concerné ;
+- l'effet sur le thème et les éventuelles adaptations conditionnelles ;
+- le statut de vérification et les tests associés.
+
+Les différences ne doivent pas rester uniquement dans les échanges conversationnels ou dans des notes temporaires. Toute tranche validée est reportée dans le document de cartographie et dans le registre transversal avant de poursuivre.
+
+### 69.5 Règle de mise à jour régulière du dépôt
+
+À la fin de chaque tranche d'analyse :
+1. intégrer les constats et les limites dans `docs/P0-CARTOGRAPHIE-NAVIGATION.md` ;
+2. mettre à jour le registre des différences de versions ;
+3. actualiser `ROADMAP.md` et `README.md` si le périmètre ou l'état d'avancement évolue ;
+4. vérifier les liens, la numérotation, les ancres et les références croisées ;
+5. relire le contenu enregistré sur `main` après le commit.
+
+Une tranche n'est considérée comme intégrée que lorsque le contenu a été relu depuis GitHub. Les analyses statiques et les tests exécutés doivent rester explicitement distingués.
+
+### 69.6 Conséquence sur l'état actuel
+
+Les sections 65 à 68 ont été rédigées à partir de Moodle `MOODLE_500_STABLE`. Elles constituent une première cartographie fonctionnelle et technique, mais **ne valident pas la compatibilité Moodle 4.5–5.3**. Elles doivent être complétées par les fiches de comparaison interversions avant que les mécanismes concernés soient considérés comme spécifiés pour le thème.
+
+La compatibilité cible du thème reste Moodle 4.5, 5.0, 5.1, 5.2 et 5.3. Toute décision de surcharge devra être vérifiée sur les cinq générations, avec une stratégie explicite lorsqu'une API ou un template diffère.
