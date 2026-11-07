@@ -304,7 +304,7 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
 5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
 
-Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.16, 67.9–67.12 et 68.11–68.16 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.16, 67.9–67.12 et 68.11–68.17 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 ### 9.4 Chaîne de rendu du cours et contrats de l'Output API
 
