@@ -319,7 +319,7 @@ Constats :
 - le module AMD utilise l'import Bootstrap Collapse depuis bootstrap en 5.3, alors que Moodle 5.0 l'importait depuis theme_boost/bootstrap/collapse ;
 - les arbres de code révèlent des ajouts dans le sous-système : classes/templates d'aperçu d'activité en 5.0, architecture du sélecteur d'activité en 5.1, contenu de navigation linéaire en 5.3.
 
-Les fichiers de la chaîne de rendu standard comparés entre Moodle et Iomad sont identiques pour les sept fichiers sélectionnés dans les couples 5.0 et 5.2. Les couples 4.5 et 5.1 restent à vérifier au même niveau.
+Les fichiers de la chaîne de rendu standard sélectionnés sont identiques entre Moodle et Iomad : neuf fichiers ont été comparés sur le couple 5.0 et sept fichiers communs sur le couple 5.2. Les couples 4.5 et 5.1 restent à vérifier au même niveau.
 
 ### 9.5 Correction des devoirs et carnet de notes
 
