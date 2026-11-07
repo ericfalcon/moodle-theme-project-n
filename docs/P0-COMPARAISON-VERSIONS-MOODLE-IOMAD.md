@@ -407,6 +407,19 @@ Une sélection de neuf fichiers de logique de plugins Moodle natifs a été comp
 
 Cette comparaison confirme que les plugins natifs sélectionnés ne sont pas directement modifiés dans Iomad. La spécificité d'inscription Iomad est principalement portée par enrol/license et par les couches entreprise (licences, affectations, rôles, capacités et synchronisations). Cette conclusion ne couvre pas LDAP, IMS, flatfile, LTI, paiement ni les plugins tiers.
 
+### 9.11 Administration des licences dans Iomad Company Admin
+
+Le parcours de gestion des licences a été comparé entre Iomad 5.0 et 5.2. Les fichiers company_license_list.php, company_license_users_form.php, company_users_licenses_form.php, company_license_form.php, company_license_users_form.php, company_users_licenses_form.php et company_license_table.php évoluent entre ces deux branches. Le module AMD license_edit.js est absent en 5.0 et présent en 5.2.
+
+Le changement d'interface est notable :
+- en 5.0, company_license_edit_form.php est une page autonome et company_license_form étend company_moodleform ;
+- en 5.2, la page autonome n'existe plus dans ce parcours ; company_license_form étend dynamic_form et le formulaire est ouvert en modal via core_form/modalform ;
+- le tableau expose des actions avec data-action, data-licenseid, data-companyid et data-parentid ; le module AMD gère le formulaire modal, le retour du focus, les notifications et la confirmation de suppression.
+
+Les formulaires distinguent le pool de licences, l'allocation aux utilisateurs et l'affectation de cours aux licences d'un utilisateur. Les capacités edit_licenses, edit_my_licenses, split_my_licenses, allocate_licenses, unallocate_licenses et company_license_users délimitent les opérations disponibles. Les quotas, dates de validité, types de licences, programmes multi-cours et entreprises filles sont gérés par les services Iomad.
+
+Cette interface repose sur les tables local_iomad_company_licenses, local_iomad_company_license_users et local_iomad_company_license_courses en 5.2. Les pages et formulaires ne doivent pas être reproduits avec des requêtes SQL ou des règles métier dans le thème.
+
 ## 10. Sources de code examinées
 
 ### Moodle — Output API, format de cours et évaluation
@@ -453,6 +466,17 @@ Cette comparaison confirme que les plugins natifs sélectionnés ne sont pas dir
 - [Moodle 5.0 — plugin meta](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/meta/lib.php)
 - [Moodle 5.0 — plugin guest](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/guest/lib.php)
 - [Moodle 5.0 — plugin database](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/database/lib.php)
+
+### Iomad — administration des licences entreprise
+
+- [Iomad 5.0 — liste des licences entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/company_license_list.php)
+- [Iomad 5.0 — page autonome de création/modification d'une licence](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/company_license_edit_form.php)
+- [Iomad 5.2 — liste des licences entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/company_license_list.php)
+- [Iomad 5.2 — formulaire dynamique de licence](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/forms/company_license_form.php)
+- [Iomad 5.2 — table des licences](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/tables/company_license_table.php)
+- [Iomad 5.2 — module AMD des modales de licence](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/amd/src/license_edit.js)
+- [Iomad 5.2 — affectation de licences aux utilisateurs](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/company_license_users_form.php)
+- [Iomad 5.2 — gestion des cours sous licence d'un utilisateur](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/company_users_licenses_form.php)
 
 ### Iomad — plugin d'inscription par licence
 
