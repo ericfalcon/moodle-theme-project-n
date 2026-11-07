@@ -415,6 +415,15 @@ Les six fichiers sélectionnés (helper, renderer, deux classes de barre d'actio
 - [Moodle 5.3 — entité membre de cohorte](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/cohort/classes/reportbuilder/local/entities/cohort_member.php)
 - [Moodle 5.3 — rapport système des cohortes](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/cohort/classes/reportbuilder/local/systemreports/cohorts.php)
 
+### Moodle — gestion des catégories et cours
+
+- [Moodle 5.3 — helper de gestion des catégories et cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/management/helper.php)
+- [Moodle 5.3 — renderer de gestion des catégories et cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/management_renderer.php)
+- [Moodle 5.3 — barre d'actions d'une catégorie](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/output/category_action_bar.php)
+- [Moodle 5.3 — barre d'actions de gestion des catégories](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/output/manage_categories_action_bar.php)
+- [Moodle 5.3 — template de barre d'actions de catégorie](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/category_actionbar.mustache)
+- [Moodle 5.3 — template de barre d'actions de gestion](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/manage_category_actionbar.mustache)
+
 ### Iomad — Company Admin et migration local_iomad
 
 - [Iomad 5.0 — page de gestion des utilisateurs](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/editusers.php)
