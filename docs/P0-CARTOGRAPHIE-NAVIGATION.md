@@ -4056,6 +4056,23 @@ Dans le second cas, le code enregistre les informations de résultat, supprime d
 
 Cette anomalie apparaît dans les codes Iomad 5.0 et 5.2 examinés. Elle peut affecter l'enregistrement du résultat et de la date de fin pour les retraits liés à l'inactivité. Ce constat est une alerte de revue statique, pas un diagnostic runtime : il faut reproduire le cas sur une instance de test, consulter les journaux PHP et vérifier l'effet sur les données avant de proposer une correction. Aucun fichier du fork n'a été modifié.
 
+### 68.16 Comparaison des plugins d'inscription Moodle natifs dans Iomad
+
+La comparaison ne s'est pas limitée aux contrôleurs. Une sélection de neuf fichiers de logique de plugins natifs a été comparée intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 :
+- enrol/category/lib.php et sa tâche de synchronisation ;
+- enrol/cohort/lib.php et sa tâche de synchronisation ;
+- enrol/manual/lib.php ;
+- enrol/self/lib.php ;
+- enrol/meta/lib.php ;
+- enrol/guest/lib.php ;
+- enrol/database/lib.php.
+
+Les neuf fichiers sont identiques entre Moodle et Iomad sur chacun des deux couples vérifiés.
+
+**Conclusion limitée :** pour les plugins natifs sélectionnés, Iomad ne modifie pas directement la logique d'inscription Moodle dans ces fichiers. L'extension spécifique est principalement portée par le plugin enrol/license, les associations entreprise/utilisateur, les rôles et capacités Iomad, les licences et les mécanismes de synchronisation. Les autres plugins (LDAP, IMS, flatfile, LTI, paiement, plugins tiers et synchronisations spécifiques) ne sont pas couverts par cette sélection.
+
+**Conséquence Project N :** ne pas construire une seconde logique d'inscription dans le thème. Conserver les interfaces fournies par les plugins et les capacités associées. Pour les fonctions Iomad, distinguer l'inscription Moodle à une instance, l'affectation d'une licence à une entreprise/utilisateur, et les rôles entreprise/cours qui peuvent être attribués en conséquence.
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
