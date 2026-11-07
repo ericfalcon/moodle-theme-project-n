@@ -3047,6 +3047,28 @@ Cette organisation est une proposition d'architecture de l'information. Chaque d
 
 ---
 
+
+### 65.10 Comparaison statique des points d'entrée sur Moodle 4.5 à 5.3
+
+Une première comparaison des fichiers sources a été effectuée sur les branches officielles `MOODLE_405_STABLE`, `MOODLE_500_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` et `MOODLE_503_STABLE`. Les empreintes Git des fichiers permettent de distinguer les contenus strictement identiques des fichiers modifiés ; elles ne prouvent pas à elles seules une identité de comportement.
+
+| Élément | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 | Constat établi |
+|---|---|---|---|---|---|---|
+| Page du cours | `course/view.php` | idem | `public/course/view.php` | idem | idem | Fichier différent à chaque génération comparée ; analyse des contrats de format de cours à poursuivre |
+| Édition du cours | `course/edit.php` | idem | `public/course/edit.php` | idem | idem | Empreinte identique sur les cinq branches |
+| Participants | `user/index.php` | idem | `public/user/index.php` | idem | idem | 4.5 diffère ; 5.0, 5.1 et 5.2 identiques ; 5.3 diffère |
+| Rapport du correcteur | `grade/report/grader/index.php` | idem | `public/grade/report/grader/index.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
+| Application de correction du devoir | `mod/assign/classes/output/grading_app.php` | idem | `public/mod/assign/classes/output/grading_app.php` | idem | idem | 4.5 et 5.0 identiques ; 5.1 et 5.3 présentent des évolutions ; 5.2 reste à contrôler |
+
+**Conséquences :**
+- L'édition du cours est un bon candidat à une intégration commune, sous réserve de vérifier également les formulaires, templates et API appelés.
+- La page du cours ne doit pas être considérée comme un contrat stable sur la seule base de son point d'entrée : son évolution impose de comparer aussi le format de cours, ses composants de sortie, les templates et les modules JavaScript.
+- Le déplacement vers `public/` à partir de Moodle 5.1 est une modification de l'organisation du dépôt et du document root, pas une raison de coder des chemins physiques de fichiers dans le thème.
+- La correction des devoirs doit être revue au niveau de l'Output API et de l'application de correction, pas uniquement par comparaison de la page PHP.
+
+Niveau de preuve : comparaison des empreintes des fichiers sur les branches indiquées. Les écarts de contenu n'ont pas tous été relus ligne à ligne et aucun test navigateur n'est déclaré réalisé.
+
+
 ## 66. Administration Moodle — comptes utilisateurs et cohortes
 
 > Première tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE` (référence 5.0). Cette analyse porte sur les interfaces et mécanismes natifs. Elle ne valide pas encore les écarts Moodle 4.5–5.3, les adaptations Iomad ni les parcours en environnement installé.
@@ -3207,6 +3229,25 @@ Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits éten
 
 ---
 
+
+### 66.10 Comparaison statique des comptes et cohortes sur Moodle 4.5 à 5.3
+
+| Élément | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 | Constat établi |
+|---|---|---|---|---|---|---|
+| Page d'administration des comptes | `admin/user.php` | idem | `public/admin/user.php` | idem | idem | 4.5 diffère ; 5.0, 5.1 et 5.2 identiques ; 5.3 diffère |
+| Rapport système des utilisateurs | `admin/classes/reportbuilder/local/systemreports/users.php` | idem | `public/admin/classes/reportbuilder/local/systemreports/users.php` | idem | idem | 4.5 diffère ; 5.0 et 5.1 identiques ; 5.2 et 5.3 évoluent |
+| Liste des cohortes | `cohort/index.php` | idem | `public/cohort/index.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
+| Actions groupées | `admin/user/user_bulk.php` | idem | `public/admin/user/user_bulk.php` | idem | idem | Empreinte identique sur les cinq branches |
+
+**Conséquences :**
+- Le socle des actions groupées paraît stable dans le fichier contrôleur, mais les formulaires, actions disponibles, hooks et capacités doivent aussi être vérifiés avant de figer les composants du thème.
+- Le rapport système des utilisateurs est un point d'évolution notable : la présentation Project N doit rester pilotée par les colonnes, filtres, actions et exports réellement fournis par Report Builder.
+- La liste des cohortes présente un fichier stable de 5.0 à 5.3, mais le changement entre 4.5 et 5.0 impose de vérifier les données, les capacités et les vues associées.
+- Les différences de code observées ne permettent pas d'inférer seules une différence de droits. Les définitions de capacités, les contextes et les rôles doivent être comparés séparément.
+
+Les empreintes confirment les groupes de versions indiqués ; elles ne constituent pas une revue ligne à ligne de tous les composants dépendants. Aucun test runtime n'est déclaré réalisé.
+
+
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
 > Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
@@ -3360,6 +3401,16 @@ La page ajoute des accès à la gestion des cours/catégories, à l'ajout de cat
 - Les écarts Iomad doivent être étudiés sur la version Moodle correspondante, sans présumer que le périmètre catégorie est équivalent au périmètre entreprise.
 
 ---
+
+
+### 67.9 Comparaison statique de la gestion des catégories et cours
+
+Le point d'entrée `course/management.php` a été comparé sur les cinq branches Moodle cibles. Son empreinte Git est strictement identique entre Moodle 4.5, 5.0, 5.1, 5.2 et 5.3. À partir de Moodle 5.1, son chemin dans le dépôt devient `public/course/management.php`, sans modification du contenu du fichier.
+
+**Conclusion limitée :** le contrôleur principal de gestion des catégories et des cours est stable sur les cinq branches examinées. Cela constitue un indice favorable pour une intégration commune, mais ne suffit pas à déclarer l'ensemble de l'interface identique. Il reste à contrôler les classes de gestion, le renderer, la barre d'actions, les templates, les modules JavaScript, les chaînes de langue et les capacités.
+
+La section 67 peut donc conserver son analyse fonctionnelle actuelle. Les adaptations du thème devront cibler les points d'extension réellement disponibles et éviter de surcharger le contrôleur ou de reproduire ses opérations.
+
 
 ## 68. Administration Moodle — méthodes d'inscription et inscriptions aux cours
 
@@ -3517,6 +3568,24 @@ Limites :
 - aucun test runtime, mobile, clavier ou lecteur d'écran déclaré réalisé par cette analyse statique.
 
 ---
+
+
+### 68.11 Comparaison statique des méthodes d'inscription
+
+| Élément | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 | Constat établi |
+|---|---|---|---|---|---|---|
+| Gestion des instances | `enrol/instances.php` | idem | `public/enrol/instances.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
+| Configuration d'une instance | `enrol/editinstance.php` | idem | `public/enrol/editinstance.php` | idem | idem | 5.1 à 5.3 identiques ; comparaison 4.5/5.0 à compléter |
+| Gestion des inscriptions manuelles | `enrol/manual/manage.php` | idem | `public/enrol/manual/manage.php` | idem | idem | 4.5, 5.0 et 5.1 diffèrent ; 5.1 à 5.3 identiques |
+
+**Conséquences :**
+- Le contrôleur des instances d'inscription est stable de Moodle 5.0 à 5.3 ; le changement de chemin en 5.1 relève de la nouvelle arborescence publique.
+- La gestion manuelle des inscriptions évolue entre 4.5, 5.0 et 5.1. Les rôles attribuables, dates, durées, filtres et opérations d'ajout/retrait doivent être relus dans chaque version avant toute adaptation de présentation.
+- Le formulaire d'édition d'une instance reste délégué au plugin d'inscription. La stabilité de son contrôleur ne rend pas les formulaires de plugins interchangeables.
+- Les plugins d'inscription tiers et les méthodes spécifiques Iomad ne sont pas couverts par cette comparaison.
+
+Niveau de preuve : empreintes Git des points d'entrée sur les branches officielles. L'analyse des classes de plugin, capacités, synchronisations et tests d'interface reste à compléter.
+
 
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
