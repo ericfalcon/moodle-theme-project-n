@@ -3527,8 +3527,8 @@ La page ajoute des accès à la gestion des cours/catégories, à l'ajout de cat
 
 ### 67.8 Limites et validations restantes
 
-- Référence de code : Moodle `MOODLE_500_STABLE` uniquement.
-- Les différences de gestion des catégories/cours entre Moodle 4.5 et 5.3 restent à comparer, notamment dans le renderer de gestion, la barre d'actions et les composants JavaScript.
+- Références de code : Moodle 4.5 à 5.3 pour le contrôleur, le helper, le renderer, les barres d'actions et plusieurs templates ; voir 67.9 à 67.12.
+- Les différences de renderer, de helper et de barre d'actions sont établies statiquement, mais les contrats JavaScript et les actions de tous les plugins ne sont pas exhaustivement couverts.
 - L'interface mobile réelle doit être testée : le fait que Moodle propose plusieurs modes de vue ne garantit pas que toutes les actions soient confortables sur smartphone.
 - Les opérations de déplacement, suppression et visibilité doivent être testées avec des profils ayant des droits globaux, limités à une catégorie et sans droits de gestion.
 - Les écarts Iomad doivent être étudiés sur la version Moodle correspondante, sans présumer que le périmètre catégorie est équivalent au périmètre entreprise.
@@ -3544,6 +3544,69 @@ Le point d'entrée `course/management.php` a été comparé sur les cinq branche
 
 La section 67 peut donc conserver son analyse fonctionnelle actuelle. Les adaptations du thème devront cibler les points d'extension réellement disponibles et éviter de surcharger le contrôleur ou de reproduire ses opérations.
 
+
+### 67.11 Contrat de gestion des catégories et cours : helper, renderer et actions
+
+La comparaison a été étendue au-delà de course/management.php. Le moteur d'interface est réparti entre :
+- core_course\\management\\helper : préparation des données et calcul des actions disponibles ;
+- core_course_management_renderer : rendu de l'arborescence des catégories, des listes de cours, des détails, des actions et de la pagination ;
+- core_course\\output\\manage_categories_action_bar et category_action_bar : barre d'actions, filtres de navigation et recherche ;
+- les objets core_course_category et core_course_list_element : données et capacités métier qui déterminent les opérations autorisées.
+
+Le helper ne construit pas une liste fixe de boutons. Il s'appuie sur les méthodes métier de la catégorie et du cours, par exemple can_edit, can_change_visibility, can_change_sortorder, can_create_subcategory, can_delete_full, can_review_permissions, can_review_cohorts, can_review_filters, can_restore_courses_into, can_create_course, can_copy, can_delete et can_move. La disponibilité des actions peut aussi dépendre de plugins comme Recycle Bin ou Content Bank, de la configuration de la plateforme et du contexte.
+
+Les actions de catégorie observées comprennent notamment consultation, modification, masquage/affichage, déplacement, création de sous-catégorie, tri des sous-catégories, suppression, permissions, verrouillage de contexte, cohortes, filtres, restauration, corbeille et banque de contenus.
+
+Les actions de cours observées comprennent notamment consultation, modification, copie, suppression, masquage/affichage et déplacement dans la catégorie. Lorsqu'un cours est en cours de suppression, les actions ordinaires de la liste sont supprimées. Les opérations de masse (tri, déplacement de catégories ou de cours) sont construites séparément des actions d'une ligne.
+
+#### 67.11.1 Contrat DOM et JavaScript
+
+Le renderer construit une arborescence récursive de catégories. Les éléments portent notamment role=treeitem, aria-expanded, data-id, data-expandable, data-expanded, data-selected, data-visible et des attributs data-action pour développer, réduire ou sélectionner. Les catégories enfants sont imbriquées dans des listes role=group.
+
+La liste des cours expose des attributs data-id, data-selected, data-visible et des cases de sélection data-action=select. Elle intègre pagination, compteurs, poignées de déplacement, menus d'actions et indicateurs de suppression programmée.
+
+Le renderer Moodle 5.3 initialise encore le module YUI moodle-course-management. La présence de markup Bootstrap 5 ne signifie donc pas que l'ensemble des interactions est piloté par Bootstrap ou par les composants modernes du thème.
+
+**Conséquences Project N :**
+1. Conserver les rôles ARIA de l'arbre, les états développé/replié et les relations aria-controls.
+2. Préserver les attributs data-action, data-id, data-visible et les identifiants de sélection utilisés par le JavaScript Moodle.
+3. Ne pas confondre actions de ligne, actions globales et actions de masse.
+4. Conserver la pagination, la recherche, les vues disponibles, les compteurs et les états de suppression.
+5. Adapter l'affichage mobile sans remplacer les règles de disponibilité des actions ni retirer les contrôles nécessaires au clavier.
+
+#### 67.11.2 Barres d'actions et recherche
+
+La barre de gestion distingue les modes de vue (cours et catégories, catégories seules, cours seuls), le sélecteur de catégorie et la recherche. L'action de recherche peut renvoyer vers la gestion des cours pour un utilisateur disposant de capacités de gestion/création, ou vers la recherche de cours ordinaire pour un utilisateur sans ces capacités.
+
+Sur une page de catégorie, les options supplémentaires sont conditionnées par la visibilité de la catégorie et les capacités effectives : créer un cours, demander un cours, approuver des demandes, gérer les cours et créer une sous-catégorie. Les listes de catégories proposées dans les sélecteurs sont elles-mêmes filtrées selon moodle/category:manage et moodle/course:create.
+
+La barre d'actions est donc un composant de navigation contextuel. Project N peut la réorganiser, mais ne doit pas transformer ses options en raccourcis universels disponibles dans tous les contextes.
+
+### 67.12 Évolutions interversions et comparaison Moodle / Iomad
+
+#### 67.12.1 Évolutions Moodle 4.5 à 5.3
+
+| Fichier | Résultat sur les cinq branches | Conséquence |
+|---|---|---|
+| course/management.php | Identique sur 4.5 à 5.3 | Point d'entrée commun |
+| course/classes/management/helper.php | 4.5 différent ; 5.0 = 5.1 = 5.2 ; 5.3 évolue | Les données et actions calculées doivent être vérifiées par génération |
+| course/classes/management_renderer.php | Contenu différent à chaque génération | Le DOM de gestion ne doit pas être supposé identique |
+| course/classes/output/category_action_bar.php | 4.5, 5.0 et 5.1 différents ; 5.1 = 5.2 = 5.3 | Contrat de barre de catégorie stabilisé depuis 5.1 |
+| course/classes/output/manage_categories_action_bar.php | 4.5 diffère ; 5.0 à 5.3 identiques | Composant commun stable depuis 5.0 |
+| course/templates/category_actionbar.mustache | 4.5 diffère ; 5.0 à 5.3 identiques | Template stable depuis 5.0 |
+| course/templates/manage_category_actionbar.mustache | 4.5 diffère ; 5.0 à 5.3 identiques | Template stable depuis 5.0 |
+| course/templates/coursecard.mustache | 4.5 diffère ; 5.0 = 5.1 ; 5.2 = 5.3 | Carte de cours à revoir à partir de 5.2 |
+| course/templates/coursecards.mustache | 4.5 à 5.1 identiques ; 5.2 = 5.3 et diffèrent des versions précédentes | Grille de cartes modifiée en 5.2 |
+
+Les empreintes ont été comparées sur les cinq branches. Le renderer a été lu en 5.3 pour relever les contrats DOM et les actions. Aucun test navigateur ou test d'accessibilité n'a été exécuté.
+
+#### 67.12.2 Contrôle Moodle / Iomad
+
+Les six fichiers sélectionnés (helper, renderer, deux classes de barre d'actions et deux templates Mustache) ont été comparés intégralement sur les couples Moodle/Iomad 5.0 et 5.2. Ils sont identiques sur chacun de ces deux couples.
+
+Cela confirme que l'interface standard de gestion des catégories et cours du cœur n'est pas directement modifiée dans les fichiers comparés. Les adaptations de gestion entreprise sont portées par les composants Iomad Company Admin, notamment les formulaires et tables propres à la gestion des cours d'entreprise décrits en 67.10. Elles ne doivent pas être confondues avec la gestion standard des catégories Moodle.
+
+Les couples 4.5 et 5.1 restent à vérifier au même niveau de dépendances. Les personnalisations présentes dans le fork Iomad 5.0 restent séparées et doivent être conservées.
 
 ## 68. Administration Moodle — méthodes d'inscription et inscriptions aux cours
 
