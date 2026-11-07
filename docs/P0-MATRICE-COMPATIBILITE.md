@@ -128,7 +128,7 @@ Le contexte entreprise (`CONTEXT_COMPANY`) et les capacités du bloc `block_ioma
 
 Le champ Iomad `company_users.managertype` n'est pas un rôle Moodle. Il encode une fonction dans l'entreprise (notamment utilisateur, gestionnaire d'entreprise, gestionnaire de département ou reporter). Le champ `company_users.educator` est distinct et peut être combiné à cette fonction. Les valeurs des sélecteurs de formulaire (0, 1, 10, 11, 20, 21, 40, 41) sont converties avant enregistrement ; elles ne sont pas des identifiants de rôle.
 
-La méthode `company::upsert_company_user()` affecte les rôles effectifs au contexte entreprise et, selon `iomad_autoenrol_managers`, peut aussi inscrire les gestionnaires aux cours avec `companycourseeditor` ou `companycoursenoneditor`. Les écrans doivent donc distinguer statut de gestion, statut d'éducateur et rôles réellement attribués.
+La méthode `company::upsert_company_user()` affecte les rôles effectifs au contexte entreprise et, selon `iomad_autoenrol_managers`, peut aussi inscrire les gestionnaires aux cours avec `companycourseeditor` ou `companycoursenoneditor`. Les écrans doivent donc distinguer statut de gestion, statut d'éducateur et rôles réellement attribués. Les capacités sont configurables depuis `company_capabilities.php` et peuvent s'appuyer sur des modèles `company_role_templates` ; les menus ne doivent pas reposer sur une correspondance rôle-fonction figée.
 
 ### 7.3 Personnalisations du fork Iomad 5.0
 
