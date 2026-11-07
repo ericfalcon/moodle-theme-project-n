@@ -304,7 +304,7 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
 5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
 
-Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.12, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.14, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 ### 9.4 Chaîne de rendu du cours et contrats de l'Output API
 
@@ -335,6 +335,24 @@ Le rapport gradereport_grader connaît un changement de contrat en 5.3 :
 Conséquence : privilégier les composants communs Moodle et préserver les régions DOM, attributs ARIA, commandes clavier et actions natives dans les adaptations desktop et mobile. Toute surcharge du template spécifique du rapport de notes doit être revue pour Moodle 5.3.
 
 Ces constats sont statiques ; ils ne valident ni les workflows de correction ni l'accessibilité réelle de l'interface.
+
+### 9.6 Report Builder des comptes et cohortes
+
+La comparaison a été étendue des pages d'entrée aux principales entités et classes système Report Builder.
+
+Pour le rapport des comptes, le système assemble les entités utilisateur, cohorte, membre de cohorte et rôle. Les colonnes et filtres sont composés à partir des entités, des champs d'identité configurés, des champs de profil et des extensions. Les actions de ligne sont conditionnées par des callbacks qui contrôlent les capacités, les états du compte, l'identité MNet, le compte courant et le statut administrateur de la cible.
+
+Pour les cohortes, le rapport système utilise les entités cohorte et membre de cohorte. Le contexte est une donnée de portée essentielle. La consultation, la sélection groupée, la modification, l'affichage/masquage, la suppression et l'affectation des membres dépendent des capacités dans ce contexte et de l'origine de la cohorte. Les cohortes synchronisées par un composant ne sont pas des objets librement modifiables.
+
+Les fichiers sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 :
+- rapport système utilisateurs ;
+- entité utilisateur et datasource utilisateurs ;
+- entités cohorte et membre de cohorte ;
+- rapport système des cohortes.
+
+Les fichiers sélectionnés sont identiques entre Moodle et Iomad sur chacun de ces deux couples. Les écrans spécifiques du bloc Iomad Company Admin, les filtres par entreprise/département et les règles de cloisonnement ne sont pas couverts par cette identité.
+
+La comparaison interversions montre que le rapport système utilisateurs change entre 4.5 et 5.0, reste identique entre 5.0 et 5.1, puis évolue en 5.2 et 5.3. Les entités cohorte et membre de cohorte évoluent également au fil des générations. L'interface Project N doit donc exploiter les colonnes, filtres, actions et contextes effectivement fournis par Report Builder plutôt que reproduire un tableau statique.
 
 ## 10. Sources de code examinées
 
