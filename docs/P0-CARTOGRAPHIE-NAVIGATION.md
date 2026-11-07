@@ -3520,6 +3520,8 @@ Limites :
 
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
+Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
+
 Cette section fixe la méthode obligatoire pour couvrir la cible **Moodle 4.5 à 5.3**. Une analyse effectuée sur une seule branche Moodle ne suffit jamais à conclure à la compatibilité de Project N sur toute cette plage.
 
 ### 69.1 Versions cibles
