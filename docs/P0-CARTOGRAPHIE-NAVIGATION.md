@@ -3630,6 +3630,31 @@ La tâche asynchrone `local_iomad\\task\\resetrolestask` réinitialise les capac
 
 **Conséquence thème :** l'interface d'administration doit s'appuyer sur les capacités effectives et le contexte courant. Ne pas déduire les accès d'un simple libellé de rôle, ni assimiler Company Manager à Moodle Manager. Les menus, actions et compteurs doivent être conditionnés par les capacités Iomad et Moodle réellement disponibles.
 
+### 66.12 Distinction entre rôles, statut de gestion et statut d'éducateur
+
+Iomad superpose plusieurs notions qu'il ne faut pas fusionner dans l'interface :
+
+1. **Rôle Moodle/Iomad** : objet Moodle affecté à un contexte. Par exemple `companymanager`, `companydepartmentmanager` ou `companyreporter` sont affectés au contexte entreprise ; `companycourseeditor` et `companycoursenoneditor` sont des rôles de cours.
+2. **Type de gestionnaire Iomad** : valeur `managertype` enregistrée dans `company_users`. Les valeurs utilisées par le code sont notamment 0 (utilisateur ordinaire), 1 (gestionnaire d'entreprise), 2 (gestionnaire de département) et 4 (reporter d'entreprise). Ce champ n'est pas un identifiant de rôle Moodle.
+3. **Statut d'éducateur** : champ distinct `educator` de `company_users`. Il peut être combiné à un type de gestionnaire. Ce n'est pas un rôle supplémentaire créé dans `local/iomad/db/install.php`.
+
+Le formulaire de création d'utilisateur propose des choix d'interface (0, 1, 10, 11, 20, 21, 40, 41), puis les convertit en `managertype` (0, 1, 2, 4) et indicateur `educator`. Par exemple, 11 correspond à gestionnaire d'entreprise + éducateur ; 21 à gestionnaire de département + éducateur ; 41 à reporter + éducateur. Ces valeurs de formulaire ne doivent pas être exposées comme des identifiants de rôle.
+
+La méthode `company::upsert_company_user()` synchronise ensuite l'association `company_users` et les rôles effectifs :
+- type 1 : affecte `companymanager` au contexte entreprise ;
+- type 2 : affecte `companydepartmentmanager` au contexte entreprise ;
+- type 4 : affecte `companyreporter` au contexte entreprise ;
+- type 0 : retire les rôles de gestion correspondants lors d'une rétrogradation ;
+- selon `iomad_autoenrol_managers`, peut inscrire automatiquement les gestionnaires aux cours de l'entreprise et leur attribuer `companycourseeditor` sur les cours créés par l'entreprise ou `companycoursenoneditor` sur les autres cours concernés.
+
+Les rôles de cours sont donc une conséquence conditionnelle de la politique d'auto-inscription et du type de cours, pas une simple traduction directe du type de gestionnaire.
+
+**Conséquence thème :** ne pas produire un badge unique « rôle » à partir de `managertype`. Pour les écrans d'administration, distinguer fonction dans l'entreprise, statut d'éducateur, rôles effectivement affectés au contexte entreprise et rôles attribués dans chaque cours. Les actions doivent rester conditionnées par les capacités, pas par une valeur numérique du formulaire.
+
+Niveau de preuve : lecture de `blocks/iomad_company_admin/company_user_create_form.php`, `blocks/iomad_company_admin/classes/tables/editusers_table.php`, `local/iomad/lib/company.php` (`upsert_company_user()`) et `local/iomad/lib/user.php`. Comportements d'auto-inscription à confirmer en test runtime selon la configuration.
+
+
+
 ### 67.10 Différences du fork Iomad 5.0 — gestion des cours
 
 Le fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, conserve six fichiers personnalisés par rapport à l'amont Iomad 5.0. Après synchronisation amont, la branche est en avance de 15 commits et en retard de zéro commit. Le commit de fusion est `40f37899a1d89bf307bd0cc0d205c01c03f78e5e`; le commit amont intégré est `77c795dca4fd423e7b76c5996413f33b0679ba85`.
