@@ -389,6 +389,18 @@ Le renderer construit une arborescence de catégories et une liste de cours avec
 
 Les six fichiers sélectionnés (helper, renderer, deux classes de barre d'actions et deux templates Mustache) ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 ; ils sont identiques sur chacun de ces couples. Les adaptations de gestion des cours d'entreprise sont portées par les composants Iomad Company Admin décrits dans la cartographie, et non par ces fichiers du cœur.
 
+### 9.9 Plugin Iomad enrol/license
+
+Le plugin enrol/license est absent des cinq branches Moodle 4.5 à 5.3 et présent dans les quatre branches Iomad 4.5 à 5.2. Il constitue une méthode d'inscription spécifique à Iomad, distincte des méthodes natives Moodle.
+
+Sur les branches Iomad 4.5 et 5.0, le fichier lib.php est identique. Il évolue en 5.1 puis reste identique en 5.2. Les fichiers edit.php, edit_form.php, locallib.php, db/access.php et classes/task/cron_task.php sont identiques sur les quatre branches.
+
+Les différences du lib.php entre 5.0 et 5.2 suivent la migration du modèle local_iomad : tables de licences et d'affectation renommées avec le préfixe local_iomad_, champ licensecourseid remplacé par courseid dans les requêtes de la méthode, et paramètre de format de date déplacé vers la configuration du plugin local_iomad.
+
+Le plugin vérifie l'existence d'une licence individuelle non utilisée ou d'une licence globale de l'entreprise, les dates de validité, le quota d'allocation, l'éventuelle appartenance à une cohorte et la disponibilité dans un parcours d'apprentissage. Il calcule ensuite la durée d'inscription, attribue le rôle prévu, marque la licence comme utilisée et émet un événement. Le traitement cron gère les retraits pour inactivité et expiration.
+
+Une anomalie statique dans le traitement de l'inactivité est identifiée en 5.0 et 5.2 : la première boucle utilise user->userid, user->enrolid et user->courseid alors que la variable de boucle est instance et que l'identifiant est dans userid ; elle affecte aussi timecompleted depuis runtime avant que runtime soit initialisé dans la fonction. Ce point doit être reproduit en environnement de test avant toute correction. Aucun code du fork n'a été modifié.
+
 ## 10. Sources de code examinées
 
 ### Moodle — Output API, format de cours et évaluation
@@ -423,6 +435,15 @@ Les six fichiers sélectionnés (helper, renderer, deux classes de barre d'actio
 - [Moodle 5.3 — barre d'actions de gestion des catégories](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/output/manage_categories_action_bar.php)
 - [Moodle 5.3 — template de barre d'actions de catégorie](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/category_actionbar.mustache)
 - [Moodle 5.3 — template de barre d'actions de gestion](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/manage_category_actionbar.mustache)
+
+### Iomad — plugin d'inscription par licence
+
+- [Iomad 5.0 — plugin enrol/license](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/enrol/license/lib.php)
+- [Iomad 5.2 — plugin enrol/license](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/enrol/license/lib.php)
+- [Iomad 5.2 — configuration de l'instance licence](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/enrol/license/edit.php)
+- [Iomad 5.2 — formulaire d'inscription par licence](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/enrol/license/locallib.php)
+- [Iomad 5.2 — capacités enrol/license](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/enrol/license/db/access.php)
+- [Iomad 5.2 — tâche cron des licences](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/enrol/license/classes/task/cron_task.php)
 
 ### Iomad — Company Admin et migration local_iomad
 
