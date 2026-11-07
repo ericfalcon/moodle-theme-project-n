@@ -58,7 +58,7 @@ Ce tableau est volontairement conservateur : « cartographie initiale antérieur
 
 Les contenus complets des points d'entrée listés ont été comparés depuis les branches actuelles des forks. Le détail par fichier, génération et couple Moodle/Iomad est conservé dans :
 - `P0-CARTOGRAPHIE-NAVIGATION.md`, sections 65.10–65.11, 66.10–66.12, 67.9–67.10 et 68.11–68.13 ;
-- `P0-COMPARAISON-VERSIONS-MOODLE-IOMAD.md`, section 10.
+- `P0-COMPARAISON-VERSIONS-MOODLE-IOMAD.md`, section 9.
 
 Le statut « comparé : points d'entrée » ne signifie pas que l'ensemble des classes, templates, renderers, modules JavaScript, plugins, permissions et parcours utilisateurs est couvert. Il ne vaut pas validation fonctionnelle ni déclaration de compatibilité.
 
