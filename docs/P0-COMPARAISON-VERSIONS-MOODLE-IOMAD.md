@@ -323,7 +323,7 @@ Les fichiers de la chaîne de rendu standard comparés entre Moodle et Iomad son
 
 ### 9.5 Correction des devoirs et carnet de notes
 
-Le renderer de mod_assign (mod/assign/classes/output/renderer.php) évolue dans les cinq générations comparées. La classe grading_app évolue entre 5.0 et 5.1, puis en 5.2 ; les versions 5.2 et 5.3 sont identiques pour ce fichier. En 5.3, la classe prend explicitement en compte le marqueur dans les devoirs à plusieurs évaluateurs.
+Le renderer de mod_assign (mod/assign/classes/output/renderer.php) évolue dans les cinq générations comparées. La classe grading_app évolue entre 5.0 et 5.1, puis en 5.2 ; les versions 5.2 et 5.3 sont identiques pour ce fichier. À partir de Moodle 5.2, la classe prend explicitement en compte le marqueur dans les devoirs à plusieurs évaluateurs.
 
 Le template grading_app est un assemblage de zones fonctionnelles distinctes : navigation entre participants, relecture, notation, actions, sauvegarde et séparateur redimensionnable. En 5.3, ce séparateur porte data-region=resizer, tabindex=0 et un libellé ARIA. Ces éléments sont des contrats d'interaction et d'accessibilité, pas de simples détails de présentation.
 
