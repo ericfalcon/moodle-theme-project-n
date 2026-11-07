@@ -49,7 +49,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 
 ## P0 — Cadrage, spécifications et décisions
 
-Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : l'inventaire a été complété sur les renderers de cours, tableaux de bord et la configuration, mais reste une analyse statique. La cartographie technique [docs/P0-CARTOGRAPHIE-NAVIGATION.md](docs/P0-CARTOGRAPHIE-NAVIGATION.md) comprend désormais une section 53 sur l'architecture fonctionnelle de `local_iomad`. Ces ajouts ne clôturent pas P0 et ne déclenchent pas le développement.
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : l'inventaire a été complété sur les renderers de cours, tableaux de bord et la configuration, mais reste une analyse statique. La cartographie technique [docs/P0-CARTOGRAPHIE-NAVIGATION.md](docs/P0-CARTOGRAPHIE-NAVIGATION.md) a été enrichie progressivement : elle couvre désormais les analyses jusqu'à la section 65, dont une analyse fonctionnelle de l'espace formateur Moodle standard (gestion des cours, participants, groupes, suivi, notes, communication et correction). Les sections consacrées aux activités, aux contrats techniques et aux fichiers/éditeurs sont également documentées. Cette cartographie reste une analyse statique ; elle ne clôture pas P0 et ne déclenche pas le développement.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
@@ -58,9 +58,9 @@ Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). I
 La cartographie technique doit désormais privilégier **Moodle standard**. Les travaux déjà réalisés sur Iomad constituent une base suffisante pour suspendre l'approfondissement de son administration, sauf lorsqu'un écart Iomad conditionne directement un parcours Moodle ou une décision d'architecture.
 
 Ordre de priorité pour la suite de P0 :
-1. terminer la cartographie des parcours natifs apprenant et formateur dans Moodle ;
-2. approfondir les mécanismes Moodle qui structurent ces parcours : page de cours et édition, activités/ressources, évaluations et corrections, banque de questions, éditeurs, gestion des fichiers, formulaires, notifications et navigation contextuelle ;
-3. relever les contrats techniques à préserver (capabilities, formulaires, Output API, renderers, templates, AMD/JavaScript, événements et attributs DOM) et les différences entre Moodle 4.5 et les générations 5.x ;
+1. consolider la cartographie des parcours apprenant et formateur Moodle, en vérifiant les éventuels angles morts et les différences entre versions ; l'espace formateur a fait l'objet d'une première synthèse en section 65 ;
+2. poursuivre l'analyse de l'administration Moodle standard : gestion des utilisateurs et comptes, cohortes, cours et catégories, inscriptions, rôles/capacités/contextes, rapports et paramètres de plateforme ;
+3. approfondir les mécanismes transversaux qui conditionnent les parcours : banque de questions, formulaires, notifications, navigation contextuelle et contrats techniques (capabilities, Output API, renderers, templates, AMD/JavaScript, événements et attributs DOM) ;
 4. analyser ensuite les écarts Iomad strictement nécessaires, en comparant les mêmes générations Moodle ;
 5. maintenir distincts les constats issus de l'analyse statique et les validations qui nécessitent une installation, des scénarios runtime ou des tests d'accessibilité.
 
@@ -303,4 +303,4 @@ Les tâches types sont rejouées aux jalons majeurs et comparées, lorsque cela 
 
 ## Règle de mise à jour
 
-La feuille de route est mise à jour à chaque évolution significative. Une phase ne passe à « Terminée » qu'après vérification de tous ses livrables et critères d'acceptation. Les éléments partiellement réalisés sont signalés comme tels, avec les preuves ou tests associés. Toute décision structurante est datée et justifiée.
+La feuille de route est mise à jour à chaque évolution significative. Chaque tranche de cartographie validée doit être intégrée au dépôt avant de poursuivre l'analyse ; le numéro de section et son périmètre sont reportés ici lorsque cela modifie l'état ou l'ordre des travaux. Une phase ne passe à « Terminée » qu'après vérification de tous ses livrables et critères d'acceptation. Les éléments partiellement réalisés sont signalés comme tels, avec les preuves ou tests associés. Toute décision structurante est datée et justifiée.
