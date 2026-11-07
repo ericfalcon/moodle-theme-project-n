@@ -304,7 +304,7 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
 5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
 
-Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.16, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.16, 67.9–67.12 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 ### 9.4 Chaîne de rendu du cours et contrats de l'Output API
 
@@ -373,6 +373,21 @@ Cette évolution signifie que le code du bloc 5.0 et celui du bloc 5.2 ne partag
 Le parcours d'affectation des utilisateurs à l'entreprise est également une opération métier : double sélecteur utilisateurs potentiels/utilisateurs actuels, contrôle du quota, affectation au département par défaut, événements d'affectation/mise à jour, retrait de l'association et événements correspondants. Une simple modification de rôle Moodle ne reproduit pas cette opération.
 
 La comparaison 5.0/5.2 est statique et n'a pas exécuté de migration de base de données. Elle n'établit pas que le passage d'une instance 5.0 à 5.2 a été testé. Les personnalisations propres au fork Iomad 5.0 sont conservées et doivent rester séparées du code amont.
+
+### 9.8 Gestion des catégories et cours à l'échelle de la plateforme
+
+Le contrôleur course/management.php est strictement identique sur les cinq branches Moodle. En revanche, ses dépendances de rendu évoluent :
+- course/classes/management/helper.php change entre 4.5 et 5.0, reste identique de 5.0 à 5.2, puis évolue en 5.3 ;
+- course/classes/management_renderer.php diffère sur chacune des cinq générations ;
+- category_action_bar.php change entre 4.5, 5.0 et 5.1, puis reste identique en 5.2 et 5.3 ;
+- manage_categories_action_bar.php et les deux templates de barre d'actions sont identiques de 5.0 à 5.3 ;
+- coursecard.mustache évolue en 5.2 ; coursecards.mustache évolue également en 5.2.
+
+Le helper construit les actions à partir des méthodes métier des objets catégorie et cours. Les actions disponibles couvrent la gestion de visibilité, édition, création, déplacement, tri, suppression, permissions, cohortes, filtres, restauration et fonctionnalités conditionnelles de plugins. Les opérations de masse sont séparées des actions de ligne.
+
+Le renderer construit une arborescence de catégories et une liste de cours avec états, sélections, compteurs, pagination, menus et attributs DOM utilisés par le module YUI moodle-course-management. Le thème doit préserver ces contrats et ne pas déduire les actions d'un rôle ou d'un menu fixe.
+
+Les six fichiers sélectionnés (helper, renderer, deux classes de barre d'actions et deux templates Mustache) ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 ; ils sont identiques sur chacun de ces couples. Les adaptations de gestion des cours d'entreprise sont portées par les composants Iomad Company Admin décrits dans la cartographie, et non par ces fichiers du cœur.
 
 ## 10. Sources de code examinées
 
