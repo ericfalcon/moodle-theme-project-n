@@ -3660,6 +3660,41 @@ Les arbres des dépôts montrent aussi l'apparition de nouveaux éléments dans 
 
 Sept fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 : renderer, classes content/section/cm, templates content et section/content, tiroir de l'index et module AMD principal. Les sept fichiers sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. Les couples 4.5 et 5.1 restent à contrôler sur cette même sélection.
 
+### 65.13 Interfaces d'évaluation : correction des devoirs et carnet de notes
+
+#### 65.13.1 Application de correction des devoirs
+
+La correction de devoir s'appuie sur plusieurs couches : la classe mod_assign output grading_app, le renderer du module, des templates Mustache spécialisés et des modules AMD. La comparaison des contenus confirme que le renderer mod/assign/classes/output/renderer.php évolue entre les cinq générations, tandis que grading_app.php évolue en 5.1 puis en 5.2 et reste identique entre 5.2 et 5.3.
+
+La classe grading_app expose notamment des données liées à l'utilisateur évalué, au groupe, à l'assignation et aux marqueurs. Dans la génération 5.3, le constructeur prend explicitement en compte le paramètre marker pour les devoirs utilisant plusieurs évaluateurs. L'interface doit donc préserver la distinction entre attribution du travail de correction et notation finale.
+
+Le template mod_assign/grading_app est un assemblage de zones fonctionnelles distinctes :
+- navigation entre les participants ;
+- panneau de consultation/relecture ;
+- panneau de notation ;
+- actions de notation ;
+- indicateur de sauvegarde ;
+- séparateur redimensionnable entre les panneaux.
+
+En 5.3, le séparateur est rendu avec data-region="resizer", tabindex="0", un libellé ARIA et un titre. Ces attributs font partie du contrat d'interaction et d'accessibilité ; ils doivent être conservés dans toute adaptation mobile ou desktop. Les attributs data-region et les sous-templates sont également consommés par les scripts du module.
+
+**Conséquence Project N :** ne pas transformer l'application de correction en simple formulaire linéaire sans avoir traité le changement de participant, la navigation, le panneau de relecture, le panneau de notation, la sauvegarde et le redimensionnement clavier. En mobile, une présentation séquentielle peut être envisagée, mais elle doit conserver les actions et états natifs.
+
+#### 65.13.2 Rapport du correcteur
+
+Le rapport du correcteur gradereport_grader conserve un point d'entrée PHP identique de 5.0 à 5.3, mais son contrat de barre d'actions évolue en 5.3 :
+- jusqu'à Moodle 5.2, la classe gradereport_grader output action_bar renvoie le template gradereport_grader/action_bar ;
+- en Moodle 5.3, elle renvoie le template commun core/action_bar ;
+- l'ancien template gradereport_grader/action_bar est marqué déprécié en 5.3, avec une dépréciation finale annoncée pour Moodle 6.0.
+
+Le rapport réutilise les composants communs de sélection de groupe, d'initiales, d'utilisateur et la barre d'action générale. La barre d'actions ne doit donc pas être redessinée comme un composant isolé propre au rapport.
+
+**Conséquence Project N :** privilégier les composants communs de navigation/action de Moodle et prévoir une adaptation responsive sans substituer un système de filtres propriétaire. La surcharge historique du template propre au rapport doit être revue pour Moodle 5.3 et anticiper sa disparition à terme.
+
+#### 65.13.3 Limites de la comparaison
+
+Les constats ci-dessus portent sur les classes et templates nommés, leurs déclarations et les sélecteurs repérés dans le JavaScript. Ils ne constituent pas une validation du fonctionnement de l'interface. Restent à vérifier en environnement installé : navigation entre copies, groupes, évaluateurs multiples, feedback plugins, workflow de correction, sauvegarde, redimensionnement clavier, zoom, TalkBack/NVDA et comportement tactile.
+
 ### 66.11 Rôles Iomad et périmètres de gestion
 
 La création des rôles Iomad est déclarée dans `local/iomad/db/install.php`. Les rôles suivants sont spécifiques à Iomad et ne doivent pas être confondus avec le rôle Moodle natif Gestionnaire (`manager`) :
