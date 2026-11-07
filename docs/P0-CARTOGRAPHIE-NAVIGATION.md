@@ -2908,3 +2908,140 @@ Le formulaire ne manipule pas directement une URL définitive de fichier. Les fi
 - `lib/form/filemanager.php` : 4.5 `c8422d94aa0baac2bef67c94613e38dba0056693` ; 5.0/5.1 `dfe37f273841dede8e84752b63e91751a5886bf9` ; 5.2/5.3 `a7b31c7c0afc5d6dde1c7333365e2eb3bbaefaed`.
 - `repository/filepicker.js` : 4.5 `326f09b00ab382f79256cde6106c161bf77b0f65` ; 5.0 `ecd649cb17a072e89e174fdaf120951cbba52bf3` ; 5.1 `36ccf3466b1c6897432f19ec6c2258e79f8ed15f` ; 5.2 `873bb085db95343b68556addaf43e502a11eb2de` ; 5.3 `3e6879533d595e6d754cb8f602fd2f687f026193`.
 - `repository/filepicker.php` : SHA identique 4.5/5.3 `fcdb2ab9182b03a4e784691f34dcf0934ef88d98`.
+
+---
+
+## 65. Moodle standard — espace formateur : gestion et pilotage d'un cours
+
+> Analyse fonctionnelle et technique initiale réalisée sur la branche Moodle `MOODLE_500_STABLE`. Cette section complète les analyses antérieures des activités et des interfaces de correction. Elle ne constitue pas une comparaison exhaustive Moodle 4.5–5.3 ni une validation runtime. Les chemins ci-dessous désignent les points d'entrée et classes examinés ; les capacités réellement disponibles restent à vérifier dans le contexte de chaque page.
+
+### 65.1 Gestion du cours et édition
+
+- `course/view.php` délègue une partie essentielle du rendu du contenu au plugin de format du cours.
+- Le format Topics s'appuie notamment sur `course/format/topics/format.php` et son renderer.
+- Les composants de sortie de format de cours, notamment `core_courseformat\\output\\local\\content`, construisent les sections et exposent les données nécessaires au rendu Mustache. Ils prennent en charge les vues de section, la navigation, le sélecteur, l'ajout de sections et les outils d'édition groupée.
+- `course/edit.php` contrôle les capacités de création/mise à jour et le contexte, prépare les données et le formulaire, puis crée ou met à jour le cours.
+- `course/edit_form.php` définit un formulaire dynamique : identité du cours, catégorie, visibilité, dates, fichiers/contenu, champs conditionnels et champs spécifiques au format. Certains champs sont gelés selon les capacités.
+- `course/management.php` concerne davantage la gestion des cours et catégories à l'échelle plateforme/catégorie : recherche, actions groupées, visibilité, classement, déplacement et suppression.
+
+**Conséquences pour Project N**
+- Distinguer les opérations d'un formateur dans son cours de celles d'un gestionnaire de catégorie ou d'un administrateur.
+- Déterminer l'affichage à partir des capacités et du contexte, jamais du seul nom du rôle.
+- Ne pas réimplémenter le mode édition, les actions AJAX ni les mécanismes de déplacement/réorganisation.
+- Moderniser les points de présentation sans casser les contrats du format de cours et ses composants de sortie.
+- Ne pas supposer que tous les formats de cours exposent exactement les mêmes fonctions.
+
+### 65.2 Participants, inscriptions et rôles
+
+La page native `user/index.php` utilise la table de participants `core_user\\table\\participants`. Elle fournit recherche, filtres, pagination et actions groupées. Les filtres observés couvrent notamment rôle, groupe, identités/recherche et initiales.
+
+Le filtrage respecte les groupes séparés ou visibles et les capacités associées, notamment `moodle/site:accessallgroups`. Les contrôles doivent rester appliqués côté serveur.
+
+Les opérations de rôle et d'inscription sont deux mécanismes distincts :
+- l'attribution d'un rôle dépend des rôles attribuables et de la capacité `moodle/role:assign`, via les mécanismes natifs d'édition des rôles ;
+- les inscriptions sont gérées par `course_enrolment_manager` dans `enrol/locallib.php`, avec les méthodes d'inscription actives et leurs propres actions ;
+- les rôles hérités ne sont pas nécessairement modifiables au niveau du cours ; seules les affectations permises sont proposées.
+
+**Conséquences pour Project N**
+- Ne pas fusionner « inscrire une personne » et « lui attribuer un rôle » dans une action unique.
+- Conserver les filtres, restrictions de groupes, actions groupées et retours d'état natifs.
+- Prévoir une présentation responsive des participants (table adaptée, cartes ou fiches selon la largeur) sans supprimer les possibilités de tri, filtrage et action.
+
+### 65.3 Groupes et groupements
+
+Les principaux points d'entrée identifiés sont :
+- `group/index.php` : liste et gestion des groupes ;
+- `group/group.php` : création et modification ;
+- `group/members.php` : gestion des membres ;
+- `group/autogroup.php` : création automatique ;
+- `group/groupings.php` et `group/assign.php` : groupements et affectation des groupes ;
+- `group/overview.php` : vue d'ensemble et export.
+
+La capacité principale est `moodle/course:managegroups`. Un groupe rassemble des participants ; un groupement rassemble des groupes et peut notamment être utilisé dans les restrictions d'accès. La création automatique propose des critères tels que le nombre de groupes ou le nombre de membres par groupe et une méthode de répartition. Un participant doit être inscrit au cours pour être ajouté à un groupe. L'édition rapide s'appuie notamment sur `core_group\\output\\user_groups_editable` et vérifie cours, inscription, capacité et règles de retrait.
+
+**Conséquences pour Project N**
+- Conserver la distinction conceptuelle et fonctionnelle entre groupes et groupements.
+- Ne pas afficher une action d'ajout/retrait si les règles d'inscription ou les capacités l'interdisent.
+- Adapter la densité des listes et formulaires au mobile, sans retirer la création automatique, la prévisualisation ou les affectations.
+
+### 65.4 Suivi pédagogique et rapports de cours
+
+Les rapports natifs étudiés couvrent des angles différents :
+
+| Rapport | Apport principal | Point de vigilance |
+|---|---|---|
+| `report/progress` | Achèvement des activités par participant, filtres groupe/activité/section, export | Repose sur les critères d'achèvement configurés |
+| `report/completion` | Critères d'achèvement du cours et des activités | Le marquage manuel dépend des critères et capacités |
+| `report/outline` | Synthèse de l'activité des participants | Ne mesure pas à lui seul les acquis |
+| `report/participation` | Actions selon activité, rôle et période | Une action enregistrée n'est pas une preuve d'apprentissage |
+| `report/log` | Journaux détaillés avec filtres participant, groupe, date, activité, action et origine | Volume et granularité peuvent rendre l'affichage complexe |
+
+Les rapports appliquent leurs capacités dédiées, par exemple `report/progress:view`, `report/completion:view` et `report/log:view`, ainsi que les restrictions de groupes pertinentes.
+
+**Conséquences pour Project N**
+- Ne pas agréger ces rapports en un indicateur unique présenté comme une mesure des apprentissages.
+- Présenter clairement la nature de chaque donnée (achèvement, participation, journal d'événements).
+- Privilégier des raccourcis contextualisés vers les rapports natifs plutôt qu'un moteur de reporting parallèle.
+
+### 65.5 Carnet de notes
+
+Les interfaces principales identifiées sont :
+- `grade/report/grader` : rapport du correcteur, notes par participant et élément ;
+- `grade/report/singleview` : vue individuelle d'un participant ou d'un élément de notation ;
+- `grade/edit/tree` : organisation des catégories et éléments de notation.
+
+Les capacités comprennent notamment `gradereport/grader:view`, `gradereport/singleview:view`, `moodle/grade:viewall` et `moodle/grade:manage`. La structure hiérarchique et les opérations de gestion sont construites notamment par les classes et fonctions du rapport d'arborescence, dont `grade/edit/tree/lib.php`.
+
+**Conséquences pour Project N**
+- Ne pas construire de carnet de notes parallèle.
+- Améliorer la lisibilité, la navigation et l'accès aux vues natives.
+- Ne pas modifier les règles de calcul, agrégations, catégories, éléments ou pondérations.
+- Distinguer la consultation des notes, la correction et la gestion du calcul des notes.
+
+### 65.6 Communication et notifications
+
+- Le forum Annonces est une instance de forum du cours, généralement de type `news`, et non un système indépendant. `forum_get_course_forum()` intervient dans la récupération/création du forum d'annonces ; abonnement et notifications restent ceux du forum natif.
+- La messagerie s'appuie sur `message/index.php` et `core_message\\helper::render_messaging_widget()`. Elle couvre conversations individuelles ou de groupe, recherche, membres, état lu/supprimé, contacts, blocages et confidentialité.
+- `core_message\\api::can_send_message()` vérifie notamment `moodle/site:sendmessage`, `moodle/site:readallmessages` et les règles `can_contact_user()`.
+- Les notifications sont émises par les composants Moodle, distribuées par les canaux configurés et régies par les préférences utilisateur.
+
+**Conséquences pour Project N**
+- Ne pas créer de système d'annonces, de messagerie ou de notifications concurrent.
+- Ne pas afficher une action « contacter » sans tenir compte des règles effectives de contact et d'envoi.
+- Conserver les préférences, états de lecture, blocages et règles de confidentialité.
+- Le calendrier et les préférences associées ont déjà été traités dans la section 55 ; ils ne sont pas réanalysés ici.
+
+### 65.7 Correction des travaux
+
+L'interface de correction du devoir s'appuie notamment sur `mod/assign/classes/output/grading_app.php` et `mod/assign/locallib.php`. Elle expose les participants et l'état de leur remise/correction, avec des filtres tels que non remis, brouillon, remis, à évaluer et évalué, ainsi que les situations de délai supplémentaire.
+
+Le workflow de correction peut être activé : il introduit des états de correction et de publication. L'allocation des corrections est possible selon la configuration et la capacité `mod/assign:manageallocations`.
+
+Cette section complète l'étude antérieure des interfaces de correction (section 44) ; elle ne prétend pas reprendre toute l'analyse des devoirs et tests. Aucun mécanisme universel natif regroupant dans une file unique toutes les corrections de tous les cours n'a été identifié dans le périmètre examiné.
+
+**Conséquences pour Project N**
+- Une synthèse formateur peut afficher le nombre de travaux à corriger et fournir des liens directs vers les devoirs concernés.
+- Distinguer au minimum les travaux remis, ceux à évaluer et les corrections dont la publication reste en attente.
+- Conserver les filtres, allocations, statuts et actions de l'interface native ; ne pas créer un workflow parallèle.
+- Vérifier les éventuelles évolutions de ce point sur chaque version cible avant de figer le composant.
+
+### 65.8 Organisation fonctionnelle indicative de l'espace formateur
+
+L'analyse fonctionnelle conduit à regrouper les accès autour de cinq domaines, sans imposer une navigation parallèle aux mécanismes Moodle :
+
+1. **Vue d'ensemble** : cours suivis, travaux à corriger, progression et événements utiles.
+2. **Mes cours** : édition, sections, activités et ressources.
+3. **Participants** : inscriptions, rôles, groupes et suivi.
+4. **Évaluations** : travaux, corrections et carnet de notes.
+5. **Communication et rapports** : annonces, forums, messagerie, progression, achèvement, participation et journaux.
+
+Cette organisation est une proposition d'architecture de l'information. Chaque destination doit renvoyer vers la page Moodle native appropriée et être filtrée selon les capacités effectives. Elle ne constitue pas une nouvelle couche d'autorisation.
+
+### 65.9 Limites et validations restantes
+
+- Référence de lecture principale : Moodle `MOODLE_500_STABLE`. Les différences de chemins, classes, templates et comportements entre 4.5 et 5.3 restent à comparer pour les éléments qui conditionneront les choix du thème.
+- Analyse statique uniquement : aucune installation ni scénario navigateur n'est déclaré validé par cette section.
+- Les interfaces de participants, groupes, rapports, notes et correction doivent être testées avec plusieurs profils et capacités, notamment sur smartphone.
+- Les parcours Iomad correspondants devront être comparés à version Moodle équivalente ; l'adaptation entreprise et les rôles Iomad ne doivent pas être extrapolés à partir du seul Moodle standard.
+- Les tableaux et formulaires complexes nécessitent une stratégie responsive et des tests clavier/lecteur d'écran, pas seulement une réduction de largeur.
+
