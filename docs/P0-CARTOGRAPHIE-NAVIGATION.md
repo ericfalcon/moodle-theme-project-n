@@ -3058,7 +3058,7 @@ Une première comparaison des fichiers sources a été effectuée sur les branch
 | Édition du cours | `course/edit.php` | idem | `public/course/edit.php` | idem | idem | Empreinte identique sur les cinq branches |
 | Participants | `user/index.php` | idem | `public/user/index.php` | idem | idem | 4.5 diffère ; 5.0, 5.1 et 5.2 identiques ; 5.3 diffère |
 | Rapport du correcteur | `grade/report/grader/index.php` | idem | `public/grade/report/grader/index.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
-| Application de correction du devoir | `mod/assign/classes/output/grading_app.php` | idem | `public/mod/assign/classes/output/grading_app.php` | idem | idem | 4.5 et 5.0 identiques ; 5.1 et 5.3 présentent des évolutions ; 5.2 reste à contrôler |
+| Application de correction du devoir | `mod/assign/classes/output/grading_app.php` | idem | `public/mod/assign/classes/output/grading_app.php` | idem | idem | 4.5 = 5.0 ; 5.1 diffère ; 5.2 = 5.3 et diffèrent de 5.1 |
 
 **Conséquences :**
 - L'édition du cours est un bon candidat à une intégration commune, sous réserve de vérifier également les formulaires, templates et API appelés.
@@ -3577,7 +3577,7 @@ Limites :
 | Élément | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 | Constat établi |
 |---|---|---|---|---|---|---|
 | Gestion des instances | `enrol/instances.php` | idem | `public/enrol/instances.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
-| Configuration d'une instance | `enrol/editinstance.php` | idem | `public/enrol/editinstance.php` | idem | idem | 5.1 à 5.3 identiques ; comparaison 4.5/5.0 à compléter |
+| Configuration d'une instance | `enrol/editinstance.php` | idem | `public/enrol/editinstance.php` | idem | idem | Empreinte identique sur les cinq branches |
 | Gestion des inscriptions manuelles | `enrol/manual/manage.php` | idem | `public/enrol/manual/manage.php` | idem | idem | 4.5, 5.0 et 5.1 diffèrent ; 5.1 à 5.3 identiques |
 
 La lecture du diff confirme que, pour ce point d'entrée, les écarts 4.5 → 5.0 puis 5.0 → 5.1 portent sur une seule ligne de classes CSS du tableau de sélection des rôles/utilisateurs. Aucun changement fonctionnel n'est démontré par ce fichier seul. La différence doit être traitée comme une évolution de markup/styling à vérifier dans le rendu, et non comme une modification des règles d'inscription.
@@ -3686,6 +3686,33 @@ La différence Iomad principale observée dans cette tranche n'est donc pas un r
 
 Niveau de preuve : comparaison statique des fichiers nommés sur les branches officielles homologues et lecture des déclarations de rôles/capacités Iomad 5.0. Aucun test runtime, test d'interface ou test de non-régression n'a été exécuté.
 
+### 68.13 Consolidation interversions des points 65 à 68
+
+Une nouvelle passe de comparaison a été effectuée directement sur les branches des forks GitHub. Les résultats ci-dessous portent sur le contenu intégral des fichiers nommés (égalité stricte du contenu), pas seulement sur leur chemin ou leur taille.
+
+| Point | Fichier / mécanisme | Moodle 4.5 → 5.3 | Moodle / Iomad homologues 4.5 → 5.2 | Lecture pour Project N |
+|---|---|---|---|---|
+| 65 | `course/view.php` | Contenu différent à chaque génération | Différence Iomad dans les quatre couples ; `iomad_check_course()` présent dans les quatre versions Iomad | Ne pas figer le rendu du cours ni contourner le contrôle d'accès entreprise |
+| 65 | `course/edit.php` | Identique sur les cinq générations | Identique dans les quatre couples | Bon candidat à une intégration commune, sous réserve des formulaires et composants appelés |
+| 65 | `user/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 ; 5.3 diffère | Identique dans les quatre couples | Le tableau des participants reste natif ; surveiller les évolutions du point d'entrée |
+| 65 | `group/index.php`, `group/group.php` | Identiques sur les cinq générations | Non comparés Iomad dans cette passe | Contrôleurs stables côté Moodle ; vérifier les classes et formulaires associés |
+| 65 | `group/members.php` | 4.5, 5.0 et 5.1 diffèrent ; 5.1 = 5.2 = 5.3 | Non comparé Iomad dans cette passe | Point de vigilance pour les écrans de membres et leurs composants |
+| 65 | `grade/report/grader/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 | Non recontrôlé dans cette passe | Le rapport du correcteur a un point d'entrée stable depuis 5.0 ; ne pas en déduire la stabilité de ses composants |
+| 65 | `mod/assign/classes/output/grading_app.php` | 4.5 = 5.0 ; 5.1 diffère ; 5.2 = 5.3 | Non recontrôlé dans cette passe | La couche de correction évolue indépendamment du contrôleur du cours |
+| 66 | `admin/user.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 ; 5.3 diffère | Identique dans les quatre couples | La page d'administration des comptes reste commune à Moodle et Iomad sur les versions comparées |
+| 66 | Report Builder utilisateurs | 4.5 diffère ; 5.0 = 5.1 ; 5.2 diffère ; 5.3 diffère de 5.2 | Non comparé Iomad dans cette passe | Les colonnes, filtres et actions doivent rester pilotés par Report Builder |
+| 66 | `cohort/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 | Identique dans les quatre couples | Contrôleur stable depuis 5.0 ; ne pas confondre cohorte et groupe |
+| 66 | `admin/user/user_bulk.php` | Identique sur les cinq générations | Non comparé Iomad dans cette passe | Point d'entrée stable, mais actions et capacités restent à vérifier |
+| 67 | `course/management.php`, `course/editcategory.php` | Identiques sur les cinq générations | `course/management.php` identique dans les quatre couples | La stabilité des contrôleurs n'autorise pas à recopier les règles de gestion |
+| 68 | `enrol/instances.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 | Identique dans les quatre couples | Le contrôleur d'instances est commun depuis 5.0 |
+| 68 | `enrol/editinstance.php` | Identique sur les cinq générations | Non comparé Iomad dans cette passe | Les champs et validations restent fournis par le plugin d'inscription |
+| 68 | `enrol/manual/manage.php` | 4.5, 5.0 et 5.1 diffèrent ; 5.1 = 5.2 = 5.3 | Identique dans les quatre couples | Les changements repérés concernent le markup/classe CSS du tableau ; vérifier le rendu, sans inférer une évolution des droits |
+
+**Précisions sur les chemins :** les fichiers web passent sous `public/` à partir des branches Moodle/Iomad 5.1. Les chemins indiqués dans les tableaux sont les chemins relatifs au dépôt ; ils ne doivent pas être codés en dur dans le thème.
+
+**Précision Iomad sur l'accès au cours :** dans chacune des branches Iomad 4.5, 5.0, 5.1 et 5.2, `course/view.php` appelle `iomad::iomad_check_course($id, $name, $idnumber, true)` avant la récupération du cours. En cas d'échec, l'identifiant transmis à la récupération est remplacé afin que le cours ne soit pas récupéré. Cette différence touche au contrôle d'accès, pas uniquement au rendu.
+
+**Limites :** cette passe compare des fichiers d'entrée et quelques composants de sortie nommés. Elle ne compare pas exhaustivement les renderers, templates, AMD/JavaScript, formulaires, plugins tiers ni les scénarios d'accès. Aucun test runtime, mobile, clavier ou lecteur d'écran n'a été exécuté.
 
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
