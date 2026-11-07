@@ -3045,3 +3045,162 @@ Cette organisation est une proposition d'architecture de l'information. Chaque d
 - Les parcours Iomad correspondants devront être comparés à version Moodle équivalente ; l'adaptation entreprise et les rôles Iomad ne doivent pas être extrapolés à partir du seul Moodle standard.
 - Les tableaux et formulaires complexes nécessitent une stratégie responsive et des tests clavier/lecteur d'écran, pas seulement une réduction de largeur.
 
+---
+
+## 66. Administration Moodle — comptes utilisateurs et cohortes
+
+> Première tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE` (référence 5.0). Cette analyse porte sur les interfaces et mécanismes natifs. Elle ne valide pas encore les écarts Moodle 4.5–5.3, les adaptations Iomad ni les parcours en environnement installé.
+
+### 66.1 Organisation de l'administration des utilisateurs
+
+Le menu d'administration des utilisateurs est déclaré dans `admin/settings/users.php`. Il distingue notamment :
+- les comptes (`accounts`) ;
+- les permissions et rôles (`roles`) ;
+- la confidentialité et les politiques (`privacy`).
+
+Les entrées principales conduisent à :
+- `admin/user.php` : liste et gestion des comptes ;
+- `admin/user/user_bulk.php` : sélection et actions groupées ;
+- `user/editadvanced.php?id=-1` : création d'un compte ;
+- `user/profile/index.php` : champs de profil personnalisés ;
+- `cohort/index.php` : gestion des cohortes.
+
+L'accès aux pages est déclaré avec des capacités explicites dans `admin/settings/users.php`. La visibilité d'une entrée de menu ne remplace toutefois jamais le contrôle d'accès effectué par la page elle-même.
+
+### 66.2 Liste des comptes : Report Builder
+
+Dans Moodle 5.0, `admin/user.php` construit un rapport système à partir de `core_admin\\reportbuilder\\local\\systemreports\\users`. La page :
+- initialise le rapport dans le contexte système ;
+- active les cases de sélection si des actions groupées sont disponibles ;
+- ajoute une action « Ajouter un utilisateur » uniquement si `moodle/user:create` est accordée ;
+- affiche le rapport, puis le formulaire d'actions groupées si celui-ci propose au moins une action.
+
+Le rapport `admin/classes/reportbuilder/local/systemreports/users.php` s'appuie sur les entités Report Builder, notamment utilisateur, cohorte/membre de cohorte et rôle. Il construit ses colonnes, filtres et actions. Les colonnes comprennent notamment l'identité (nom avec lien vers le profil), les champs d'identification disponibles et le dernier accès. Les filtres couvrent entre autres :
+- identité et champs utilisateur ;
+- méthode d'authentification ;
+- cohorte ;
+- rôle système et rôle dans un cours ;
+- présence dans un cours ;
+- champs de profil personnalisés ;
+- données d'accès et d'activité.
+
+Les actions de ligne sont conditionnelles : modification, suspension/réactivation et déverrouillage ne sont pas proposées indistinctement. Le code vérifie la capacité, l'état du compte, le caractère distant MNet et, pour certains cas, le statut d'administrateur du compte cible.
+
+**Conséquences pour Project N**
+- Ne pas remplacer ce rapport par une liste maison : s'appuyer sur Report Builder et ses colonnes, filtres, tris, actions et exports.
+- La présentation peut devenir une liste responsive ou des cartes sur petit écran, mais doit conserver recherche, filtres actifs visibles, tri, pagination, sélection et actions groupées.
+- Les actions doivent rester contextuelles à chaque ligne et à chaque capacité ; un bouton global « gérer » ne doit pas rendre accessibles des opérations interdites.
+- Le thème doit accepter des colonnes variables selon les champs d'identité et les extensions installées. Ne pas figer une liste de colonnes supposée universelle.
+
+### 66.3 Création, modification et cycle de vie d'un compte
+
+Le formulaire avancé est défini dans `user/editadvanced_form.php`, appelé par `user/editadvanced.php`.
+
+Le formulaire tient compte des plugins d'authentification installés et activés :
+- les méthodes d'authentification sont proposées selon leur état ;
+- la possibilité de modifier le nom d'utilisateur ou le mot de passe dépend du plugin ;
+- certains champs sont désactivés lorsque le backend d'authentification ne permet pas leur modification ;
+- le formulaire intègre les champs de profil personnalisés.
+
+La page distingue création et modification :
+- création : capacité `moodle/user:create` dans le contexte système ;
+- modification d'un compte existant : capacité `moodle/user:update` dans le contexte système ;
+- édition du profil : chargement des préférences, des champs personnalisés, des intérêts et des fichiers de profil ;
+- enregistrement : appel aux API utilisateur et au plugin d'authentification concerné, puis déclenchement des événements `user_created` ou `user_updated`.
+
+Des protections supplémentaires existent : les comptes distants MNet ne sont pas modifiables par cette page ; le compte invité réel ne peut pas être édité ; un non-administrateur ne peut pas modifier le compte d'un administrateur ; l'utilisateur ne peut pas changer lui-même sa méthode d'authentification. La suspension d'un compte provoque la destruction de ses sessions actives.
+
+La page de liste `admin/user.php` gère également confirmation, suppression, suspension/réactivation et déverrouillage. La suppression passe par `delete_user()`, avec protections contre la suppression d'un administrateur du site et mécanisme de confirmation.
+
+**Conséquences pour Project N**
+- Ne pas simplifier le formulaire en supposant que tous les comptes sont locaux ou utilisent l'authentification manuelle.
+- Respecter les champs conditionnels et les états désactivés par le plugin d'authentification.
+- Différencier suspension, verrouillage, confirmation et suppression : ce sont des états et opérations distincts.
+- Ne pas présenter la suppression comme une simple désactivation visuelle.
+- Les informations personnelles et les champs personnalisés imposent de préserver les règles de visibilité et de confidentialité natives.
+
+### 66.4 Filtres et actions groupées
+
+Le moteur de filtres historiques `user/filters/lib.php` reste présent pour les interfaces de sélection et d'actions groupées. Il sait notamment filtrer sur nom, prénom, identifiant, courriel, ville, pays, confirmation, suspension, profil, rôle de cours, présence dans un cours, rôle système, cohorte, dates de premier/dernier accès, création et modification, méthode d'authentification, identifiant institutionnel, institution et département.
+
+La sélection groupée est gérée par `admin/user/user_bulk.php` et `admin/user/user_bulk_forms.php`. Les actions centrales sont construites selon les capacités : confirmation, messagerie, suppression, affichage, téléchargement, changement forcé de mot de passe et ajout à une cohorte. Des plugins peuvent compléter la liste via le hook `core_user\\hook\\extend_bulk_user_actions` et le mécanisme historique de callbacks.
+
+**Conséquences pour Project N**
+- Ne pas coder en dur les actions groupées : leur disponibilité dépend des capacités, de la configuration et des plugins.
+- Préserver les filtres actifs et leur suppression individuelle ou globale.
+- Prévoir une sélection explicite et une confirmation compréhensible avant les opérations massives.
+- Ne pas supposer que toutes les opérations portent sur un nombre illimité de comptes ; le code historique de sélection borne certains traitements.
+
+### 66.5 Cohortes : portée et distinction avec les groupes
+
+Une cohorte est un ensemble d'utilisateurs défini dans un contexte système ou catégorie de cours. Elle peut servir à organiser des populations et à automatiser leur inscription à plusieurs cours. Elle ne se confond pas avec :
+- un groupe, qui rassemble des participants à l'intérieur d'un cours ;
+- un groupement, qui rassemble des groupes au sein d'un cours ;
+- une inscription, qui donne à un utilisateur un accès à un cours selon une méthode d'inscription.
+
+La page `cohort/index.php` accepte un contexte système ou catégorie de cours. Elle détermine séparément les capacités de gestion (`moodle/cohort:manage`), d'affectation des membres (`moodle/cohort:assign`) et de consultation (`moodle/cohort:view`). La portée de la liste et les actions disponibles dépendent donc du contexte affiché.
+
+Le rapport système `cohort/classes/reportbuilder/local/systemreports/cohorts.php` expose notamment :
+- le contexte de la cohorte ;
+- son nom et son identifiant ;
+- sa description ;
+- le nombre de membres ;
+- sa source/composant ;
+- des filtres de recherche.
+
+Le nom et l'identifiant peuvent utiliser les composants d'édition sur place. Les actions afficher/masquer, modifier, supprimer et affecter des membres sont proposées selon la capacité effective et l'origine de la cohorte.
+
+### 66.6 Création et gestion d'une cohorte
+
+Les principaux points d'entrée sont :
+- `cohort/edit.php` : création, modification et visibilité ;
+- `cohort/edit_form.php` : formulaire de cohorte ;
+- `cohort/lib.php` : API métier de création, mise à jour, suppression et gestion des membres ;
+- `cohort/assign.php` et `cohort/locallib.php` : affectation et retrait des membres.
+
+Le formulaire comprend notamment nom, catégorie/contexte, identifiant, visibilité, description et champs personnalisés. Le thème de cohorte n'est proposé que si la configuration `allowcohortthemes` l'autorise.
+
+La page d'affectation utilise deux sélecteurs d'utilisateurs : membres potentiels et membres actuels. L'ajout et le retrait sont effectués par les fonctions métier `cohort_add_member()` et `cohort_remove_member()`.
+
+**Point important :** les cohortes créées par un système externe portent un composant (`component` non vide). Les interfaces natives empêchent leur modification manuelle ordinaire : les actions d'édition, de suppression et d'affectation manuelle sont conditionnées à l'absence de composant. Leur cycle de vie relève du système qui les fournit. Le thème doit rendre cette origine visible plutôt que proposer des actions inopérantes.
+
+### 66.7 Cohorte et inscription automatique dans un cours
+
+Le plugin d'inscription `enrol/cohort` établit le lien entre une cohorte et un cours. Il nécessite les capacités de configuration d'inscription au niveau du cours, notamment `moodle/course:enrolconfig` et `enrol/cohort:config`, ainsi qu'une cohorte disponible.
+
+Lors de la création ou de la mise à jour de l'instance d'inscription, le plugin déclenche la synchronisation des membres de la cohorte avec les inscriptions du cours. Il peut aussi créer un groupe de cours associé à la cohorte, sous réserve de la capacité `moodle/course:managegroups`.
+
+La synchronisation des inscriptions ne signifie pas que l'appartenance à la cohorte est elle-même une inscription au cours. Ce sont deux relations distinctes :
+1. l'utilisateur appartient à la cohorte ;
+2. le plugin d'inscription cohorte synchronise cette appartenance avec une inscription dans le cours, selon sa configuration.
+
+**Conséquences pour Project N**
+- Présenter clairement la différence entre membre d'une cohorte, utilisateur inscrit à un cours et membre d'un groupe de cours.
+- Dans les interfaces d'inscription, rendre visible la méthode « Cohorte » et son lien avec le groupe éventuellement associé.
+- Ne pas proposer de gérer manuellement les inscriptions issues d'une synchronisation sans tenir compte des règles du plugin.
+- Conserver la possibilité de plusieurs cohortes associées à une instance de cours lorsque le mécanisme natif le permet.
+
+### 66.8 Capacités et rôle Gestionnaire : enseignements pour l'interface
+
+Dans `lib/db/access.php`, les capacités suivantes sont déclarées avec l'archétype `manager` autorisé par défaut :
+- `moodle/user:create`, `moodle/user:update`, `moodle/user:delete` au contexte système ;
+- `moodle/cohort:manage` et `moodle/cohort:assign` au contexte catégorie de cours.
+
+La capacité `moodle/cohort:view` est une capacité de lecture ; elle ne donne pas le droit de modifier ou d'affecter les membres. La capacité `moodle/cohort:configurecustomfields` relève de la configuration système.
+
+Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits étendus sur les comptes et cohortes, sans être administrateur du site. Cela ne signifie pas que chaque personne portant ce rôle a toujours exactement ces droits : les attributions et dérogations de capacités peuvent être modifiées.
+
+**Conséquences pour Project N**
+- Ne pas masquer toute l'administration des comptes au Gestionnaire par une condition « administrateur uniquement ».
+- Ne pas assimiler Gestionnaire et Administrateur : certaines opérations système restent soumises à des capacités distinctes, et des protections explicites subsistent sur les comptes administrateurs.
+- Construire les menus, boutons et actions à partir des capacités Moodle effectives dans le contexte pertinent.
+- En Iomad, il faudra superposer l'analyse des rôles et de la portée entreprise : ne pas extrapoler les droits Moodle aux rôles Iomad ni ignorer le cloisonnement multi-entreprise.
+
+### 66.9 Limites et vérifications restantes
+
+- Référence de code : Moodle `MOODLE_500_STABLE` uniquement.
+- Les différences exactes entre Moodle 4.5, 5.1, 5.2 et 5.3 restent à cartographier, notamment autour du Report Builder, des hooks et des actions groupées.
+- Les écrans et capacités Iomad doivent être comparés sur une génération équivalente ; il faut notamment déterminer comment l'entreprise filtre les comptes, cohortes et affectations.
+- Les rôles Iomad et leurs capacités effectives restent un chantier distinct ; cette section ne les déduit pas.
+- Les parcours de création en masse/import CSV, les politiques de confidentialité, la suppression/anonymisation et les champs personnalisés nécessitent des tranches dédiées.
+- Aucun test runtime, mobile, clavier ou lecteur d'écran n'est déclaré réalisé par cette analyse statique.
