@@ -30,6 +30,24 @@ Les fichiers `version.php` donnent les versions suivantes au moment de l'analyse
 
 Les couples 4.5, 5.0 et 5.1 sont alignés jusque dans leur version corrective affichée. Pour 5.2, les branches sont bien de même génération, mais le snapshot Moodle contient des correctifs postérieurs au build Iomad consulté. Les écarts très récents doivent donc être contrôlés avant d'être qualifiés de modifications Iomad.
 
+### 1.2 Têtes de branches consultées pour la comparaison des points 65 à 68
+
+Les têtes de branches ont été relues dans les forks GitHub au moment de cette passe :
+
+| Dépôt | Branche | HEAD consulté |
+|---|---|---|
+| Moodle | `MOODLE_405_STABLE` | `c0690bbc765fccacd4956452cbff3f6aacad77c5` |
+| Moodle | `MOODLE_500_STABLE` | `744cc0c19013e7be831dca24fafd6501d7eb8348` |
+| Moodle | `MOODLE_501_STABLE` | `a682566412e1d429b95ac8ef4351a518f61b94c5` |
+| Moodle | `MOODLE_502_STABLE` | `28fdef85e7043c8dd758af8c1a146da1419db0d0` |
+| Moodle | `MOODLE_503_STABLE` | `236a9d702e62dc11f5aa66e4c8b5239cfc26c3d8` |
+| Iomad | `IOMAD_405_STABLE` | `114ac90f25f74d79e4aae7bd72a749d8ab41a50e` |
+| Iomad | `IOMAD_500_STABLE` | `40f37899a1d89bf307bd0cc0d205c01c03f78e5e` |
+| Iomad | `IOMAD_501_STABLE` | `40cd06130bb227e159fae8df4e4a90b7a0f32adb` |
+| Iomad | `IOMAD_502_STABLE` | `88a9a3e9997916a049048db536048918cbdc1e56` |
+
+La branche Iomad 5.0 consultée est bien le fork personnel après intégration de l'amont ; les six fichiers personnalisés décrits dans la section 67.10 de la cartographie restent à préserver. Les SHA ci-dessus identifient les têtes de branches au moment de la comparaison ; ils ne remplacent pas les références de version corrective indiquées en 1.1.
+
 ## 2. Évolution du socle Moodle entre les générations
 
 ### 2.1 Réorganisation du répertoire public à partir de Moodle 5.1
@@ -233,6 +251,60 @@ La prochaine étape P0 doit cartographier les parcours et composants réellement
 5. différences de templates, renderers, APIs et composants entre chaque couple de versions.
 
 La sortie attendue sera une matrice **écran / action / composant natif / capacité / contexte / adaptation Iomad / versions**, avant toute implémentation du thème.
+
+## 10. Comparaison des points 65 à 68 sur les branches actuelles
+
+Cette passe reprend les points d'entrée ciblés des sections 65 à 68 de la cartographie. Les contenus des fichiers ont été récupérés directement depuis les forks Moodle et Iomad, puis comparés intégralement. « Identique » signifie égalité exacte du contenu récupéré ; « différent » ne signifie pas nécessairement changement fonctionnel.
+
+### 10.1 Moodle — évolution entre 4.5 et 5.3
+
+| Point | Fichier | Résultat sur les branches Moodle |
+|---|---|---|
+| 65 — cours | `course/view.php` | Contenu différent à chaque génération 4.5, 5.0, 5.1, 5.2 et 5.3 |
+| 65 — édition | `course/edit.php` | Identique sur les cinq générations |
+| 65 — participants | `user/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 ; 5.3 diffère |
+| 65 — groupes | `group/index.php`, `group/group.php` | Identiques sur les cinq générations |
+| 65 — membres | `group/members.php` | 4.5, 5.0 et 5.1 diffèrent ; 5.1 = 5.2 = 5.3 |
+| 65 — carnet de notes | `grade/report/grader/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 |
+| 65 — correction devoir | `mod/assign/classes/output/grading_app.php` | 4.5 = 5.0 ; 5.1 diffère ; 5.2 = 5.3 |
+| 66 — comptes | `admin/user.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 ; 5.3 diffère |
+| 66 — rapport utilisateurs | `admin/classes/reportbuilder/local/systemreports/users.php` | 4.5 diffère ; 5.0 = 5.1 ; 5.2 diffère ; 5.3 diffère de 5.2 |
+| 66 — cohortes | `cohort/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 |
+| 66 — actions groupées | `admin/user/user_bulk.php` | Identique sur les cinq générations |
+| 67 — gestion catégories/cours | `course/management.php`, `course/editcategory.php` | Identiques sur les cinq générations |
+| 68 — instances | `enrol/instances.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 |
+| 68 — configuration instance | `enrol/editinstance.php` | Identique sur les cinq générations |
+| 68 — inscription manuelle | `enrol/manual/manage.php` | 4.5, 5.0 et 5.1 diffèrent ; 5.1 = 5.2 = 5.3 |
+| 68 — page d'inscription utilisateur | `enrol/index.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 |
+
+Les chemins des fichiers web sont à la racine du dépôt en 4.5 et 5.0, puis sous `public/` en 5.1, 5.2 et 5.3. Cette réorganisation ne doit pas être transformée en chemins codés en dur dans Project N.
+
+### 10.2 Iomad — comparaison avec Moodle de même génération
+
+| Point d'entrée | 4.5 | 5.0 | 5.1 | 5.2 |
+|---|---|---|---|---|
+| `course/view.php` | Différent | Différent | Différent | Différent |
+| `course/edit.php` | Identique | Identique | Identique | Identique |
+| `user/index.php` | Identique | Identique | Identique | Identique |
+| `admin/user.php` | Identique | Identique | Identique | Identique |
+| `cohort/index.php` | Identique | Identique | Identique | Identique |
+| `course/management.php` | Identique | Identique | Identique | Identique |
+| `enrol/instances.php` | Identique | Identique | Identique | Identique |
+| `enrol/manual/manage.php` | Identique | Identique | Identique | Identique |
+
+Pour les quatre branches Iomad, le fichier `course/view.php` contient l'appel `iomad::iomad_check_course($id, $name, $idnumber, true)` avant la récupération du cours. Le contrôle est donc bien présent dans les quatre générations vérifiées. Il ne s'agit pas d'une simple adaptation de présentation : le contrôle conditionne la récupération du cours dans le périmètre accessible à l'utilisateur.
+
+Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couples de même génération. Cela ne signifie pas que tous les services, renderers, plugins ou contrôles d'accès sont identiques : les adaptations Iomad peuvent être portées par les composants appelés par ces contrôleurs.
+
+### 10.3 Conséquences et limites
+
+1. Les points d'entrée les plus stables pour une intégration commune sont notamment `course/edit.php`, `course/management.php`, `course/editcategory.php`, `enrol/editinstance.php` et les contrôleurs d'inscription comparés entre Moodle et Iomad. La stabilité doit toujours être confirmée au niveau des classes, formulaires, templates et composants appelés.
+2. Les points d'entrée les plus sensibles aux versions sont `course/view.php`, le rapport système des utilisateurs, `admin/user.php` en 4.5 et 5.3, la correction des devoirs et la gestion manuelle des inscriptions.
+3. Le thème doit s'appuyer sur les API de sortie Moodle et les plugins concernés ; il ne doit pas déduire d'une empreinte identique que le DOM, le JavaScript ou le rendu final sont inchangés.
+4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
+5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
+
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.11, 66.10–66.12, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 ## 9. Sources de code examinées
 
