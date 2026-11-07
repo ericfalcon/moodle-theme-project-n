@@ -124,6 +124,12 @@ Rôles ajoutés par Iomad, distincts du rôle Moodle natif Gestionnaire :
 
 Le contexte entreprise (`CONTEXT_COMPANY`) et les capacités du bloc `block_iomad_company_admin` déterminent les actions disponibles. L'interface du thème doit tester les capacités effectives dans le contexte pertinent, pas seulement le shortname du rôle.
 
+### 7.2 bis Statut de gestion et statut d'éducateur
+
+Le champ Iomad `company_users.managertype` n'est pas un rôle Moodle. Il encode une fonction dans l'entreprise (notamment utilisateur, gestionnaire d'entreprise, gestionnaire de département ou reporter). Le champ `company_users.educator` est distinct et peut être combiné à cette fonction. Les valeurs des sélecteurs de formulaire (0, 1, 10, 11, 20, 21, 40, 41) sont converties avant enregistrement ; elles ne sont pas des identifiants de rôle.
+
+La méthode `company::upsert_company_user()` affecte les rôles effectifs au contexte entreprise et, selon `iomad_autoenrol_managers`, peut aussi inscrire les gestionnaires aux cours avec `companycourseeditor` ou `companycoursenoneditor`. Les écrans doivent donc distinguer statut de gestion, statut d'éducateur et rôles réellement attribués.
+
 ### 7.3 Personnalisations du fork Iomad 5.0
 
 Le fork conserve six fichiers modifiés dans `blocks/iomad_company_admin`. Ils ajoutent notamment le préfixe `[shortname]` dans les listes/sélecteurs de cours et restreignent le clonage aux cours appartenant à l'entreprise avec la capacité `createcourse`. Les fichiers sont détaillés dans la section 67.10 de la cartographie.
