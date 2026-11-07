@@ -3358,3 +3358,160 @@ La page ajoute des accès à la gestion des cours/catégories, à l'ajout de cat
 - L'interface mobile réelle doit être testée : le fait que Moodle propose plusieurs modes de vue ne garantit pas que toutes les actions soient confortables sur smartphone.
 - Les opérations de déplacement, suppression et visibilité doivent être testées avec des profils ayant des droits globaux, limités à une catégorie et sans droits de gestion.
 - Les écarts Iomad doivent être étudiés sur la version Moodle correspondante, sans présumer que le périmètre catégorie est équivalent au périmètre entreprise.
+
+---
+
+## 68. Administration Moodle — méthodes d'inscription et inscriptions aux cours
+
+> Troisième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section traite les méthodes d'inscription, leurs instances et les inscriptions individuelles. Elle complète les sections 61 et 66 sur les participants, les rôles et les cohortes.
+
+### 68.1 Trois niveaux fonctionnels distincts
+
+Le modèle Moodle impose de distinguer trois objets :
+
+1. **Plugin/méthode d'inscription** : composant technique disponible sur la plateforme (`manual`, `self`, `guest`, `cohort`, etc.). Il peut être installé mais désactivé globalement.
+2. **Instance de méthode dans un cours** : configuration concrète d'une méthode pour un cours donné, stockée dans la table `enrol`. Un cours peut posséder plusieurs instances et plusieurs méthodes.
+3. **Inscription individuelle** : relation entre un utilisateur et une instance, portée par `user_enrolments`, avec son propre statut et ses dates.
+
+Il faut encore distinguer l'inscription au cours de l'attribution d'un rôle dans le contexte du cours. Une affectation de rôle peut exister sans inscription effective ; la classe `course_enrolment_manager` identifie ces personnes comme « autres utilisateurs ».
+
+### 68.2 Gestion des instances d'inscription d'un cours
+
+La page `enrol/instances.php` est l'interface de gestion des méthodes d'inscription d'un cours. Elle :
+- exige `moodle/course:enrolreview` dans le contexte du cours ;
+- vérifie séparément `moodle/course:enrolconfig` pour les opérations de configuration ;
+- liste les instances, leur nom, le nombre d'inscriptions associées et les actions disponibles ;
+- permet de modifier l'ordre des instances ;
+- permet, selon le plugin, de supprimer ou d'activer/désactiver une instance ;
+- affiche les liens de gestion spécifiques fournis par le plugin ;
+- propose l'ajout d'une méthode lorsque le plugin indique que l'instance peut être créée.
+
+Le nombre affiché est le nombre d'enregistrements associés à l'instance ; il ne doit pas être présenté sans nuance comme le nombre de participants actuellement actifs.
+
+Les opérations sont déléguées aux plugins : `can_delete_instance()`, `can_hide_show_instance()`, `get_action_icons()`, `can_add_instance()` et, selon le plugin, son interface de configuration propre. Une méthode désactivée globalement ou une instance désactivée est présentée différemment ; certains états sont spécifiques au plugin et ne doivent pas être modifiés arbitrairement par le contrôleur générique.
+
+### 68.3 Configuration d'une instance
+
+L'interface standard est `enrol/editinstance.php`, avec le formulaire partagé `enrol/editinstance_form.php`.
+
+Le formulaire commun délègue au plugin la définition des champs via `edit_instance_form()`, puis appelle sa validation. La page distingue création et modification :
+- création : contrôle de `moodle/course:enrolconfig`, récupération des valeurs par défaut du plugin et création d'une instance ;
+- modification : vérification de l'instance dans le cours et appel à `update_instance()` ;
+- certaines méthodes peuvent fournir leur propre interface plutôt que l'interface standard.
+
+La configuration d'une instance relève donc à la fois des capacités Moodle communes et des capacités spécifiques au plugin. Par exemple, l'ajout d'une instance manuelle exige `moodle/course:enrolconfig` et `enrol/manual:config`.
+
+**Conséquences pour Project N**
+- Ne pas créer un formulaire universel avec des champs supposés identiques pour toutes les méthodes.
+- Le thème doit laisser le plugin fournir ses champs, son aide, ses validations et éventuellement son interface personnalisée.
+- Distinguer clairement le réglage global d'une méthode dans l'administration de sa configuration locale dans un cours.
+- Les actions d'activation, désactivation, suppression et déplacement doivent rester spécifiques à l'instance et respecter les protections du plugin.
+
+### 68.4 Gestion des inscriptions manuelles
+
+Le plugin manuel expose notamment `enrol/manual/manage.php` pour inscrire ou désinscrire des utilisateurs d'une instance manuelle.
+
+La page vérifie les capacités :
+- `enrol/manual:enrol` pour ajouter des utilisateurs ;
+- `enrol/manual:unenrol` pour retirer des utilisateurs.
+
+Elle utilise deux sélecteurs distincts : candidats à l'inscription et utilisateurs déjà inscrits. L'ajout permet de choisir :
+- le rôle attribué par l'inscription, parmi les rôles attribuables dans le contexte ;
+- une durée d'inscription ou une durée illimitée ;
+- une date de départ (début du cours, aujourd'hui ou maintenant) ;
+- éventuellement une date de fin explicite.
+
+Le retrait et l'ajout sont exécutés par les fonctions du plugin. Le commentaire du code précise que la capacité `enrol/manual:manage` n'est pas utilisée dans cette page pour modifier des inscriptions existantes ; les capacités d'inscription et de désinscription sont évaluées séparément.
+
+**Conséquences pour Project N**
+- Ne pas réduire l'inscription manuelle à une simple sélection de personnes : rôle, dates et durée font partie de l'opération.
+- Conserver les deux listes et les capacités indépendantes d'ajout et de retrait.
+- Ne pas afficher comme attribuable un rôle qui ne figure pas dans les rôles autorisés du contexte.
+- Distinguer la désinscription de la suspension d'une inscription.
+
+### 68.5 Gestionnaire des inscriptions et filtres
+
+La classe `course_enrolment_manager` dans `enrol/locallib.php` centralise la consultation et la gestion des inscriptions d'un cours. Elle peut filtrer les personnes selon :
+- l'instance de méthode d'inscription ;
+- le rôle ;
+- une recherche textuelle ;
+- le groupe ;
+- le statut d'inscription active ou suspendue.
+
+Elle distingue les personnes effectivement inscrites de celles qui possèdent une affectation de rôle dans le contexte du cours sans inscription dans ce cours. Cette distinction évite de confondre visibilité dans une liste de participants, attribution d'un rôle et accès effectif au cours.
+
+Le filtre de statut tient compte de plusieurs facteurs : statut de l'inscription individuelle, statut de l'instance, date de début et date de fin. Une inscription n'est donc pas active uniquement parce que son champ de statut indique « actif ».
+
+Les restrictions de groupes séparés sont également prises en compte, notamment lorsque la personne qui consulte ne dispose pas de `moodle/site:accessallgroups`.
+
+**Conséquences pour Project N**
+- Ne pas calculer soi-même l'état d'accès à partir d'un seul champ.
+- Réutiliser les états et filtres natifs du gestionnaire d'inscriptions.
+- Présenter séparément « inscrit », « inscription suspendue », « instance désactivée », « inscription à venir », « inscription expirée » et « rôle attribué sans inscription » lorsque ces états sont pertinents.
+- Conserver le filtrage par groupe et les restrictions de visibilité associées.
+
+### 68.6 Méthodes natives : comportements qui ne sont pas interchangeables
+
+#### Inscription manuelle (`enrol_manual`)
+
+Un gestionnaire autorisé ajoute ou retire individuellement les personnes. Le plugin peut gérer la durée, le rôle et les dates de l'inscription. Le plugin manuel ne permet qu'une seule instance par cours dans son implémentation observée.
+
+#### Auto-inscription (`enrol_self`)
+
+L'utilisateur s'inscrit lui-même lorsque les conditions de l'instance le permettent. Le plugin peut demander une clé d'inscription et ouvrir un formulaire modal ; sans clé, une action explicite d'inscription reste nécessaire. Une durée d'inscription peut être appliquée. Si l'option de clé de groupe est configurée, la clé saisie peut aussi affecter l'utilisateur au groupe correspondant.
+
+#### Accès invité (`enrol_guest`)
+
+L'accès invité ne crée pas de véritable inscription dans `user_enrolments`. Le plugin charge temporairement un rôle invité dans le contexte du cours, éventuellement après vérification d'un mot de passe. Il ne faut donc pas le compter comme une inscription classique ni lui appliquer les mêmes actions de gestion.
+
+#### Inscription par cohorte (`enrol_cohort`)
+
+Elle synchronise les membres d'une cohorte avec les inscriptions du cours et peut associer un groupe. Le lien entre appartenance à la cohorte et inscription au cours reste une relation gérée par le plugin, comme décrit en section 66.
+
+#### Autres méthodes
+
+Les plugins d'inscription peuvent inclure des sources externes et des mécanismes de synchronisation. Le cœur Moodle ne doit pas présumer que toutes les méthodes permettent une inscription ou une désinscription manuelle. Les règles de maintien, suspension ou suppression lorsque l'utilisateur disparaît d'une source externe sont définies par les mécanismes du plugin.
+
+### 68.7 Page d'options d'inscription visible par l'utilisateur
+
+`enrol/index.php` affiche les options d'inscription disponibles pour l'utilisateur dans un cours. Elle récupère les plugins activés et les instances actives, puis demande à chaque plugin de fournir son contenu via `enrol_page_hook()`. Le renderer de cours assemble ensuite les widgets d'inscription.
+
+Cette page est différente de la gestion des instances par le formateur ou le gestionnaire. Elle présente les possibilités offertes à l'utilisateur : auto-inscription, accès invité ou autre parcours fourni par un plugin.
+
+**Conséquences pour Project N**
+- Le thème doit préserver le rendu fourni par chaque plugin d'inscription.
+- Ne pas afficher une action « S'inscrire » générique sans que le plugin ait confirmé que l'utilisateur peut effectivement s'inscrire.
+- Distinguer les options d'accès destinées à l'apprenant de l'administration des méthodes destinée au formateur/gestionnaire.
+
+### 68.8 Configuration globale des plugins d'inscription
+
+Dans `admin/settings/plugins.php`, Moodle parcourt les plugins de type `enrol` et leur permet de déclarer leurs paramètres globaux via `load_settings()`.
+
+La configuration globale des méthodes d'inscription est donc extensible : les réglages disponibles dépendent des plugins installés et de leur code. Elle ne doit pas être confondue avec les instances de méthodes configurées dans chaque cours.
+
+### 68.9 Statuts à ne pas confondre
+
+Le cœur distingue au minimum :
+- `ENROL_INSTANCE_ENABLED` / `ENROL_INSTANCE_DISABLED` : état de l'instance dans le cours ;
+- `ENROL_USER_ACTIVE` / `ENROL_USER_SUSPENDED` : état de l'inscription individuelle ;
+- dates de début et de fin de l'inscription ;
+- activation globale du plugin dans la plateforme.
+
+La désactivation d'une instance, la suspension d'une inscription et la désactivation globale d'un plugin n'ont donc pas la même portée. Une personne peut aussi disposer de plusieurs inscriptions qui se chevauchent dans le même cours ; les fonctions natives calculent l'accès effectif en tenant compte de ces chevauchements.
+
+### 68.10 Capacités et limites de l'analyse
+
+Les capacités rencontrées comprennent notamment :
+- `moodle/course:enrolreview` : consultation/gestion de la page des instances ;
+- `moodle/course:enrolconfig` : configuration des méthodes ;
+- `enrol/manual:config`, `enrol/manual:enrol`, `enrol/manual:unenrol` : opérations propres à l'inscription manuelle ;
+- `enrol/self:config`, `enrol/guest:config`, `enrol/cohort:config` : configuration des méthodes correspondantes.
+
+La capacité de configuration d'une méthode ne donne pas automatiquement les droits d'ajouter ou de retirer des participants. Les capacités sont spécifiques au plugin et évaluées dans le contexte du cours.
+
+Limites :
+- référence de code Moodle `MOODLE_500_STABLE) uniquement ;
+- comparaison des versions 4.5 à 5.3 non terminée ;
+- méthodes d'inscription externes non étudiées exhaustivement ;
+- droits, synchronisations et interfaces spécifiques Iomad à comparer séparément ;
+- aucun test runtime, mobile, clavier ou lecteur d'écran déclaré réalisé par cette analyse statique.
