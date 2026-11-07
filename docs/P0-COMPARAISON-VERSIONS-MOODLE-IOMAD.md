@@ -376,6 +376,46 @@ La comparaison 5.0/5.2 est statique et n'a pas exécuté de migration de base de
 
 ## 10. Sources de code examinées
 
+### Moodle — Output API, format de cours et évaluation
+
+- [Moodle 5.0 — renderer du format de cours](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/course/format/classes/output/section_renderer.php)
+- [Moodle 5.3 — classe de base des formats de cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/base.php)
+- [Moodle 5.3 — renderer du format de cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/section_renderer.php)
+- [Moodle 5.3 — contenu du cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content.php)
+- [Moodle 5.3 — sortie de section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/section.php)
+- [Moodle 5.3 — sortie d'activité](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/classes/output/local/content/cm.php)
+- [Moodle 5.3 — template principal du cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content.mustache)
+- [Moodle 5.3 — template de contenu de section](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/templates/local/content/section/content.mustache)
+- [Moodle 5.3 — module AMD du contenu de cours](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/format/amd/src/local/content.js)
+- [Moodle 5.3 — application de correction des devoirs](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/assign/classes/output/grading_app.php)
+- [Moodle 5.3 — template de correction des devoirs](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/mod/assign/templates/grading_app.mustache)
+- [Moodle 5.3 — barre d'actions du rapport du correcteur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/grade/report/grader/classes/output/action_bar.php)
+- [Moodle 5.3 — ancien template déprécié du rapport du correcteur](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/grade/report/grader/templates/action_bar.mustache)
+
+### Moodle — Report Builder comptes et cohortes
+
+- [Moodle 5.3 — rapport système utilisateurs](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/admin/classes/reportbuilder/local/systemreports/users.php)
+- [Moodle 5.3 — entité utilisateur Report Builder](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/reportbuilder/classes/local/entities/user.php)
+- [Moodle 5.3 — entité cohorte](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/cohort/classes/reportbuilder/local/entities/cohort.php)
+- [Moodle 5.3 — entité membre de cohorte](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/cohort/classes/reportbuilder/local/entities/cohort_member.php)
+- [Moodle 5.3 — rapport système des cohortes](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/cohort/classes/reportbuilder/local/systemreports/cohorts.php)
+
+### Iomad — Company Admin et migration local_iomad
+
+- [Iomad 5.0 — page de gestion des utilisateurs](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/editusers.php)
+- [Iomad 5.0 — table des utilisateurs entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+- [Iomad 5.0 — formulaire d'affectation à l'entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/classes/forms/company_users_form.php)
+- [Iomad 5.0 — sélecteurs d'utilisateurs du bloc](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/lib/user_selectors.php)
+- [Iomad 5.2 — page de gestion des utilisateurs](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/editusers.php)
+- [Iomad 5.2 — table des utilisateurs entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+- [Iomad 5.2 — sélecteur commun entreprise](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/user_selector/company_base.php)
+- [Iomad 5.2 — sélecteur des utilisateurs actuels](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/user_selector/current_company.php)
+- [Iomad 5.2 — sélecteur des utilisateurs potentiels](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/user_selector/potential_company.php)
+- [Iomad 5.2 — migration des tables Iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/upgrade.php)
+- [Iomad 5.2 — schéma des tables local_iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/install.xml)
+
+
+
 - [Moodle 4.5 — accesslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/accesslib.php)
 - [Iomad 4.5 — accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/accesslib.php)
 - [Moodle 5.0 — accesslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/lib/accesslib.php)
