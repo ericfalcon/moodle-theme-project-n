@@ -3299,6 +3299,88 @@ Les fichiers Report Builder sélectionnés ont été comparés intégralement en
 
 Cette identité indique que ces rapports natifs du cœur ne sont pas directement modifiés dans les fichiers examinés. Elle ne signifie pas que l'expérience de gestion des comptes, cohortes ou utilisateurs Iomad est identique : Iomad fournit des parcours spécifiques dans le bloc iomad_company_admin, avec des filtres entreprise/département, des rôles et des règles de cloisonnement propres. Ces interfaces spécifiques doivent être analysées séparément, sans remplacer ni détourner les rapports natifs Moodle.
 
+### 66.15 Gestion des utilisateurs dans Iomad Company Admin
+
+La gestion des utilisateurs Iomad n'est pas une simple variante du rapport système Moodle. Le parcours principal est porté par le bloc block_iomad_company_admin, notamment editusers.php, editusers_table et les formulaires dédiés.
+
+#### 66.15.1 Portée et contrôles d'accès
+
+La page editusers.php :
+- récupère l'entreprise courante avec iomad::get_my_companyid() ;
+- construit le contexte entreprise ;
+- exige la capacité block/iomad_company_admin:view_editusers ;
+- n'autorise le mode édition que si editusers ou editallusers est accordée dans le contexte entreprise ;
+- vérifie que le département demandé appartient bien à l'entreprise ;
+- détermine le département de départ selon le niveau hiérarchique de l'utilisateur, sauf si edit_all_departments est accordée ;
+- filtre les résultats selon l'entreprise, les départements descendants et le type de gestionnaire.
+
+Le tableau est construit à partir des associations utilisateur-entreprise, des départements et de l'entreprise. Les utilisateurs administrateurs du site sont exclus de la liste ordinaire. Selon les capacités, les gestionnaires de l'entreprise parente peuvent également être exclus du périmètre de consultation. Les capacités assign_company_manager et assign_company_reporter conditionnent aussi les types de gestionnaires que l'utilisateur peut voir ou attribuer.
+
+La table editusers_table construit ses actions ligne par ligne. Selon les capacités et l'état du compte, elle peut proposer modification, réinitialisation du mot de passe, suppression, suspension/réactivation, gestion des inscriptions aux cours et gestion des licences. La modification des comptes gestionnaires est en outre protégée par editmanagers. Les utilisateurs MNet et les administrateurs du site font l'objet de restrictions spécifiques.
+
+**Conséquence Project N :** le menu d'actions du gestionnaire d'entreprise doit être construit à partir des capacités Iomad et de l'utilisateur cible. Il ne peut pas être déduit du seul rôle companymanager ou d'une capacité Moodle générique.
+
+#### 66.15.2 Filtrage hiérarchique et multi-entreprise
+
+Le filtre département est hiérarchique : la page peut afficher les utilisateurs d'un département et de ses sous-départements. Un gestionnaire limité à son niveau hiérarchique ne reçoit pas automatiquement l'ensemble des utilisateurs de l'entreprise. Le filtre par type distingue notamment les utilisateurs ordinaires et les différents types de gestionnaires.
+
+La possibilité d'afficher des utilisateurs non encore affectés à l'entreprise dépend de la capacité company_add et du paramètre showall. Le sélecteur des utilisateurs potentiels n'a pas la même portée pour un gestionnaire d'entreprise ordinaire et un administrateur autorisé à ajouter des utilisateurs à une autre entreprise.
+
+Il faut donc distinguer :
+- l'entreprise de rattachement du compte ;
+- l'entreprise sélectionnée dans le parcours ;
+- le département de rattachement ;
+- les départements descendants accessibles ;
+- le statut de gestionnaire/éducateur ;
+- le compte Moodle sous-jacent.
+
+Un même compte Moodle peut être associé à plusieurs entreprises selon les règles Iomad. Le tableau peut donc avoir plusieurs lignes logiques pour un même utilisateur, chacune correspondant à une association entreprise distincte.
+
+#### 66.15.3 Affectation et retrait des utilisateurs
+
+La page company_users_form.php s'appuie sur deux sélecteurs : utilisateurs potentiels et utilisateurs déjà affectés à l'entreprise. Le formulaire conserve une logique de sélection double liste et traite séparément l'ajout, l'import et le retrait.
+
+L'ajout vérifie le quota maximal d'utilisateurs de l'entreprise, affecte l'utilisateur au département par défaut, puis déclenche les événements de mise à jour et d'affectation. Le retrait supprime l'association entreprise et déclenche les événements correspondants. Ces opérations sont donc des mutations métier, pas de simples changements de rôle Moodle.
+
+**Conséquence Project N :** une interface plus moderne peut remplacer visuellement la table HTML ou les deux listes, mais elle doit conserver les règles de quota, les sélections, les confirmations, les sesskeys, les événements et la distinction entre affectation à une entreprise et inscription à un cours.
+
+### 66.16 Évolution Iomad 5.0 vers 5.2 : déplacement du modèle entreprise vers local_iomad
+
+Une différence structurelle importante apparaît entre Iomad 5.0 et Iomad 5.2. La branche 5.0 utilise les anciennes tables Iomad telles que company, department et company_users. Dans Iomad 5.2, le plugin local_iomad porte désormais les tables préfixées local_iomad_.
+
+Le fichier local/iomad/db/upgrade.php de la branche 5.2 contient des opérations explicites de renommage de tables. Parmi les migrations vérifiées :
+- company devient local_iomad_companies ;
+- department devient local_iomad_company_departments, avec renommage de champs company en companyid et parent en parentid ;
+- company_users devient local_iomad_company_users, avec révision des index ;
+- company_course devient local_iomad_company_courses ;
+- companylicense devient local_iomad_company_licenses ;
+- companylicense_users devient local_iomad_company_license_users ;
+- companylicense_courses devient local_iomad_company_license_courses ;
+- company_course_groups devient local_iomad_company_course_groups ;
+- company_shared_courses et company_created_courses deviennent local_iomad_company_shared_courses et local_iomad_company_created_courses ;
+- les tables de restrictions de rôles, domaines, modèles de rôles et options de cours sont également renommées dans le périmètre local_iomad.
+
+Cette migration est confirmée à la fois par les opérations rename_table de upgrade.php et par les déclarations de tables dans local/iomad/db/install.xml en Iomad 5.2.
+
+#### 66.16.1 Conséquences sur les écrans d'administration
+
+La page editusers.php et la table editusers_table utilisent en 5.2 les tables local_iomad_company_users et local_iomad_company_departments. Les noms et namespaces du contexte entreprise évoluent également.
+
+Le mécanisme des sélecteurs est déplacé :
+- en 5.0, les sélecteurs current_company_users_user_selector et potential_company_users_user_selector sont déclarés dans blocks/iomad_company_admin/lib/user_selectors.php ;
+- en 5.2, les classes current_company et potential_company sont déclarées dans local/iomad/classes/user_selector et héritent d'une classe commune company_base.
+
+Le bloc Company Admin consomme ainsi des services et sélecteurs centralisés dans le plugin local_iomad. La gestion métier entreprise est moins dépendante du code interne du bloc.
+
+**Conséquences Project N :**
+1. Ne jamais interroger directement les anciennes tables Iomad depuis le thème.
+2. Ne pas coder les noms de tables ou classes Iomad dans les templates ; s'appuyer sur les pages, renderers et API du plugin.
+3. Isoler les éventuelles adaptations Iomad derrière des contrôles de présence et des API compatibles avec la version détectée.
+4. Ne pas supposer qu'un écran identique en apparence utilise les mêmes tables, classes ou sélecteurs d'une version à l'autre.
+5. Pour le passage Iomad 5.0 vers 5.2, vérifier les migrations de schéma et les services local_iomad avant toute intégration ou surcharge.
+
+La comparaison 5.0/5.2 porte ici sur le code du fork Iomad disponible pour chaque branche. Les personnalisations propres à la branche Iomad 5.0 doivent rester distinguées du code amont et être conservées ; cette analyse ne modifie aucun fichier de ces forks.
+
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
 > Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
