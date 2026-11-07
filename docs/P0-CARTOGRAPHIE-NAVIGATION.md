@@ -3851,7 +3851,7 @@ Les arbres des dépôts montrent aussi l'apparition de nouveaux éléments dans 
 
 #### 65.12.4 Contrôle Iomad sur le rendu du cours
 
-Sept fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 : renderer, classes content/section/cm, templates content et section/content, tiroir de l'index et module AMD principal. Les sept fichiers sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. Les couples 4.5 et 5.1 restent à contrôler sur cette même sélection.
+Neuf fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur le couple 5.0 ; sept fichiers communs ont été comparés sur le couple 5.2. Le périmètre 5.0 inclut le socle de format, le renderer, les classes content/section/cm, les templates content et section/content, le tiroir de l'index et le module AMD principal. Le périmètre 5.2 couvre le renderer, les classes content/section/cm, les templates content et section/content et le module AMD principal. Les fichiers sélectionnés sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. Les couples 4.5 et 5.1 restent à contrôler sur cette même sélection.
 
 ### 65.13 Interfaces d'évaluation : correction des devoirs et carnet de notes
 
