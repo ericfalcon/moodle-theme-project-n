@@ -252,7 +252,7 @@ La prochaine étape P0 doit cartographier les parcours et composants réellement
 
 La sortie attendue sera une matrice **écran / action / composant natif / capacité / contexte / adaptation Iomad / versions**, avant toute implémentation du thème.
 
-## 10. Comparaison des points 65 à 68 sur les branches actuelles
+## 9. Comparaison des points 65 à 68 sur les branches actuelles
 
 Cette passe reprend les points d'entrée ciblés des sections 65 à 68 de la cartographie. Les contenus des fichiers ont été récupérés directement depuis les forks Moodle et Iomad, puis comparés intégralement. « Identique » signifie égalité exacte du contenu récupéré ; « différent » ne signifie pas nécessairement changement fonctionnel.
 
@@ -306,7 +306,7 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 
 Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.11, 66.10–66.12, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
-## 9. Sources de code examinées
+## 10. Sources de code examinées
 
 - [Moodle 4.5 — accesslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/accesslib.php)
 - [Iomad 4.5 — accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/accesslib.php)
