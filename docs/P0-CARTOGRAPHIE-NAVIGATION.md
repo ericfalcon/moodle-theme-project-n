@@ -4110,23 +4110,20 @@ Chaque sous-domaine de la cartographie doit comporter une fiche de comparaison s
 
 Les tableaux synthétiques doivent éviter les formulations vagues (« fonctionne pareil »). Ils indiquent les éléments concrets comparés et les exceptions éventuelles.
 
-### 69.4 Registre transversal des différences
+### 69.4 Documentation des différences interversions
 
-Les différences interversions doivent être consignées au fil de l'eau dans un registre dédié, lié à cette cartographie. Le registre devra permettre de retrouver rapidement :
-- le domaine fonctionnel ;
-- la version d'apparition ou de disparition ;
-- les versions affectées ;
-- le fichier ou symbole concerné ;
-- l'effet sur le thème et les éventuelles adaptations conditionnelles ;
-- le statut de vérification et les tests associés.
+Aucun registre supplémentaire n'est créé : il ferait doublon avec les documents déjà présents dans le dépôt. La traçabilité est répartie entre :
+- `P0-CARTOGRAPHIE-NAVIGATION.md` : analyse fonctionnelle et technique détaillée, contrats et impacts thème ;
+- `P0-COMPARAISON-VERSIONS-MOODLE-IOMAD.md` : différences techniques par version et comparaison des couples Moodle/Iomad ;
+- `P0-MATRICE-COMPATIBILITE.md` : couverture des versions, niveau de preuve, écarts et validations restantes.
 
-Les différences ne doivent pas rester uniquement dans les échanges conversationnels ou dans des notes temporaires. Toute tranche validée est reportée dans le document de cartographie et dans le registre transversal avant de poursuivre.
+Chaque différence doit permettre de retrouver le domaine, les versions et branches comparées, les fichiers/symboles concernés, les capacités/contextes, l'impact sur Project N, les adaptations éventuelles et les tests requis. Les constats doivent être reportés dans ces documents existants, sans créer de fichier de suivi redondant.
 
 ### 69.5 Règle de mise à jour régulière du dépôt
 
 À la fin de chaque tranche d'analyse :
 1. intégrer les constats et les limites dans `docs/P0-CARTOGRAPHIE-NAVIGATION.md` ;
-2. mettre à jour le registre des différences de versions ;
+2. mettre à jour `docs/P0-COMPARAISON-VERSIONS-MOODLE-IOMAD.md` et `docs/P0-MATRICE-COMPATIBILITE.md` selon le niveau de preuve ;
 3. actualiser `ROADMAP.md` et `README.md` si le périmètre ou l'état d'avancement évolue ;
 4. vérifier les liens, la numérotation, les ancres et les références croisées ;
 5. relire le contenu enregistré sur `main` après le commit.
@@ -4135,6 +4132,8 @@ Une tranche n'est considérée comme intégrée que lorsque le contenu a été r
 
 ### 69.6 Conséquence sur l'état actuel
 
-Les sections 65 à 68 ont été rédigées à partir de Moodle `MOODLE_500_STABLE`. Elles constituent une première cartographie fonctionnelle et technique, mais **ne valident pas la compatibilité Moodle 4.5–5.3**. Elles doivent être complétées par les fiches de comparaison interversions avant que les mécanismes concernés soient considérés comme spécifiés pour le thème.
+Les sections 65 à 68 ont d'abord été rédigées à partir de Moodle `MOODLE_500_STABLE`. Une comparaison statique ciblée a depuis été menée sur les points d'entrée Moodle 4.5 à 5.3, sur les couples Iomad 4.5 à 5.2, puis approfondie sur les Output API du cours, Report Builder, la gestion des catégories/cours et le plugin Iomad enrol/license.
+
+Cette couverture reste partielle : elle ne valide pas les parcours runtime, les migrations de base, l'accessibilité réelle, les plugins tiers ou l'ensemble des dépendances de rendu. La compatibilité du thème ne peut donc pas être déclarée acquise. Les éléments non comparés et les tests restants sont consignés dans la matrice.
 
 La compatibilité cible du thème reste Moodle 4.5, 5.0, 5.1, 5.2 et 5.3. Toute décision de surcharge devra être vérifiée sur les cinq générations, avec une stratégie explicite lorsqu'une API ou un template diffère.
