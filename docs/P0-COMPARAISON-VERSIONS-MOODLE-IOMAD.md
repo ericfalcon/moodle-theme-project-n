@@ -401,6 +401,12 @@ Le plugin vérifie l'existence d'une licence individuelle non utilisée ou d'une
 
 Une anomalie statique dans le traitement de l'inactivité est identifiée en 5.0 et 5.2 : la première boucle utilise user->userid, user->enrolid et user->courseid alors que la variable de boucle est instance et que l'identifiant est dans userid ; elle affecte aussi timecompleted depuis runtime avant que runtime soit initialisé dans la fonction. Ce point doit être reproduit en environnement de test avant toute correction. Aucun code du fork n'a été modifié.
 
+### 9.10 Plugins d'inscription natifs comparés à Iomad
+
+Une sélection de neuf fichiers de logique de plugins Moodle natifs a été comparée intégralement sur les couples Moodle/Iomad 5.0 et 5.2 : category et sa tâche de synchronisation, cohort et sa tâche de synchronisation, manual, self, meta, guest et database. Les fichiers sélectionnés sont identiques sur chacun de ces couples.
+
+Cette comparaison confirme que les plugins natifs sélectionnés ne sont pas directement modifiés dans Iomad. La spécificité d'inscription Iomad est principalement portée par enrol/license et par les couches entreprise (licences, affectations, rôles, capacités et synchronisations). Cette conclusion ne couvre pas LDAP, IMS, flatfile, LTI, paiement ni les plugins tiers.
+
 ## 10. Sources de code examinées
 
 ### Moodle — Output API, format de cours et évaluation
@@ -435,6 +441,18 @@ Une anomalie statique dans le traitement de l'inactivité est identifiée en 5.0
 - [Moodle 5.3 — barre d'actions de gestion des catégories](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/classes/output/manage_categories_action_bar.php)
 - [Moodle 5.3 — template de barre d'actions de catégorie](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/category_actionbar.mustache)
 - [Moodle 5.3 — template de barre d'actions de gestion](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/course/templates/manage_category_actionbar.mustache)
+
+### Moodle — plugins d'inscription natifs
+
+- [Moodle 5.0 — plugin category](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/category/lib.php)
+- [Moodle 5.0 — synchronisation category](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/category/classes/task/enrol_category_sync.php)
+- [Moodle 5.0 — plugin cohort](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/cohort/lib.php)
+- [Moodle 5.0 — synchronisation cohort](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/cohort/classes/task/enrol_cohort_sync.php)
+- [Moodle 5.0 — plugin manual](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/manual/lib.php)
+- [Moodle 5.0 — plugin self](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/self/lib.php)
+- [Moodle 5.0 — plugin meta](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/meta/lib.php)
+- [Moodle 5.0 — plugin guest](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/guest/lib.php)
+- [Moodle 5.0 — plugin database](https://github.com/ericfalcon/moodle/blob/MOODLE_500_STABLE/enrol/database/lib.php)
 
 ### Iomad — plugin d'inscription par licence
 
