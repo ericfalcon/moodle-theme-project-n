@@ -3591,6 +3591,77 @@ La lecture du diff confirme que, pour ce point d'entrée, les écarts 4.5 → 5.
 Niveau de preuve : empreintes Git des points d'entrée sur les branches officielles. L'analyse des classes de plugin, capacités, synchronisations et tests d'interface reste à compléter.
 
 
+### 65.11 Comparaison ciblée Moodle / Iomad — espace formateur
+
+Comparaison effectuée sur les branches homologues officielles Moodle/Iomad 4.5, 5.0, 5.1 et 5.2. Iomad 5.3 n'est pas disponible dans le périmètre de cette analyse.
+
+| Point d'entrée | Moodle 4.5 / Iomad 4.5 | Moodle 5.0 / Iomad 5.0 | Moodle 5.1 / Iomad 5.1 | Moodle 5.2 / Iomad 5.2 |
+|---|---|---|---|---|
+| Affichage du cours | Différence Iomad dans `course/view.php` | Différence Iomad dans `course/view.php` | Différence Iomad dans `public/course/view.php` | Différence Iomad dans `public/course/view.php` |
+| Édition du cours | Identique | Identique | À confirmer sur ce point précis | Identique |
+| Participants | Identique | Identique | Identique | Identique |
+| Rapport de notes / correction | Non comparé dans cette passe | `grade/report/grader/index.php` et `mod/assign/classes/output/grading_app.php` identiques | Non comparé dans cette passe | Non comparé dans cette passe |
+
+Dans les quatre générations, le point d'entrée d'affichage du cours Iomad ajoute un contrôle `iomad::iomad_check_course(...)`. Ce contrôle vérifie que le cours appartient à la liste des cours accessibles à l'utilisateur dans le contexte de son entreprise. Si le contrôle échoue, le contrôleur force un identifiant de cours invalide avant la récupération avec `MUST_EXIST`. La méthode `iomad_check_course()` s'appuie notamment sur l'entreprise de l'utilisateur et `company::get_menu_courses()`. Les administrateurs du site et le contexte d'installation sont traités à part.
+
+**Conséquence thème :** ne pas confondre ce contrôle d'accès Iomad avec une simple variante d'affichage. Les liens, listes et raccourcis vers les cours doivent respecter le périmètre entreprise ; le thème ne doit jamais reconstruire une liste de cours en contournant les API natives/Iomad. Le contrôle du contrôleur ne suffit toutefois pas à lui seul à prouver l'isolation de toutes les données multi-entreprises.
+
+Les autres points d'entrée comparés dans cette tranche sont identiques entre Moodle et Iomad sur les couples testés : `course/edit.php`, `user/index.php`, `admin/user.php`, `course/management.php`, `enrol/instances.php`, `enrol/editinstance.php` et `enrol/manual/manage.php`. En 5.0, sont également identiques `grade/report/grader/index.php`, `mod/assign/classes/output/grading_app.php`, le rapport système utilisateurs de Report Builder, `cohort/index.php` et `admin/user/user_bulk.php`.
+
+Cette conclusion porte sur les fichiers d'entrée listés, pas sur l'intégralité des classes, templates, blocs, plugins ou contrats de rendu appelés par ces pages.
+
+### 66.11 Rôles Iomad et périmètres de gestion
+
+La création des rôles Iomad est déclarée dans `local/iomad/db/install.php`. Les rôles suivants sont spécifiques à Iomad et ne doivent pas être confondus avec le rôle Moodle natif Gestionnaire (`manager`) :
+
+| Rôle Iomad | Shortname | Contexte d'affectation autorisé | Fonction indiquée dans le code |
+|---|---|---|---|
+| Company Manager | `companymanager` | Entreprise (`CONTEXT_COMPANY`) | Gestion d'une entreprise, notamment utilisateurs |
+| Company Department Manager | `companydepartmentmanager` | Entreprise (`CONTEXT_COMPANY`) | Gestion des départements d'une entreprise |
+| Company Course Editor | `companycourseeditor` | Cours (`CONTEXT_COURSE`) | Rôle de type enseignant éditeur associé aux cours créés par un gestionnaire d'entreprise |
+| Company Course Non Editor | `companycoursenoneditor` | Cours (`CONTEXT_COURSE`) | Rôle de type enseignant non éditeur |
+| Company Report Only | `companyreporter` | Entreprise (`CONTEXT_COMPANY`) | Consultation des rapports de l'entreprise |
+| Client Administrator | `clientadministrator` | Système (`CONTEXT_SYSTEM`) | Administration transversale des entreprises |
+| Client Report Only | `clientreporter` | Système (`CONTEXT_SYSTEM`) | Consultation transversale des rapports |
+
+Le contexte `CONTEXT_COMPANY` est un contexte propre à Iomad. Les capacités du bloc `block_iomad_company_admin` y sont déclarées dans `blocks/iomad_company_admin/db/access.php`. Les permissions sont donc distribuées par capacité et par contexte, pas uniquement par le nom du rôle. Par exemple, les accès à la gestion des entreprises, utilisateurs, cours, licences et rapports sont contrôlés par des capacités distinctes.
+
+La tâche asynchrone `local_iomad\\task\\resetrolestask` réinitialise les capacités de six rôles (`companymanager`, `companydepartmentmanager`, `companycourseeditor`, `companycoursenoneditor`, `companyreporter`, `clientreporter`). `clientadministrator` n'apparaît pas dans cette liste de réinitialisation. Ce détail doit être conservé dans la cartographie des permissions et vérifié avant toute intervention sur les rôles.
+
+**Conséquence thème :** l'interface d'administration doit s'appuyer sur les capacités effectives et le contexte courant. Ne pas déduire les accès d'un simple libellé de rôle, ni assimiler Company Manager à Moodle Manager. Les menus, actions et compteurs doivent être conditionnés par les capacités Iomad et Moodle réellement disponibles.
+
+### 67.10 Différences du fork Iomad 5.0 — gestion des cours
+
+Le fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, conserve six fichiers personnalisés par rapport à l'amont Iomad 5.0. Après synchronisation amont, la branche est en avance de 15 commits et en retard de zéro commit. Le commit de fusion est `40f37899a1d89bf307bd0cc0d205c01c03f78e5e`; le commit amont intégré est `77c795dca4fd423e7b76c5996413f33b0679ba85`.
+
+| Fichier local | Personnalisation conservée |
+|---|---|
+| `blocks/iomad_company_admin/classes/forms/company_ccu_courses_form.php` | Requête dédiée pour présenter les cours de l'entreprise sous la forme `[shortname] fullname` |
+| `blocks/iomad_company_admin/classes/forms/company_groups_form.php` | Préfixe `[shortname]` dans le sélecteur de cours |
+| `blocks/iomad_company_admin/classes/forms/company_gu_courses_form.php` | Même désambiguïsation dans le sélecteur associé |
+| `blocks/iomad_company_admin/classes/tables/iomad_courses_table.php` | Affichage du shortname avant le nom complet ; restriction de l'action de clonage aux cours créés par l'entreprise et à la capacité `createcourse` |
+| `blocks/iomad_company_admin/iomad_courses_form.php` | Vérification que le cours source du clonage appartient à `company_created_courses` ; suppression du mécanisme d'attribution temporaire du rôle Manager |
+| `blocks/iomad_company_admin/lib/course_selectors.php` | Préfixe `[shortname]` centralisé pour différencier les cours homonymes dans les sélecteurs |
+
+Ces modifications sont propres au fork et ne doivent pas être présentées comme le comportement natif d'Iomad. Leur objectif principal est de lever les ambiguïtés entre cours portant le même fullname dans des entreprises différentes et de resserrer les conditions de clonage.
+
+**Points de revue technique à conserver :**
+- `company_groups_form.php` et `company_gu_courses_form.php` effectuent une lecture `get_field()` par cours pour récupérer le shortname : risque de requêtes N+1 lorsque les listes sont volumineuses. Une récupération groupée est à étudier.
+- Dans `iomad_courses_table.php`, la condition de suppression répète deux fois exactement la même vérification `deletecourses` dans un `OR`. La seconde branche n'ajoute aucun droit ; cela semble redondant et doit être clarifié, sans correction automatique.
+- Dans `iomad_courses_form.php`, la récupération du cours source est effectuée deux fois dans le même bloc. C'est redondant, à confirmer avant nettoyage.
+- Le changement de clonage est une modification de règle métier et de permission : il nécessite des tests avec cours créés par l'entreprise, cours partagés, cours sous licence et rôles concernés avant toute reprise dans une autre version.
+
+Le fork Moodle personnel a été comparé aux branches officielles 4.5, 5.0, 5.1, 5.2 et 5.3 : les cinq têtes de branche étaient identiques. Aucune synchronisation Moodle n'était nécessaire.
+
+### 68.12 Comparaison ciblée Moodle / Iomad — inscriptions
+
+Sur les couples 4.5, 5.0 et 5.2, les contrôleurs d'inscription comparés sont identiques entre Moodle et Iomad : `enrol/instances.php`, `enrol/editinstance.php` et `enrol/manual/manage.php`. En 5.1, `public/enrol/instances.php`, `public/enrol/editinstance.php` et `public/enrol/manual/manage.php` sont également identiques.
+
+La différence Iomad principale observée dans cette tranche n'est donc pas un remplacement des méthodes d'inscription Moodle : elle se situe dans le périmètre d'accès aux cours, les affectations de rôles au contexte entreprise et les fonctions de gestion d'entreprise. Les plugins et synchronisations Iomad (entreprise, département, licence, cohortes et affectations) doivent être analysés séparément avant de conclure sur l'ensemble du cycle d'inscription.
+
+Niveau de preuve : comparaison statique des fichiers nommés sur les branches officielles homologues et lecture des déclarations de rôles/capacités Iomad 5.0. Aucun test runtime, test d'interface ou test de non-régression n'a été exécuté.
+
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
