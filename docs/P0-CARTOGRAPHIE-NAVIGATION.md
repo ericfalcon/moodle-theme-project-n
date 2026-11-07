@@ -3714,7 +3714,7 @@ Sept fichiers du rendu standard ont été comparés intégralement entre Moodle 
 
 La correction de devoir s'appuie sur plusieurs couches : la classe mod_assign output grading_app, le renderer du module, des templates Mustache spécialisés et des modules AMD. La comparaison des contenus confirme que le renderer mod/assign/classes/output/renderer.php évolue entre les cinq générations, tandis que grading_app.php évolue en 5.1 puis en 5.2 et reste identique entre 5.2 et 5.3.
 
-La classe grading_app expose notamment des données liées à l'utilisateur évalué, au groupe, à l'assignation et aux marqueurs. Dans la génération 5.3, le constructeur prend explicitement en compte le paramètre marker pour les devoirs utilisant plusieurs évaluateurs. L'interface doit donc préserver la distinction entre attribution du travail de correction et notation finale.
+La classe grading_app expose notamment des données liées à l'utilisateur évalué, au groupe, à l'assignation et aux marqueurs. À partir de Moodle 5.2, le constructeur prend explicitement en compte le paramètre marker pour les devoirs utilisant plusieurs évaluateurs. L'interface doit donc préserver la distinction entre attribution du travail de correction et notation finale.
 
 Le template mod_assign/grading_app est un assemblage de zones fonctionnelles distinctes :
 - navigation entre les participants ;
