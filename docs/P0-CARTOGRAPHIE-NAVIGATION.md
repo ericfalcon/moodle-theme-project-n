@@ -4073,6 +4073,57 @@ Les neuf fichiers sont identiques entre Moodle et Iomad sur chacun des deux coup
 
 **Conséquence Project N :** ne pas construire une seconde logique d'inscription dans le thème. Conserver les interfaces fournies par les plugins et les capacités associées. Pour les fonctions Iomad, distinguer l'inscription Moodle à une instance, l'affectation d'une licence à une entreprise/utilisateur, et les rôles entreprise/cours qui peuvent être attribués en conséquence.
 
+### 68.17 Administration des licences Iomad : création, partage et affectation
+
+L'interface d'administration des licences est portée par Company Admin, pas par la page standard de configuration des instances d'inscription. Elle couvre trois opérations distinctes :
+1. gérer le pool de licences de l'entreprise ;
+2. affecter des licences et des cours à des utilisateurs ;
+3. gérer, pour un utilisateur donné, les cours couverts par ses licences.
+
+#### 68.17.1 Gestion du pool de licences
+
+La page company_license_list.php affiche une table_sql avec notamment le nom, la référence, le type, le caractère programme, le mode instantané, les cours associés, la date d'expiration, la durée, le nombre alloué, le nombre utilisé/restant, l'entreprise et les actions.
+
+La liste est filtrée par l'entreprise courante et, selon la capacité company_add_child, peut inclure les entreprises descendantes. Les gestionnaires limités à un département ne voient que les licences accessibles dans leur hiérarchie. L'affichage des licences expirées est un filtre distinct.
+
+Les actions de ligne sont conditionnées par des capacités spécifiques :
+- edit_licenses et edit_my_licenses : modification et suppression selon la portée de la licence ;
+- split_my_licenses : division d'une licence parent si une allocation reste disponible et si l'entreprise possède des entreprises filles ;
+- allocate_licenses : affectation des licences aux utilisateurs ;
+- les capacités d'accès aux licences et d'affectation individuelle sont évaluées séparément.
+
+Le formulaire de licence propose plusieurs types : standard, réutilisable, éducateur, éducateur réutilisable et globale/blanket. Le réglage autoenrol_managers peut retirer les types éducateur. Le formulaire distingue également licence programme (plusieurs cours) et licence simple, instantanée ou non, dates de début et d'expiration, date de coupure, suppression/effacement à expiration, durée de validité et allocation. Une licence enfant peut être créée à partir d'une licence parent et affectée à une entreprise descendante.
+
+Pour une licence programme, l'allocation et l'utilisation sont réparties entre les cours associés. Le calcul du nombre de places restantes ne peut donc pas être présenté comme une valeur unique sans tenir compte du nombre de cours du programme.
+
+#### 68.17.2 Affectation des licences aux utilisateurs
+
+La page company_license_users_form.php exige block/iomad_company_admin:allocate_licenses. Elle vérifie que la licence appartient à l'entreprise courante, tient compte des dates de validité et limite les licences visibles selon les droits et la hiérarchie départementale.
+
+Le formulaire company_license_users_form utilise deux sélecteurs : utilisateurs potentiels et utilisateurs déjà affectés. Il peut également filtrer par cours, département et sous-départements. Il tient compte du nombre de cours associés, des licences programmes et du quota restant. L'affectation peut être planifiée à une date d'envoi et déclenche des événements d'affectation/désaffectation.
+
+La page company_users_licenses_form.php réalise l'opération inverse à l'échelle d'un utilisateur : elle vérifie son appartenance à l'entreprise et au département, puis permet d'affecter ou de retirer des cours de ses licences avec des sélecteurs de cours actuels et potentiels. Ce parcours utilise la capacité block/iomad_company_admin:company_license_users et les droits d'affectation/désaffectation appropriés.
+
+Ces deux écrans ne sont donc pas interchangeables : l'un affecte des utilisateurs à une licence/cours, l'autre gère les cours couverts par les licences d'un utilisateur.
+
+#### 68.17.3 Évolution de l'interface entre Iomad 5.0 et 5.2
+
+L'interface de gestion des licences évolue sensiblement entre les deux générations :
+- en 5.0, la création/modification utilise la page dédiée company_license_edit_form.php et la classe company_license_form étend company_moodleform ;
+- en 5.2, cette page dédiée disparaît du parcours principal : la classe company_license_form étend dynamic_form et est ouverte en modal par core_form/modalform ;
+- la page company_license_list.php initialise le module AMD block_iomad_company_admin/license_edit ;
+- les boutons portent des attributs data-action, data-licenseid, data-companyid et data-parentid ; le module AMD ouvre le formulaire, restaure le focus sur le déclencheur, gère les notifications/toasts et la confirmation de suppression ;
+- les pages et classes utilisent les tables local_iomad_company_licenses, local_iomad_company_license_users et local_iomad_company_license_courses en 5.2, à la place des tables historiques de 5.0.
+
+Les fichiers comparés entre 5.0 et 5.2 changent pour company_license_list.php, company_license_users_form.php, company_users_licenses_form.php, les trois classes de formulaire, company_license_table.php. Le module AMD license_edit.js est absent en 5.0 et présent en 5.2.
+
+**Conséquences Project N :**
+1. Présenter les licences en cartes sur smartphone est envisageable, mais les données d'allocation, d'utilisation, de validité, de type, de programme et d'entreprise doivent rester visibles ou accessibles.
+2. Ne pas aplatir les licences parentes et enfants : la division et l'allocation suivent la hiérarchie d'entreprise.
+3. Préserver les actions et leurs attributs data-action ; en 5.2, le comportement modal dépend du module AMD et du retour de focus.
+4. Préserver les contrôles de quota et la distinction entre affectation utilisateur/licence et affectation licence/utilisateur/cours.
+5. Le thème ne doit pas recalculer les quotas ni la validité : les valeurs métier viennent des classes et formulaires Iomad.
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
