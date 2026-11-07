@@ -115,11 +115,11 @@ Le thème doit rester installable et fonctionnel sur Moodle 4.5, 5.0, 5.1, 5.2 e
 | `course/edit.php` | Identique | Identique | Identique | Identique | Contrôleur commun sur les versions vérifiées |
 | `user/index.php` | Identique | Identique | Identique | Identique | Participants : point d'entrée commun |
 | `admin/user.php` | Identique | Identique | Identique | Identique | Administration des comptes : point d'entrée commun |
-| `course/management.php` | Identique | Identique | Identique | Identique | Identique | Gestion plateforme : point d'entrée commun sur les cinq versions Moodle vérifiées |
+| `course/management.php` | Identique | Identique | Identique | Identique | Gestion plateforme : point d'entrée commun sur les cinq versions Moodle vérifiées |
 | `enrol/instances.php`, `editinstance.php`, `manual/manage.php` | Identiques | Identiques | Identiques | Identiques | Les contrôleurs standards d'inscription ne sont pas remplacés par Iomad |
-| `grade/report/grader/index.php`, `mod/assign/classes/output/grading_app.php` | Non vérifiés | Identiques | Non vérifiés | Non vérifiés | Non vérifiés | Vérification Moodle/Iomad faite en 5.0 uniquement |
-| Report Builder users/cohortes — sélection de fichiers | Non vérifiés | Identiques | Non vérifiés | Identiques | Moodle seul comparé sur les fichiers ciblés | Rapports et entités natifs identiques Moodle/Iomad sur les couples 5.0 et 5.2 |
-| `admin/user/user_bulk.php` | Non vérifié | Identique | Non vérifié | Non vérifié | Non vérifié | Comparaison Moodle/Iomad 5.0 uniquement |
+| `grade/report/grader/index.php`, `mod/assign/classes/output/grading_app.php` | Non vérifiés | Identiques | Non vérifiés | Non vérifiés | Vérification Moodle/Iomad faite en 5.0 uniquement |
+| Report Builder users/cohortes — sélection de fichiers | Non vérifiés | Identiques | Non vérifiés | Identiques | Rapports et entités natifs identiques Moodle/Iomad sur les couples 5.0 et 5.2 |
+| `admin/user/user_bulk.php` | Non vérifié | Identique | Non vérifié | Non vérifié | Comparaison Moodle/Iomad 5.0 uniquement |
 Ces résultats concernent les points d'entrée listés, pas l'ensemble des dépendances de rendu ni les plugins Iomad.
 
 ### 7.2 Rôles et capacités Iomad 5.0
