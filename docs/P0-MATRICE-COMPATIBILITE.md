@@ -104,7 +104,7 @@ Le thème doit rester installable et fonctionnel sur Moodle 4.5, 5.0, 5.1, 5.2 e
 | Domaine / fichier | 4.5 | 5.0 | 5.1 | 5.2 | Conclusion limitée |
 |---|---|---|---|---|---|
 | `course/view.php` | Différence Iomad | Différence Iomad | Différence Iomad | Différence Iomad | Iomad ajoute `iomad_check_course()` pour vérifier l'accès au cours dans le périmètre entreprise |
-| `course/edit.php` | Identique | Identique | Non vérifié dans cette passe | Identique | Contrôleur commun sur les versions vérifiées |
+| `course/edit.php` | Identique | Identique | Identique | Identique | Contrôleur commun sur les versions vérifiées |
 | `user/index.php` | Identique | Identique | Identique | Identique | Participants : point d'entrée commun |
 | `admin/user.php` | Identique | Identique | Identique | Identique | Administration des comptes : point d'entrée commun |
 | `course/management.php` | Identique | Identique | Non vérifié dans cette passe | Identique | Gestion plateforme : point d'entrée commun sur les versions vérifiées |
