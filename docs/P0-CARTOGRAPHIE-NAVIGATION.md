@@ -3598,7 +3598,7 @@ Comparaison effectuée sur les branches homologues officielles Moodle/Iomad 4.5,
 | Point d'entrée | Moodle 4.5 / Iomad 4.5 | Moodle 5.0 / Iomad 5.0 | Moodle 5.1 / Iomad 5.1 | Moodle 5.2 / Iomad 5.2 |
 |---|---|---|---|---|
 | Affichage du cours | Différence Iomad dans `course/view.php` | Différence Iomad dans `course/view.php` | Différence Iomad dans `public/course/view.php` | Différence Iomad dans `public/course/view.php` |
-| Édition du cours | Identique | Identique | À confirmer sur ce point précis | Identique |
+| Édition du cours | Identique | Identique | Identique | Identique |
 | Participants | Identique | Identique | Identique | Identique |
 | Rapport de notes / correction | Non comparé dans cette passe | `grade/report/grader/index.php` et `mod/assign/classes/output/grading_app.php` identiques | Non comparé dans cette passe | Non comparé dans cette passe |
 
