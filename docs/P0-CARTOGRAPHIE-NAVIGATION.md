@@ -3039,7 +3039,8 @@ Cette organisation est une proposition d'architecture de l'information. Chaque d
 
 ### 65.9 Limites et validations restantes
 
-- Référence de lecture principale : Moodle `MOODLE_500_STABLE`. Les différences de chemins, classes, templates et comportements entre 4.5 et 5.3 restent à comparer pour les éléments qui conditionneront les choix du thème.
+- Références de code : Moodle 4.5 à 5.3 pour les points d'entrée et plusieurs composants de sortie ; les différences sont précisées en 65.10 à 65.13. La couverture des dépendances n'est pas exhaustive.
+- Le moteur de rendu des formats de cours est polymorphe : le format peut fournir ses propres classes de sortie et templates. Le thème doit préserver cette extensibilité.
 - Analyse statique uniquement : aucune installation ni scénario navigateur n'est déclaré validé par cette section.
 - Les interfaces de participants, groupes, rapports, notes et correction doivent être testées avec plusieurs profils et capacités, notamment sur smartphone.
 - Les parcours Iomad correspondants devront être comparés à version Moodle équivalente ; l'adaptation entreprise et les rôles Iomad ne doivent pas être extrapolés à partir du seul Moodle standard.
@@ -3609,6 +3610,55 @@ Dans les quatre générations, le point d'entrée d'affichage du cours Iomad ajo
 Les autres points d'entrée comparés dans cette tranche sont identiques entre Moodle et Iomad sur les couples testés : `course/edit.php`, `user/index.php`, `admin/user.php`, `course/management.php`, `enrol/instances.php`, `enrol/editinstance.php` et `enrol/manual/manage.php`. En 5.0, sont également identiques `grade/report/grader/index.php`, `mod/assign/classes/output/grading_app.php`, le rapport système utilisateurs de Report Builder, `cohort/index.php` et `admin/user/user_bulk.php`.
 
 Cette conclusion porte sur les fichiers d'entrée listés, pas sur l'intégralité des classes, templates, blocs, plugins ou contrats de rendu appelés par ces pages.
+
+### 65.12 Contrat de rendu du cours : Output API, formats et templates
+
+Le rendu du cours n'est pas produit par un template unique et invariant. Le renderer commun du format de cours prend en charge les objets renderable et les formats peuvent spécialiser leurs classes de sortie et leurs templates.
+
+Le mécanisme core_courseformat base get_output_classname résout une classe spécifique au format lorsqu'elle est déclarée, puis revient à la classe commune. Les objets de sortie du contenu, des sections et des activités résolvent ainsi séparément les classes d'en-tête, listes d'activités, résumés, menus, disponibilité, achèvement, visibilité, mode de groupe et contrôles d'édition.
+
+**Conséquence Project N :** ne pas coder une structure HTML supposée identique pour tous les formats. Toute surcharge doit conserver la résolution des classes spécialisées, les contextes exportés et les possibilités de surcharge du renderer.
+
+#### 65.12.1 Templates Mustache et points d'extension
+
+Les principaux templates du rendu de cours sont :
+- core_courseformat/local/content : enveloppe du contenu du cours ;
+- core_courseformat/local/content/section et .../section/content : enveloppe et contenu d'une section ;
+- core_courseformat/local/content/cm : activité dans la liste ;
+- core_courseformat/local/courseindex/drawer : index du cours.
+
+Les templates utilisent des partials et des blocs Mustache nommés. Le template de section sert explicitement de wrapper pour permettre aux formats et aux thèmes de modifier l'enveloppe sans recopier l'intégralité du contenu interne.
+
+Stratégie recommandée :
+1. privilégier les styles SCSS ciblant les classes et attributs stables ;
+2. si une surcharge Mustache est indispensable, préserver les blocs et partials nommés ;
+3. éviter de recopier les templates complets uniquement pour déplacer un élément ou changer une classe ;
+4. ne jamais supposer que les données d'un format tiers sont identiques à celles du format standard.
+
+#### 65.12.2 Contrats DOM consommés par JavaScript
+
+Le module core_courseformat/local/content initialise un composant réactif et s'appuie notamment sur les sélecteurs [data-for='cmitem'], [data-action="togglecoursecontentsection"] et [data-bs-toggle="collapse"]. Il gère les événements de complétion, les mutations du contenu, l'état replié des sections et les actions de l'éditeur de cours.
+
+Le thème peut réorganiser visuellement les sections et les activités, mais doit préserver les identifiants, les attributs data-for, data-region, data-action, les classes utilisées par les composants réactifs, les attributs ARIA, l'état développé/replié et les éléments actualisés après une action AJAX. Un rendu mobile en cartes ne doit pas supprimer les ancres, états d'achèvement, informations de disponibilité et actions conditionnelles.
+
+#### 65.12.3 Évolutions observées selon les versions
+
+| Élément | Évolution vérifiée | Conséquence |
+|---|---|---|
+| section_renderer.php | Contenu différent entre les cinq branches ; fichier plus étoffé en 5.3 qu'en 5.0 | Renderer non figé |
+| output/local/content.php | Évolutions en 5.2 et 5.3 ; gestion du menu global de repli portée au niveau du contenu en 5.3 | Surcharge du template principal à revoir |
+| output/local/content/section.php | Évolutions successives ; ajout de returnoptions et dépréciation de sectionreturnnum en 5.3 | Préserver les paramètres de retour |
+| output/local/content/cm.php | Évolution mineure entre 5.0 et 5.3 | Vérifier les extensions héritées |
+| templates/local/content.mustache | Changements en 5.2 puis 5.3 ; menu replier/déplier déplacé au niveau supérieur en 5.3 | Surcharge à réexaminer |
+| templates/local/content/section/content.mustache | Contexte collapsemenu déprécié en 5.3 | Ne pas recopier le contrôle historique dans chaque section |
+| amd/src/local/content.js | Import de Collapse depuis bootstrap en 5.3, au lieu de theme_boost/bootstrap/collapse en 5.0 | Ne pas dépendre d'un chemin JavaScript interne à Boost |
+| templates/local/courseindex/drawer.mustache | Modifié en 5.2 puis stable en 5.3 | Revoir le tiroir de navigation |
+
+Les arbres des dépôts montrent aussi l'apparition de nouveaux éléments dans le sous-système de format de cours : classes et templates d'aperçu d'activité en 5.0, nouvelle architecture du sélecteur d'activité en 5.1 et contenu de navigation linéaire en 5.3. Leur présence dans le cœur ne signifie pas qu'ils sont actifs pour tous les formats ou tous les cours.
+
+#### 65.12.4 Contrôle Iomad sur le rendu du cours
+
+Sept fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 : renderer, classes content/section/cm, templates content et section/content, tiroir de l'index et module AMD principal. Les sept fichiers sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. Les couples 4.5 et 5.1 restent à contrôler sur cette même sélection.
 
 ### 66.11 Rôles Iomad et périmètres de gestion
 
