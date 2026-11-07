@@ -3236,6 +3236,8 @@ Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits éten
 |---|---|---|---|---|---|---|
 | Page d'administration des comptes | `admin/user.php` | idem | `public/admin/user.php` | idem | idem | 4.5 diffère ; 5.0, 5.1 et 5.2 identiques ; 5.3 diffère |
 | Rapport système des utilisateurs | `admin/classes/reportbuilder/local/systemreports/users.php` | idem | `public/admin/classes/reportbuilder/local/systemreports/users.php` | idem | idem | 4.5 diffère ; 5.0 et 5.1 identiques ; 5.2 et 5.3 évoluent |
+
+La comparaison de contenu montre qu'entre 5.0 et 5.2, le callback de la colonne d'identité fait évoluer la source de la chaîne « suspendu » et la classe Bootstrap du badge (de `text-bg-secondary` à `text-bg-warning`) ; la logique de confirmation reste également présente. Entre 5.2 et 5.3, le fichier présente de nombreux écarts textuels, dont des changements de formatage et d'URL de licence : une comparaison sémantique complète reste nécessaire avant d'attribuer ces écarts à une évolution fonctionnelle du rapport.
 | Liste des cohortes | `cohort/index.php` | idem | `public/cohort/index.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
 | Actions groupées | `admin/user/user_bulk.php` | idem | `public/admin/user/user_bulk.php` | idem | idem | Empreinte identique sur les cinq branches |
 
@@ -3577,6 +3579,8 @@ Limites :
 | Gestion des instances | `enrol/instances.php` | idem | `public/enrol/instances.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
 | Configuration d'une instance | `enrol/editinstance.php` | idem | `public/enrol/editinstance.php` | idem | idem | 5.1 à 5.3 identiques ; comparaison 4.5/5.0 à compléter |
 | Gestion des inscriptions manuelles | `enrol/manual/manage.php` | idem | `public/enrol/manual/manage.php` | idem | idem | 4.5, 5.0 et 5.1 diffèrent ; 5.1 à 5.3 identiques |
+
+La lecture du diff confirme que, pour ce point d'entrée, les écarts 4.5 → 5.0 puis 5.0 → 5.1 portent sur une seule ligne de classes CSS du tableau de sélection des rôles/utilisateurs. Aucun changement fonctionnel n'est démontré par ce fichier seul. La différence doit être traitée comme une évolution de markup/styling à vérifier dans le rendu, et non comme une modification des règles d'inscription.
 
 **Conséquences :**
 - Le contrôleur des instances d'inscription est stable de Moodle 5.0 à 5.3 ; le changement de chemin en 5.1 relève de la nouvelle arborescence publique.
