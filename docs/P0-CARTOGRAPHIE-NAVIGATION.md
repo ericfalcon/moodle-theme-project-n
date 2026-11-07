@@ -3724,15 +3724,15 @@ Cette section fixe la méthode obligatoire pour couvrir la cible **Moodle 4.5 à
 
 | Plateforme | Génération | Référence de travail | Statut de l'analyse |
 |---|---|---|---|
-| Moodle | 4.5 | branche stable exacte à relever au début de la tranche | À comparer |
-| Moodle | 5.0 | `MOODLE_500_STABLE` | Référence utilisée pour les sections 65 à 68 ; différences interversions à relever |
-| Moodle | 5.1 | branche stable exacte à relever au début de la tranche | À comparer |
-| Moodle | 5.2 | branche stable exacte à relever au début de la tranche | À comparer |
-| Moodle | 5.3 | branche stable exacte à relever au début de la tranche | À comparer |
-| Iomad | 4.5 | branche correspondant à Moodle 4.5 | À comparer |
-| Iomad | 5.0 | branche correspondant à Moodle 5.0, si publiée et maintenue | À vérifier |
-| Iomad | 5.1 | branche correspondant à Moodle 5.1, si publiée et maintenue | À vérifier |
-| Iomad | 5.2 | branche correspondant à Moodle 5.2 | À comparer |
+| Moodle | 4.5 | `MOODLE_405_STABLE` | Comparaison statique ciblée des points 65–68 ; couverture partielle |
+| Moodle | 5.0 | `MOODLE_500_STABLE` | Référence initiale et comparaison statique des points 65–68 ; couverture partielle |
+| Moodle | 5.1 | `MOODLE_501_STABLE` | Comparaison statique ciblée des points 65–68 ; couverture partielle |
+| Moodle | 5.2 | `MOODLE_502_STABLE` | Comparaison statique ciblée des points 65–68 ; couverture partielle |
+| Moodle | 5.3 | `MOODLE_503_STABLE` | Comparaison statique ciblée des points 65–68 ; couverture partielle |
+| Iomad | 4.5 | `IOMAD_405_STABLE` | Comparaison statique ciblée avec Moodle 4.5 ; couverture partielle |
+| Iomad | 5.0 | `IOMAD_500_STABLE` | Fork personnel comparé à Moodle 5.0 ; personnalisations locales conservées |
+| Iomad | 5.1 | `IOMAD_501_STABLE` | Comparaison statique ciblée avec Moodle 5.1 ; couverture partielle |
+| Iomad | 5.2 | `IOMAD_502_STABLE` | Comparaison statique ciblée avec Moodle 5.2 ; couverture partielle |
 | Iomad | 5.3 | aucune version disponible selon l'état de référence du projet au 7 novembre 2026 | Non testable à ce stade |
 
 Les numéros de versions ne doivent pas être supposés équivalents entre dépôts. Avant chaque comparaison, relever le nom exact de la branche, le tag ou le commit réellement publié. Une version Iomad n'est comparée qu'à la génération Moodle sur laquelle elle est construite.
