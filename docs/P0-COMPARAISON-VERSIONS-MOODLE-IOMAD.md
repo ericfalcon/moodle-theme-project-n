@@ -256,7 +256,7 @@ La sortie attendue sera une matrice **écran / action / composant natif / capaci
 
 Cette passe reprend les points d'entrée ciblés des sections 65 à 68 de la cartographie. Les contenus des fichiers ont été récupérés directement depuis les forks Moodle et Iomad, puis comparés intégralement. « Identique » signifie égalité exacte du contenu récupéré ; « différent » ne signifie pas nécessairement changement fonctionnel.
 
-### 10.1 Moodle — évolution entre 4.5 et 5.3
+### 9.1 Moodle — évolution entre 4.5 et 5.3
 
 | Point | Fichier | Résultat sur les branches Moodle |
 |---|---|---|
@@ -279,7 +279,7 @@ Cette passe reprend les points d'entrée ciblés des sections 65 à 68 de la car
 
 Les chemins des fichiers web sont à la racine du dépôt en 4.5 et 5.0, puis sous `public/` en 5.1, 5.2 et 5.3. Cette réorganisation ne doit pas être transformée en chemins codés en dur dans Project N.
 
-### 10.2 Iomad — comparaison avec Moodle de même génération
+### 9.2 Iomad — comparaison avec Moodle de même génération
 
 | Point d'entrée | 4.5 | 5.0 | 5.1 | 5.2 |
 |---|---|---|---|---|
@@ -296,7 +296,7 @@ Pour les quatre branches Iomad, le fichier `course/view.php` contient l'appel `i
 
 Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couples de même génération. Cela ne signifie pas que tous les services, renderers, plugins ou contrôles d'accès sont identiques : les adaptations Iomad peuvent être portées par les composants appelés par ces contrôleurs.
 
-### 10.3 Conséquences et limites
+### 9.3 Conséquences et limites
 
 1. Les points d'entrée les plus stables pour une intégration commune sont notamment `course/edit.php`, `course/management.php`, `course/editcategory.php`, `enrol/editinstance.php` et les contrôleurs d'inscription comparés entre Moodle et Iomad. La stabilité doit toujours être confirmée au niveau des classes, formulaires, templates et composants appelés.
 2. Les points d'entrée les plus sensibles aux versions sont `course/view.php`, le rapport système des utilisateurs, `admin/user.php` en 4.5 et 5.3, la correction des devoirs et la gestion manuelle des inscriptions.
@@ -304,7 +304,37 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
 5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
 
-Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.11, 66.10–66.12, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.12, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+
+### 9.4 Chaîne de rendu du cours et contrats de l'Output API
+
+La comparaison a été étendue au renderer, aux objets de sortie, aux templates Mustache et au module AMD principal du format de cours. Les classes examinées sont notamment section_renderer, output/local/content, output/local/content/section et output/local/content/cm. Les templates examinés comprennent local/content, local/content/section/content et local/courseindex/drawer.
+
+Constats :
+- les classes de sortie du format de cours sont résolues dynamiquement par le format actif au moyen de get_output_classname ; un format tiers peut donc substituer ses classes de section, activité, disponibilité, achèvement ou contrôle d'édition ;
+- les objets de sortie exportent des contextes de template ; les templates Mustache sont composés de partials et de blocs nommés, prévus pour être étendus ;
+- le module AMD principal s'appuie sur les attributs data-for, data-action et les attributs Bootstrap pour gérer les sections, les activités, l'édition, les mutations et le repli ;
+- en Moodle 5.3, le contrôle global de repli/dépli des sections est déplacé au niveau du template principal core_courseformat/local/content ; le contexte collapsemenu dans le template interne de section est déprécié ;
+- en 5.3, le champ sectionreturnnum est déprécié dans l'objet de sortie de section et returnoptions est ajouté ;
+- le module AMD utilise l'import Bootstrap Collapse depuis bootstrap en 5.3, alors que Moodle 5.0 l'importait depuis theme_boost/bootstrap/collapse ;
+- les arbres de code révèlent des ajouts dans le sous-système : classes/templates d'aperçu d'activité en 5.0, architecture du sélecteur d'activité en 5.1, contenu de navigation linéaire en 5.3.
+
+Les fichiers de la chaîne de rendu standard comparés entre Moodle et Iomad sont identiques pour les sept fichiers sélectionnés dans les couples 5.0 et 5.2. Les couples 4.5 et 5.1 restent à vérifier au même niveau.
+
+### 9.5 Correction des devoirs et carnet de notes
+
+Le renderer de mod_assign (mod/assign/classes/output/renderer.php) évolue dans les cinq générations comparées. La classe grading_app évolue entre 5.0 et 5.1, puis en 5.2 ; les versions 5.2 et 5.3 sont identiques pour ce fichier. En 5.3, la classe prend explicitement en compte le marqueur dans les devoirs à plusieurs évaluateurs.
+
+Le template grading_app est un assemblage de zones fonctionnelles distinctes : navigation entre participants, relecture, notation, actions, sauvegarde et séparateur redimensionnable. En 5.3, ce séparateur porte data-region=resizer, tabindex=0 et un libellé ARIA. Ces éléments sont des contrats d'interaction et d'accessibilité, pas de simples détails de présentation.
+
+Le rapport gradereport_grader connaît un changement de contrat en 5.3 :
+- la classe action_bar renvoie core/action_bar au lieu de gradereport_grader/action_bar ;
+- le template spécifique gradereport_grader/action_bar est déprécié depuis Moodle 5.3, avec dépréciation finale annoncée pour Moodle 6.0 ;
+- les composants de sélection de groupe, d'initiales, d'utilisateur et la barre d'action générale sont réutilisés depuis le cœur.
+
+Conséquence : privilégier les composants communs Moodle et préserver les régions DOM, attributs ARIA, commandes clavier et actions natives dans les adaptations desktop et mobile. Toute surcharge du template spécifique du rapport de notes doit être revue pour Moodle 5.3.
+
+Ces constats sont statiques ; ils ne valident ni les workflows de correction ni l'accessibilité réelle de l'interface.
 
 ## 10. Sources de code examinées
 
