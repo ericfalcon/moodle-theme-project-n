@@ -3204,3 +3204,157 @@ Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits éten
 - Les rôles Iomad et leurs capacités effectives restent un chantier distinct ; cette section ne les déduit pas.
 - Les parcours de création en masse/import CSV, les politiques de confidentialité, la suppression/anonymisation et les champs personnalisés nécessitent des tranches dédiées.
 - Aucun test runtime, mobile, clavier ou lecteur d'écran n'est déclaré réalisé par cette analyse statique.
+
+---
+
+## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
+
+> Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
+
+### 67.1 Deux interfaces à ne pas confondre
+
+Moodle expose deux parcours distincts :
+
+- `course/index.php` : consultation du catalogue et navigation dans les catégories visibles. Le rendu du contenu est délégué au renderer de cours via `course_category()`. La page utilise le layout `coursecategory` et déclenche l'événement `course_category_viewed`.
+- `course/management.php` : gestion des catégories et des cours par les personnes disposant des capacités nécessaires. La page utilise un renderer dédié à la gestion, une barre d'actions et des composants de liste/gestion.
+
+La page de catalogue n'est donc pas une version simplifiée de l'administration. Elle répond à un autre besoin : découvrir les cours auxquels l'utilisateur peut accéder, selon les règles de visibilité et les droits.
+
+**Conséquences pour Project N**
+- Ne pas mélanger « catalogue / trouver une formation » et « administrer les cours » dans un écran unique.
+- Les accès peuvent être rapprochés dans la navigation, mais les destinations et leurs droits restent distincts.
+- Les cartes de cours apprenant et les cartes de gestion de cours ne doivent pas partager automatiquement les mêmes actions ni le même niveau de détail.
+
+### 67.2 Gestion des catégories et des cours
+
+`course/management.php` est l'entrée centrale de la gestion. Elle prend notamment en charge :
+- le contexte courant (système ou catégorie) ;
+- la recherche de cours ;
+- le choix du mode d'affichage ;
+- la liste des catégories et sous-catégories ;
+- la liste des cours ;
+- un panneau de détail pour un cours sélectionné ;
+- les actions unitaires et groupées.
+
+La page ne s'adresse pas uniquement aux administrateurs. Elle vérifie si l'utilisateur possède au moins une des capacités de gestion ou de création dans les catégories concernées, notamment `moodle/category:manage` ou `moodle/course:create`. Si aucune capacité pertinente n'est disponible, elle renvoie vers le catalogue.
+
+Le composant `core_course\\output\\manage_categories_action_bar` fournit les modes de vue et le formulaire de recherche. Les modes recensés dans le helper sont :
+- vue combinée catégories + cours ;
+- vue catégories seules ;
+- vue cours seuls.
+
+Le mode combiné peut afficher une troisième zone de détail lorsqu'un cours est sélectionné. La page mémorise aussi la préférence de pagination de l'utilisateur. La recherche porte notamment sur le nom complet, le nom abrégé, l'identifiant et le résumé du cours.
+
+**Conséquences pour Project N**
+- La gestion de plateforme possède déjà plusieurs niveaux de densité et de focalisation ; il faut les conserver plutôt que forcer un tableau unique.
+- Sur mobile, transformer les colonnes en vues empilées ou en navigation progressive est envisageable, mais le passage catégorie → cours → détail doit rester explicite.
+- Préserver les modes de vue, la recherche, la pagination et la sélection de cours.
+- Éviter de confondre le détail d'un cours sélectionné avec sa page pédagogique.
+
+### 67.3 Actions de gestion disponibles
+
+Le contrôleur `course/management.php` traite les actions avec contrôle de clé de session et délègue une grande partie de la logique à `core_course\\management\\helper`.
+
+Les actions unitaires recensées comprennent :
+- afficher/masquer un cours ;
+- déplacer un cours dans l'ordre de la catégorie ;
+- afficher/masquer une catégorie ;
+- déplacer une catégorie dans l'arborescence ;
+- réordonner les catégories ou les cours ;
+- supprimer une catégorie, soit complètement lorsque les conditions le permettent, soit en déplaçant son contenu vers une autre catégorie.
+
+Les opérations groupées comprennent :
+- déplacer plusieurs cours vers une catégorie ;
+- déplacer plusieurs catégories ;
+- réordonner plusieurs catégories et/ou les cours qu'elles contiennent.
+
+Les opérations de déplacement contrôlent les conflits d'arborescence : une catégorie ne peut pas être déplacée dans elle-même ni dans une de ses propres sous-catégories. Les méthodes de gestion vérifient également si les cours ou catégories peuvent être déplacés depuis et vers les contextes concernés.
+
+La suppression d'une catégorie est une opération sensible. Le formulaire natif propose une suppression complète ou un déplacement de contenu selon les possibilités. La capacité `moodle/category:manage` permet de gérer la catégorie, mais le commentaire de déclaration de cette capacité précise que supprimer une catégorie ne donne pas automatiquement le droit de supprimer les cours qu'elle contient : la suppression des cours requiert aussi `moodle/course:delete`.
+
+**Conséquences pour Project N**
+- Ne jamais ramener les actions à un simple menu « modifier/supprimer » sans distinguer visibilité, déplacement, réorganisation et suppression.
+- Pour toute suppression, conserver les choix natifs, les contrôles de faisabilité et les confirmations.
+- Les actions groupées doivent expliciter le nombre d'éléments concernés et la destination, avec retour de succès ou d'échec.
+- Le thème ne doit pas masquer les erreurs partielles d'une opération groupée.
+- Ne pas transformer une opération de déplacement en glisser-déposer libre si les contraintes de hiérarchie ne sont pas vérifiées côté serveur.
+
+### 67.4 Édition d'une catégorie et hiérarchie
+
+La création et la modification passent par `course/editcategory.php` et `core_course_editcategory_form`. La page exige `moodle/category:manage` dans le contexte de la catégorie parente (création) ou de la catégorie modifiée.
+
+Le formulaire et l'API de catégorie gèrent notamment :
+- nom et identifiant de catégorie ;
+- parent dans l'arborescence ;
+- description et fichiers associés ;
+- visibilité ;
+- thème de catégorie lorsque la configuration `allowcategorythemes` l'autorise.
+
+La classe `core_course_category` encapsule la lecture, le cache, l'arborescence et les opérations de catégorie. La création valide le nom, la longueur et l'unicité de l'identifiant. La catégorie créée hérite par défaut de la visibilité de sa catégorie parente. Les changements de parent passent par des méthodes qui vérifient la possibilité du déplacement.
+
+La récupération d'une catégorie par `core_course_category::get()` tient compte de sa visibilité pour l'utilisateur courant : une catégorie masquée et non accessible peut être traitée comme inexistante. Il ne faut donc pas déduire l'existence ou la visibilité d'une catégorie à partir d'un simple identifiant fourni dans l'URL.
+
+**Conséquences pour Project N**
+- Afficher la hiérarchie et le parent dans le formulaire, sans traiter le parent comme un champ texte libre.
+- Présenter la visibilité héritée et l'état propre de la catégorie de façon intelligible.
+- Ne pas supposer que toutes les catégories sont accessibles à tous les profils.
+- Respecter les limites de longueur, l'unicité des identifiants et les contraintes de déplacement du formulaire/API.
+
+### 67.5 Actions contextuelles d'une catégorie
+
+Le helper de gestion construit des actions contextuelles selon les possibilités de la catégorie. Selon les droits et les fonctionnalités activées, on trouve notamment :
+- modification et visibilité ;
+- réorganisation et suppression ;
+- gestion des permissions dans le contexte ;
+- verrouillage du contexte si cette fonction est activée et autorisée ;
+- gestion des cohortes ;
+- gestion des filtres ;
+- restauration de cours ;
+- corbeille de catégorie si le plugin est activé ;
+- banque de contenus si elle est disponible.
+
+Ces actions ne sont pas toutes des fonctions de gestion de cours au sens strict : certaines relèvent des permissions, des cohortes, des filtres ou des plugins transversaux. Leur présence dépend de capacités, de la configuration et de la disponibilité des composants.
+
+**Conséquences pour Project N**
+- Le menu d'actions d'une catégorie doit être construit dynamiquement ; ne pas présenter une liste fixe d'actions qui seraient parfois interdites ou absentes.
+- Prévoir une hiérarchie visuelle entre actions courantes et actions avancées.
+- Les actions de contexte (permissions, verrouillage, filtres) doivent être identifiables comme telles et ne pas être confondues avec l'édition de la catégorie.
+- Les plugins optionnels ne doivent pas provoquer de liens cassés lorsqu'ils ne sont pas installés.
+
+### 67.6 Capacités principales et rôle Gestionnaire
+
+La déclaration des capacités dans `lib/db/access.php` précise notamment :
+- `moodle/category:manage` : création, modification et suppression de catégories ; contexte catégorie ; archétype Gestionnaire autorisé ;
+- `moodle/course:create` : création de cours ; contexte catégorie ; archétypes Créateur de cours et Gestionnaire autorisés ;
+- `moodle/category:viewhiddencategories` : consultation des catégories masquées ; archétypes Créateur de cours et Gestionnaire autorisés.
+
+La capacité de gestion de catégorie est évaluée dans le contexte pertinent. La page de gestion peut être accessible à une personne ayant des droits sur une catégorie donnée sans qu'elle dispose d'une administration globale de toutes les catégories.
+
+**Conséquences pour Project N**
+- Le périmètre de gestion doit être représenté : un gestionnaire de catégorie ne doit pas voir comme administrables les catégories hors de son champ de capacité.
+- Le menu d'administration ne doit pas être construit à partir d'un simple booléen « est administrateur ».
+- Le rôle Gestionnaire dispose de capacités natives de gestion, mais les droits effectifs peuvent être modifiés par les dérogations et attributions locales.
+- Les rôles et limites multi-entreprises Iomad devront être analysés séparément, en particulier pour vérifier si la portée catégorie correspond ou non à la portée entreprise.
+
+### 67.7 Paramètres de la rubrique Cours
+
+`admin/settings/courses.php` ne se limite pas à la liste des cours. Il déclare des rubriques distinctes pour :
+- paramètres par défaut des cours ;
+- groupes ;
+- sélecteur d'activités ;
+- sauvegardes et restaurations.
+
+La page ajoute des accès à la gestion des cours/catégories, à l'ajout de catégorie, à la création de cours et à la restauration selon les capacités. Elle regroupe également de nombreux paramètres de configuration de plateforme.
+
+**Conséquences pour Project N**
+- Séparer l'administration opérationnelle des cours (gestion des catégories et cours) de la configuration globale de Moodle (valeurs par défaut, groupes, sauvegardes, sélecteur d'activités).
+- Les paramètres globaux ne doivent pas être exposés à un gestionnaire de catégorie uniquement parce qu'il peut créer des cours.
+- Les entrées de navigation doivent refléter les capacités et le contexte ; la page de paramètres reste une fonction d'administration système.
+
+### 67.8 Limites et validations restantes
+
+- Référence de code : Moodle `MOODLE_500_STABLE` uniquement.
+- Les différences de gestion des catégories/cours entre Moodle 4.5 et 5.3 restent à comparer, notamment dans le renderer de gestion, la barre d'actions et les composants JavaScript.
+- L'interface mobile réelle doit être testée : le fait que Moodle propose plusieurs modes de vue ne garantit pas que toutes les actions soient confortables sur smartphone.
+- Les opérations de déplacement, suppression et visibilité doivent être testées avec des profils ayant des droits globaux, limités à une catégorie et sans droits de gestion.
+- Les écarts Iomad doivent être étudiés sur la version Moodle correspondante, sans présumer que le périmètre catégorie est équivalent au périmètre entreprise.
