@@ -6,15 +6,15 @@
 
 | Plateforme | Version | Branche/tag exact | Commit examiné | Statut |
 |---|---:|---|---|---|
-| Moodle | 4.5 | À relever | À relever | À comparer |
-| Moodle | 5.0 | `MOODLE_500_STABLE` | À relever au prochain contrôle | Référence initiale des sections 65 à 68 |
-| Moodle | 5.1 | À relever | À relever | À comparer |
-| Moodle | 5.2 | À relever | À relever | À comparer |
-| Moodle | 5.3 | À relever | À relever | À comparer |
-| Iomad | 4.5 | Branche correspondante à Moodle 4.5 | À relever | À comparer |
-| Iomad | 5.0 | Branche correspondante, si publiée | À relever | À vérifier |
-| Iomad | 5.1 | Branche correspondante, si publiée | À relever | À vérifier |
-| Iomad | 5.2 | Branche correspondante à Moodle 5.2 | À relever | À comparer |
+| Moodle | 4.5 | `MOODLE_405_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
+| Moodle | 5.0 | `MOODLE_500_STABLE` | SHA des fichiers relevés dans les sections 65–68 | Comparaison partielle |
+| Moodle | 5.1 | `MOODLE_501_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
+| Moodle | 5.2 | `MOODLE_502_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
+| Moodle | 5.3 | `MOODLE_503_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Moodle comparé ; Iomad non disponible |
+| Iomad | 4.5 | `IOMAD_405_STABLE` | Fork aligné sur amont : `114ac90f25f74d79e4aae7bd72a749d8ab41a50e` | Comparaison partielle |
+| Iomad | 5.0 | `IOMAD_500_STABLE` | Amont `77c795dca4fd423e7b76c5996413f33b0679ba85` ; fork `40f37899a1d89bf307bd0cc0d205c01c03f78e5e` | Comparaison partielle ; fork +15 commits locaux/merge |
+| Iomad | 5.1 | `IOMAD_501_STABLE` | Fork aligné sur amont : `40cd06130bb227e159fae8df4e4a90b7a0f32adb` | Comparaison partielle |
+| Iomad | 5.2 | `IOMAD_502_STABLE` | Fork aligné sur amont : `88a9a3e9997916a049048db536048918cbdc1e56` | Comparaison partielle |
 | Iomad | 5.3 | Non disponible selon l'état de référence du projet au 7 novembre 2026 | — | Non testable |
 
 Les versions Iomad et Moodle sont comparées par génération correspondante. Ne jamais déduire la compatibilité d'une branche Iomad avec une autre génération Moodle.
@@ -95,3 +95,48 @@ Le thème doit rester installable et fonctionnel sur Moodle 4.5, 5.0, 5.1, 5.2 e
 - ne pas se baser uniquement sur le numéro de version si une détection de capacité ou de fonctionnalité est plus robuste ;
 - ne jamais masquer une différence fonctionnelle par du CSS ;
 - tester les parcours essentiels sur chaque génération cible.
+
+
+## 7. Résultats vérifiés — sections 65 à 68
+
+### 7.1 Comparaison Moodle / Iomad
+
+| Domaine / fichier | 4.5 | 5.0 | 5.1 | 5.2 | Conclusion limitée |
+|---|---|---|---|---|---|
+| `course/view.php` | Différence Iomad | Différence Iomad | Différence Iomad | Différence Iomad | Iomad ajoute `iomad_check_course()` pour vérifier l'accès au cours dans le périmètre entreprise |
+| `course/edit.php` | Identique | Identique | Non vérifié dans cette passe | Identique | Contrôleur commun sur les versions vérifiées |
+| `user/index.php` | Identique | Identique | Identique | Identique | Participants : point d'entrée commun |
+| `admin/user.php` | Identique | Identique | Identique | Identique | Administration des comptes : point d'entrée commun |
+| `course/management.php` | Identique | Identique | Non vérifié dans cette passe | Identique | Gestion plateforme : point d'entrée commun sur les versions vérifiées |
+| `enrol/instances.php`, `editinstance.php`, `manual/manage.php` | Identiques | Identiques | Identiques | Identiques | Les contrôleurs standards d'inscription ne sont pas remplacés par Iomad |
+| `grade/report/grader/index.php`, `mod/assign/classes/output/grading_app.php` | Non vérifiés | Identiques | Non vérifiés | Non vérifiés | Vérification faite en 5.0 uniquement |
+| Report Builder users, cohortes, actions groupées | Non vérifiés | Identiques | Non vérifiés | Non vérifiés | Vérification faite en 5.0 uniquement |
+
+Ces résultats concernent les points d'entrée listés, pas l'ensemble des dépendances de rendu ni les plugins Iomad.
+
+### 7.2 Rôles et capacités Iomad 5.0
+
+Rôles ajoutés par Iomad, distincts du rôle Moodle natif Gestionnaire :
+- `companymanager` et `companydepartmentmanager` : affectables au contexte entreprise ;
+- `companycourseeditor` et `companycoursenoneditor` : affectables au contexte cours ;
+- `companyreporter` : affectable au contexte entreprise ;
+- `clientadministrator` et `clientreporter` : affectables au contexte système.
+
+Le contexte entreprise (`CONTEXT_COMPANY`) et les capacités du bloc `block_iomad_company_admin` déterminent les actions disponibles. L'interface du thème doit tester les capacités effectives dans le contexte pertinent, pas seulement le shortname du rôle.
+
+### 7.3 Personnalisations du fork Iomad 5.0
+
+Le fork conserve six fichiers modifiés dans `blocks/iomad_company_admin`. Ils ajoutent notamment le préfixe `[shortname]` dans les listes/sélecteurs de cours et restreignent le clonage aux cours appartenant à l'entreprise avec la capacité `createcourse`. Les fichiers sont détaillés dans la section 67.10 de la cartographie.
+
+Points à surveiller avant toute reprise ou refactorisation :
+- requêtes N+1 pour récupérer les shortnames dans deux formulaires ;
+- condition `deletecourses` dupliquée à l'identique dans un `OR` ;
+- récupération du cours source redondante dans le flux de clonage ;
+- tests de permissions nécessaires pour cours propres, partagés et sous licence.
+
+### 7.4 État des forks
+
+- Fork Moodle : branches 4.5, 5.0, 5.1, 5.2 et 5.3 identiques aux branches officielles contrôlées.
+- Fork Iomad : branches 4.5, 5.1 et 5.2 alignées sur l'amont ; branche 5.0 synchronisée avec l'amont tout en conservant les 14 commits locaux, plus le commit de fusion.
+- Aucune CI n'a été lancée. Les résultats sont des comparaisons statiques de code ; les tests runtime et de non-régression restent à effectuer.
+
