@@ -3992,6 +3992,70 @@ Une nouvelle passe de comparaison a été effectuée directement sur les branche
 
 **Limites :** cette passe compare des fichiers d'entrée et quelques composants de sortie nommés. Elle ne compare pas exhaustivement les renderers, templates, AMD/JavaScript, formulaires, plugins tiers ni les scénarios d'accès. Aucun test runtime, mobile, clavier ou lecteur d'écran n'a été exécuté.
 
+### 68.14 Plugin Iomad enrol/license : inscription conditionnée par une licence entreprise
+
+Le plugin enrol/license est présent dans Iomad 4.5, 5.0, 5.1 et 5.2 et absent du code Moodle standard 4.5 à 5.3. Il s'agit donc d'une méthode d'inscription Iomad spécifique, qui ne doit pas être présentée comme une méthode Moodle native.
+
+La documentation du plugin indique que l'administrateur contrôle le volume d'accès, la durée et les conditions d'utilisation des cours au moyen de licences. Les gestionnaires d'entreprise peuvent ensuite allouer ce pool de licences aux utilisateurs de leur entreprise.
+
+#### 68.14.1 Configuration de l'instance et allocation des licences
+
+L'écran enrol/license/edit.php configure une instance de méthode d'inscription dans un cours. Il exige enrol/license:config dans le contexte du cours et, lors de la création, moodle/course:enrolconfig. Le formulaire enrol_license_edit_form configure principalement :
+- l'état activé/désactivé de l'instance ;
+- le nom personnalisé ;
+- le rôle attribué par l'inscription ;
+- le délai d'inactivité avant retrait ;
+- l'envoi d'un message de bienvenue et son contenu.
+
+Cet écran ne constitue pas l'interface d'allocation des licences. Les licences, leurs quotas, les utilisateurs bénéficiaires, les cours autorisés et les dates de validité sont gérés dans les parcours de gestion entreprise Iomad. Il faut donc distinguer la configuration de la méthode d'inscription dans le cours et l'affectation des droits d'accès par licence.
+
+Les capacités du plugin sont propres à l'inscription par licence :
+- enrol/license:config et enrol/license:manage dans le contexte cours ;
+- enrol/license:unenrolself pour l'apprenant ;
+- enrol/license:unenrol pour les enseignants éditeurs et gestionnaires selon les archetypes déclarés.
+
+La présence d'un rôle Moodle ou d'un rôle Iomad ne suffit pas à déterminer à elle seule la capacité effective ; les attributions et restrictions de rôles Iomad restent à prendre en compte.
+
+#### 68.14.2 Conditions d'éligibilité de l'apprenant
+
+La méthode can_license_enrol vérifie successivement :
+- que l'utilisateur n'est pas invité et n'est pas déjà inscrit à cette instance ;
+- que l'instance est activée et que ses dates d'inscription sont respectées ;
+- que la limite maximale d'inscriptions de l'instance n'est pas atteinte ;
+- que l'utilisateur appartient à la cohorte éventuellement imposée par l'instance ;
+- qu'une licence individuelle non utilisée est affectée à l'utilisateur pour ce cours, ou qu'une licence globale de type 4 dispose d'une allocation suffisante pour l'entreprise courante ;
+- que la licence est dans sa période de validité ;
+- que les conditions de parcours/learning path autorisent l'utilisation de cette licence pour ce cours.
+
+L'inscription calcule ensuite la fin d'accès à partir du type de licence, de la durée de validité ou de la date de coupure/expiration. Selon le type de licence et le cours, le plugin attribue le rôle de l'instance ou les rôles Iomad companycourseeditor/companycoursenoneditor. Il marque la licence utilisateur comme utilisée et déclenche l'événement user_license_used. Le mot de passe de l'instance peut également servir à reconnaître un groupe de cours et à y ajouter l'apprenant.
+
+**Conséquence Project N :** l'accès à un cours Iomad ne peut pas être résumé à « inscrit/non inscrit ». L'interface peut devoir restituer un état d'éligibilité ou de blocage : licence absente, non encore valide, expirée, quota épuisé, cohorte non satisfaite, parcours non disponible, instance désactivée ou dates d'inscription dépassées. Ces états doivent provenir du plugin et de ses chaînes, pas d'une logique parallèle dans le thème.
+
+#### 68.14.3 Évolution du plugin entre Iomad 4.5 et 5.2
+
+Les fichiers edit.php, edit_form.php, locallib.php, db/access.php et la classe de tâche cron_task sont identiques sur les quatre branches Iomad 4.5, 5.0, 5.1 et 5.2. Le fichier lib.php est identique entre 4.5 et 5.0, puis évolue en 5.1 et reste identique en 5.2.
+
+Les différences de lib.php entre Iomad 5.0 et 5.2 accompagnent la migration du modèle de données vers local_iomad :
+- ajout de l'import de la classe local_iomad\iomad ;
+- remplacement des tables companylicense, companylicense_users et companylicense_courses par local_iomad_company_licenses, local_iomad_company_license_users et local_iomad_company_license_courses ;
+- remplacement de la table iomad_courses par local_iomad_courses ;
+- renommage du champ licensecourseid en courseid dans les accès à la licence utilisateur ;
+- déplacement de la configuration du format de date vers local_iomad.date_format.
+
+La logique métier générale de l'inscription par licence reste présente ; le changement concerne surtout les namespaces, les tables, les champs et la configuration. Le thème ne doit pas interroger ces tables directement.
+
+### 68.15 Tâche cron des licences : point de vigilance à vérifier
+
+La tâche enrol_license\task\cron_task appelle enrol_license_plugin::cron(). Le traitement couvre deux cas :
+1. retrait d'un apprenant n'ayant pas visité le cours depuis le délai configuré ;
+2. fin d'accès lorsque la date de fin d'inscription est dépassée.
+
+Dans le second cas, le code enregistre les informations de résultat, supprime des notes et données d'achèvement associées, puis supprime l'inscription individuelle. Il s'agit donc d'une opération de cycle de vie des licences qui peut avoir des effets sur les données pédagogiques et les rapports.
+
+**Anomalie statique à vérifier avant toute exploitation ou correction :** dans la première boucle (utilisateurs inactifs), la variable d'itération est instance et l'identifiant utilisateur est stocké dans userid. Pourtant, la requête de notes utilise user->userid, user->enrolid et user->courseid ; aucune variable user n'est initialisée dans cette boucle. Le code affecte aussi license->timecompleted à runtime alors que runtime n'est initialisé qu'après cette première boucle. Le paramètre enrolid est fourni à la requête alors qu'aucun placeholder enrolid n'apparaît dans son SQL.
+
+Cette anomalie apparaît dans les codes Iomad 5.0 et 5.2 examinés. Elle peut affecter l'enregistrement du résultat et de la date de fin pour les retraits liés à l'inactivité. Ce constat est une alerte de revue statique, pas un diagnostic runtime : il faut reproduire le cas sur une instance de test, consulter les journaux PHP et vérifier l'effet sur les données avant de proposer une correction. Aucun fichier du fork n'a été modifié.
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
