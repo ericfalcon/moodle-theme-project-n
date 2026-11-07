@@ -6,15 +6,15 @@
 
 | Plateforme | Version | Branche/tag exact | Commit examiné | Statut |
 |---|---:|---|---|---|
-| Moodle | 4.5 | `MOODLE_405_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
-| Moodle | 5.0 | `MOODLE_500_STABLE` | SHA des fichiers relevés dans les sections 65–68 | Comparaison partielle |
-| Moodle | 5.1 | `MOODLE_501_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
-| Moodle | 5.2 | `MOODLE_502_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Comparaison partielle |
-| Moodle | 5.3 | `MOODLE_503_STABLE` | Fichiers cibles relevés dans les sections 65–68 | Moodle comparé ; Iomad non disponible |
-| Iomad | 4.5 | `IOMAD_405_STABLE` | Fork aligné sur amont : `114ac90f25f74d79e4aae7bd72a749d8ab41a50e` | Comparaison partielle |
-| Iomad | 5.0 | `IOMAD_500_STABLE` | Amont `77c795dca4fd423e7b76c5996413f33b0679ba85` ; fork `40f37899a1d89bf307bd0cc0d205c01c03f78e5e` | Comparaison partielle ; fork +15 commits locaux/merge |
-| Iomad | 5.1 | `IOMAD_501_STABLE` | Fork aligné sur amont : `40cd06130bb227e159fae8df4e4a90b7a0f32adb` | Comparaison partielle |
-| Iomad | 5.2 | `IOMAD_502_STABLE` | Fork aligné sur amont : `88a9a3e9997916a049048db536048918cbdc1e56` | Comparaison partielle |
+| Moodle | 4.5 | `MOODLE_405_STABLE` | `c0690bbc765fccacd4956452cbff3f6aacad77c5` | Points d'entrée 65–68 comparés ; couverture partielle |
+| Moodle | 5.0 | `MOODLE_500_STABLE` | `744cc0c19013e7be831dca24fafd6501d7eb8348` | Points d'entrée 65–68 comparés ; couverture partielle |
+| Moodle | 5.1 | `MOODLE_501_STABLE` | `a682566412e1d429b95ac8ef4351a518f61b94c5` | Points d'entrée 65–68 comparés ; couverture partielle |
+| Moodle | 5.2 | `MOODLE_502_STABLE` | `28fdef85e7043c8dd758af8c1a146da1419db0d0` | Points d'entrée 65–68 comparés ; couverture partielle |
+| Moodle | 5.3 | `MOODLE_503_STABLE` | `236a9d702e62dc11f5aa66e4c8b5239cfc26c3d8` | Points d'entrée 65–68 comparés ; Iomad 5.3 absent du fork |
+| Iomad | 4.5 | `IOMAD_405_STABLE` | `114ac90f25f74d79e4aae7bd72a749d8ab41a50e` | Points d'entrée ciblés comparés à Moodle 4.5 |
+| Iomad | 5.0 | `IOMAD_500_STABLE` | Fork HEAD `40f37899a1d89bf307bd0cc0d205c01c03f78e5e` ; amont intégré `77c795dca4fd423e7b76c5996413f33b0679ba85` | Points d'entrée ciblés comparés ; personnalisations du fork conservées |
+| Iomad | 5.1 | `IOMAD_501_STABLE` | `40cd06130bb227e159fae8df4e4a90b7a0f32adb` | Points d'entrée ciblés comparés à Moodle 5.1 |
+| Iomad | 5.2 | `IOMAD_502_STABLE` | `88a9a3e9997916a049048db536048918cbdc1e56` | Points d'entrée ciblés comparés à Moodle 5.2 |
 | Iomad | 5.3 | Non disponible selon l'état de référence du projet au 7 novembre 2026 | — | Non testable |
 
 Les versions Iomad et Moodle sont comparées par génération correspondante. Ne jamais déduire la compatibilité d'une branche Iomad avec une autre génération Moodle.
@@ -42,17 +42,25 @@ Un champ vide n'est pas une preuve d'identité entre versions. Il signifie « no
 | Profil et préférences | Non vérifié | Cartographie initiale antérieure | Non vérifié | Non vérifié | Non vérifié | Formulaires, champs, notifications | À comparer |
 | Disponibilité et achèvement | Non vérifié | Cartographie initiale antérieure | Non vérifié | Non vérifié | Non vérifié | États, indicateurs et conditions | À comparer |
 | Fichiers et éditeurs | Non vérifié | Cartographie initiale antérieure | Non vérifié | Non vérifié | Non vérifié | File API, éditeurs, sélecteurs | À comparer |
-| Espace formateur | Non vérifié | Sections 65 / code MOODLE_500_STABLE | Non vérifié | Non vérifié | Non vérifié | Gestion cours, participants, notes, corrections | À comparer |
-| Comptes utilisateurs | Non vérifié | Section 66 / code MOODLE_500_STABLE | Non vérifié | Non vérifié | Non vérifié | Report Builder, filtres, actions groupées | À comparer |
-| Cohortes | Non vérifié | Section 66 / code MOODLE_500_STABLE | Non vérifié | Non vérifié | Non vérifié | Portée système/catégorie, synchronisation | À comparer |
-| Catégories et cours plateforme | Non vérifié | Section 67 / code MOODLE_500_STABLE | Non vérifié | Non vérifié | Non vérifié | Arborescence, actions, capacités | À comparer |
-| Méthodes d'inscription | Non vérifié | Section 68 / code MOODLE_500_STABLE | Non vérifié | Non vérifié | Non vérifié | Plugins, instances, statuts, synchronisation | À comparer |
+| Espace formateur | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Variations de `course/view.php`, `user/index.php`, groupes et correction ; Iomad `course/view.php` spécifique | Statique, partiel ; voir cartographie 65.10–65.11 et 68.13 |
+| Comptes utilisateurs | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | `admin/user.php` évolue en 4.5 et 5.3 ; Report Builder évolue en 5.2/5.3 | Statique, partiel ; cartographie 66.10 et comparaison §10 |
+| Cohortes | Comparé : point d'entrée | Comparé : point d'entrée | Comparé : point d'entrée | Comparé : point d'entrée | Comparé : point d'entrée | `cohort/index.php` différent en 4.5 puis stable de 5.0 à 5.3 ; Iomad identique sur 4.5–5.2 | Statique ; synchronisations et permissions à tester |
+| Catégories et cours plateforme | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | `course/management.php` et `course/editcategory.php` identiques sur 4.5–5.3 ; gestion identique Moodle/Iomad 4.5–5.2 | Statique ; classes, renderer et droits à compléter |
+| Méthodes d'inscription | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | Comparé : points d'entrée | `enrol/instances.php` évolue en 4.5 ; `editinstance.php` stable ; `manual/manage.php` évolue jusqu'en 5.1 | Statique ; plugins et synchronisations à tester |
 | Rôles et capacités | Non vérifié | Cartographie partielle antérieure | Non vérifié | Non vérifié | Non vérifié | Contextes, héritage, rôles Iomad | À compléter |
 | Rapports d'administration | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Report Builder, exports, permissions | À analyser |
 | Paramètres de plateforme | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Arborescence admin et capacités | À analyser |
 | Iomad multi-entreprise | Sans objet | À comparer selon branche | À comparer selon branche | À comparer selon branche | Non disponible | Isolation, périmètre entreprise, rôles | À comparer |
 
 Ce tableau est volontairement conservateur : « cartographie initiale antérieure » ne signifie pas comparaison interversions terminée.
+
+### 3.1 Résultats détaillés des points 65 à 68
+
+Les contenus complets des points d'entrée listés ont été comparés depuis les branches actuelles des forks. Le détail par fichier, génération et couple Moodle/Iomad est conservé dans :
+- `P0-CARTOGRAPHIE-NAVIGATION.md`, sections 65.10–65.11, 66.10–66.12, 67.9–67.10 et 68.11–68.13 ;
+- `P0-COMPARAISON-VERSIONS-MOODLE-IOMAD.md`, section 10.
+
+Le statut « comparé : points d'entrée » ne signifie pas que l'ensemble des classes, templates, renderers, modules JavaScript, plugins, permissions et parcours utilisateurs est couvert. Il ne vaut pas validation fonctionnelle ni déclaration de compatibilité.
 
 ## 4. Fiche obligatoire pour chaque différence
 
@@ -84,7 +92,7 @@ Pour chaque écart constaté, ajouter une entrée avec ce format :
 5. relire les fichiers depuis GitHub après commit ;
 6. ne déclarer une compatibilité acquise qu'après les validations prévues.
 
-Les sections 65 à 68 ont été rédigées à partir de Moodle 5.0. Elles ne constituent pas une preuve de compatibilité sur Moodle 4.5, 5.1, 5.2 ou 5.3. La comparaison doit être menée rétroactivement pour ces sections, puis systématiquement pour les suivantes.
+Les sections 65 à 68 ont été initialement rédigées à partir de Moodle 5.0. Une comparaison statique ciblée des points d'entrée a maintenant été menée sur Moodle 4.5 à 5.3 et sur les couples Moodle/Iomad 4.5 à 5.2. La couverture reste partielle : les composants appelés, permissions effectives, plugins, rendus et parcours runtime restent à examiner.
 
 ## 6. Principe de conception multi-version
 
