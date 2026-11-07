@@ -3221,9 +3221,9 @@ Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits éten
 
 ### 66.9 Limites et vérifications restantes
 
-- Référence de code : Moodle `MOODLE_500_STABLE` uniquement.
-- Les différences exactes entre Moodle 4.5, 5.1, 5.2 et 5.3 restent à cartographier, notamment autour du Report Builder, des hooks et des actions groupées.
-- Les écrans et capacités Iomad doivent être comparés sur une génération équivalente ; il faut notamment déterminer comment l'entreprise filtre les comptes, cohortes et affectations.
+- Références de code : Moodle 4.5 à 5.3 pour les points d'entrée et les principaux fichiers Report Builder décrits en 66.10 et 66.13.
+- Les classes et entités Report Builder, les formulaires d'actions groupées, les exports et les hooks de plugins restent à examiner plus exhaustivement.
+- Les fichiers Report Builder sélectionnés sont identiques entre Moodle et Iomad sur les couples 5.0 et 5.2 ; cela ne couvre pas les écrans spécifiques du bloc d'administration Iomad ni ses règles de cloisonnement.
 - Les rôles Iomad et leurs capacités effectives restent un chantier distinct ; cette section ne les déduit pas.
 - Les parcours de création en masse/import CSV, les politiques de confidentialité, la suppression/anonymisation et les champs personnalisés nécessitent des tranches dédiées.
 - Aucun test runtime, mobile, clavier ou lecteur d'écran n'est déclaré réalisé par cette analyse statique.
@@ -3237,10 +3237,10 @@ Cela confirme qu'un Gestionnaire Moodle peut disposer nativement de droits éten
 |---|---|---|---|---|---|---|
 | Page d'administration des comptes | `admin/user.php` | idem | `public/admin/user.php` | idem | idem | 4.5 diffère ; 5.0, 5.1 et 5.2 identiques ; 5.3 diffère |
 | Rapport système des utilisateurs | `admin/classes/reportbuilder/local/systemreports/users.php` | idem | `public/admin/classes/reportbuilder/local/systemreports/users.php` | idem | idem | 4.5 diffère ; 5.0 et 5.1 identiques ; 5.2 et 5.3 évoluent |
-
-La comparaison de contenu montre qu'entre 5.0 et 5.2, le callback de la colonne d'identité fait évoluer la source de la chaîne « suspendu » et la classe Bootstrap du badge (de `text-bg-secondary` à `text-bg-warning`) ; la logique de confirmation reste également présente. Entre 5.2 et 5.3, le fichier présente de nombreux écarts textuels, dont des changements de formatage et d'URL de licence : une comparaison sémantique complète reste nécessaire avant d'attribuer ces écarts à une évolution fonctionnelle du rapport.
 | Liste des cohortes | `cohort/index.php` | idem | `public/cohort/index.php` | idem | idem | 4.5 diffère ; 5.0 à 5.3 identiques |
 | Actions groupées | `admin/user/user_bulk.php` | idem | `public/admin/user/user_bulk.php` | idem | idem | Empreinte identique sur les cinq branches |
+
+La comparaison de contenu montre qu'entre 5.0 et 5.2, le callback de la colonne d'identité fait évoluer la source de la chaîne « suspendu » et la classe Bootstrap du badge (de `text-bg-secondary` à `text-bg-warning`) ; la logique de confirmation reste également présente. Entre 5.2 et 5.3, le fichier présente de nombreux écarts textuels, dont des changements de formatage et d'URL de licence : une comparaison sémantique complète reste nécessaire avant d'attribuer ces écarts à une évolution fonctionnelle du rapport.
 
 **Conséquences :**
 - Le socle des actions groupées paraît stable dans le fichier contrôleur, mais les formulaires, actions disponibles, hooks et capacités doivent aussi être vérifiés avant de figer les composants du thème.
@@ -3250,6 +3250,54 @@ La comparaison de contenu montre qu'entre 5.0 et 5.2, le callback de la colonne 
 
 Les empreintes confirment les groupes de versions indiqués ; elles ne constituent pas une revue ligne à ligne de tous les composants dépendants. Aucun test runtime n'est déclaré réalisé.
 
+
+### 66.13 Report Builder des comptes : dépendances et contrat de présentation
+
+La revue du rapport système utilisateurs a été prolongée au-delà de son contrôleur. Dans Moodle 5.3, admin/classes/reportbuilder/local/systemreports/users.php compose le rapport à partir des entités utilisateur, cohorte, membre de cohorte et rôle. Le rapport :
+- construit une sélection de base excluant les comptes supprimés et l'utilisateur invité ;
+- propose une colonne identité, les champs d'identité configurés, le dernier accès et des informations d'état ;
+- expose des filtres venant des entités, dont confirmation, suspension, cohorte, rôle système, rôle de cours, inscription à un cours, méthode d'authentification et champs de profil ;
+- construit ses actions de ligne avec des callbacks conditionnels.
+
+La colonne d'identité tient compte des paramètres de visibilité des noms. Les états suspendu et non confirmé sont représentés dans les données et le rendu de la colonne ; l'adresse électronique peut aussi être annotée selon l'état de suspension. Les champs d'identité disponibles dépendent de la configuration du site et les champs personnalisés peuvent ajouter des colonnes et filtres.
+
+Les actions de ligne ne sont pas interchangeables :
+- modification et suspension/réactivation exigent notamment la capacité moodle/user:update ;
+- déverrouillage est distinct de la suspension ;
+- les comptes MNet distants ont des actions de refus/rétablissement d'accès spécifiques ;
+- suppression exige moodle/user:delete et exclut notamment le compte courant, les comptes administrateurs et les utilisateurs MNet distants ;
+- confirmation et renvoi de confirmation répondent à un état distinct.
+
+**Conséquences Project N :**
+1. La liste mobile peut devenir une liste compacte ou des cartes, mais elle doit conserver les colonnes disponibles, les filtres, le tri, la pagination, les sélections, les exports et les actions groupées.
+2. Les actions par ligne doivent rester liées à leurs callbacks et capacités. Un menu d'actions uniforme affiché pour tous les comptes serait incorrect.
+3. Le thème ne doit pas supposer un ensemble fixe de champs d'identité ou de colonnes ; il doit s'adapter aux champs activés et aux extensions installées.
+4. Suspension, verrouillage, confirmation, accès MNet et suppression doivent être présentés comme des états/opérations distincts.
+5. Les libellés et badges doivent être obtenus des données de rendu et des chaînes Moodle, pas reconstruits en fonction du seul nom de rôle ou d'un statut supposé.
+
+### 66.14 Report Builder des cohortes : portée et actions contextuelles
+
+Le rapport système des cohortes s'appuie sur deux entités : cohorte et membre de cohorte. Il joint les membres pour calculer le nombre de membres et expose notamment le contexte, le nom, l'identifiant, la description, la source/composant et les données de personnalisation.
+
+Le rapport est consultable si l'utilisateur dispose de moodle/cohort:manage ou moodle/cohort:view dans le contexte concerné. Les actions sont construites séparément :
+- afficher/masquer et modifier dépendent de moodle/cohort:manage ;
+- suppression et modification manuelle sont interdites pour les cohortes fournies par un composant externe ;
+- affectation des membres dépend de moodle/cohort:assign et de l'origine de la cohorte ;
+- la sélection groupée n'est proposée que pour les cohortes gérables, sans composant externe.
+
+La portée du rapport est contextuelle : une cohorte système et une cohorte de catégorie ne sont pas interchangeables. La cohorte externe synchronisée n'est pas une cohorte ordinaire modifiable par un gestionnaire.
+
+**Conséquences Project N :**
+- afficher le contexte et l'origine de la cohorte ;
+- distinguer la consultation, la gestion, l'affectation des membres et la suppression ;
+- ne pas proposer de modification manuelle lorsque la cohorte est gérée par un composant ;
+- ne pas confondre cohorte, groupe de cours, groupement et association entreprise Iomad.
+
+#### 66.14.1 Comparaison Moodle / Iomad
+
+Les fichiers Report Builder sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 : rapport système utilisateurs, entité utilisateur, datasource utilisateurs, entités cohorte et membre de cohorte, et rapport système des cohortes. Les fichiers comparés sont identiques dans chacun de ces couples.
+
+Cette identité indique que ces rapports natifs du cœur ne sont pas directement modifiés dans les fichiers examinés. Elle ne signifie pas que l'expérience de gestion des comptes, cohortes ou utilisateurs Iomad est identique : Iomad fournit des parcours spécifiques dans le bloc iomad_company_admin, avec des filtres entreprise/département, des rôles et des règles de cloisonnement propres. Ces interfaces spécifiques doivent être analysées séparément, sans remplacer ni détourner les rapports natifs Moodle.
 
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
