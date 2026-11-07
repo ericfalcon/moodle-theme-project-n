@@ -304,7 +304,7 @@ Les autres fichiers listés sont identiques entre Moodle et Iomad sur les couple
 4. Les personnalisations Iomad 5.0 du fork personnel restent une couche distincte de l'amont. Elles ne sont pas annulées ni requalifiées comme fonctionnalités natives Iomad.
 5. Cette comparaison est statique. Aucun scénario d'instance, test de permission, test navigateur, test responsive, test clavier ou test lecteur d'écran n'a été exécuté dans cette passe.
 
-Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.14, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
+Les résultats détaillés par parcours et leurs impacts sont consignés dans les sections 65.10–65.13, 66.10–66.16, 67.9–67.10 et 68.11–68.13 de `P0-CARTOGRAPHIE-NAVIGATION.md`.
 
 ### 9.4 Chaîne de rendu du cours et contrats de l'Output API
 
@@ -353,6 +353,26 @@ Les fichiers sélectionnés ont été comparés intégralement entre Moodle et I
 Les fichiers sélectionnés sont identiques entre Moodle et Iomad sur chacun de ces deux couples. Les écrans spécifiques du bloc Iomad Company Admin, les filtres par entreprise/département et les règles de cloisonnement ne sont pas couverts par cette identité.
 
 La comparaison interversions montre que le rapport système utilisateurs change entre 4.5 et 5.0, reste identique entre 5.0 et 5.1, puis évolue en 5.2 et 5.3. Les entités cohorte et membre de cohorte évoluent également au fil des générations. L'interface Project N doit donc exploiter les colonnes, filtres, actions et contextes effectivement fournis par Report Builder plutôt que reproduire un tableau statique.
+
+### 9.7 Iomad Company Admin : gestion des utilisateurs et migration de schéma
+
+Le parcours Iomad de gestion des utilisateurs a été examiné dans le fork Iomad 5.0 et dans la branche Iomad 5.2. Il ne s'agit pas d'une adaptation du Report Builder natif : le parcours s'appuie sur les pages du bloc block_iomad_company_admin, notamment editusers.php, editusers_table, company_users_form et les sélecteurs dédiés.
+
+La page editusers applique le contexte entreprise, les capacités propres au bloc, la validation du département et la hiérarchie des départements. Les listes sont filtrées par entreprise, départements accessibles et type de gestionnaire. Les actions du tableau sont conditionnées par les capacités Iomad et l'état de l'utilisateur cible ; elles couvrent notamment l'édition, la réinitialisation du mot de passe, la suppression, la suspension/réactivation, les inscriptions aux cours et les licences.
+
+La comparaison des fichiers montre des évolutions importantes entre Iomad 5.0 et 5.2 :
+- editusers.php et editusers_table.php ont changé de contenu ;
+- company_users_form.php et classes/forms/company_users_form.php ont également évolué ;
+- en 5.0, les sélecteurs d'utilisateurs sont dans blocks/iomad_company_admin/lib/user_selectors.php ;
+- en 5.2, les sélecteurs current_company et potential_company sont déplacés dans local/iomad/classes/user_selector et héritent de company_base.
+
+La migration est structurelle et confirmée dans local/iomad/db/upgrade.php et local/iomad/db/install.xml. Plusieurs tables historiques deviennent des tables préfixées local_iomad_ ; en particulier company, department et company_users deviennent local_iomad_companies, local_iomad_company_departments et local_iomad_company_users. La migration des départements renomme également les champs company en companyid et parent en parentid, puis réorganise les index. Les tables de cours, licences, groupes d'entreprise, rôles, domaines et options suivent le même mouvement de centralisation dans local_iomad.
+
+Cette évolution signifie que le code du bloc 5.0 et celui du bloc 5.2 ne partagent pas le même contrat de persistance. Le thème ne doit jamais interroger ces tables directement ni figer leurs noms. Il doit consommer les pages, classes de sortie et API prévues par la version Iomad active.
+
+Le parcours d'affectation des utilisateurs à l'entreprise est également une opération métier : double sélecteur utilisateurs potentiels/utilisateurs actuels, contrôle du quota, affectation au département par défaut, événements d'affectation/mise à jour, retrait de l'association et événements correspondants. Une simple modification de rôle Moodle ne reproduit pas cette opération.
+
+La comparaison 5.0/5.2 est statique et n'a pas exécuté de migration de base de données. Elle n'établit pas que le passage d'une instance 5.0 à 5.2 a été testé. Les personnalisations propres au fork Iomad 5.0 sont conservées et doivent rester séparées du code amont.
 
 ## 10. Sources de code examinées
 
