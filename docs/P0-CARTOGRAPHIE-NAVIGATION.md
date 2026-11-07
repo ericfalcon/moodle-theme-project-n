@@ -3757,10 +3757,9 @@ Les capacités rencontrées comprennent notamment :
 La capacité de configuration d'une méthode ne donne pas automatiquement les droits d'ajouter ou de retirer des participants. Les capacités sont spécifiques au plugin et évaluées dans le contexte du cours.
 
 Limites :
-- référence de code Moodle `MOODLE_500_STABLE` uniquement ;
-- comparaison des versions 4.5 à 5.3 non terminée ;
-- méthodes d'inscription externes non étudiées exhaustivement ;
-- droits, synchronisations et interfaces spécifiques Iomad à comparer séparément ;
+- les contrôleurs standards ont été comparés sur Moodle 4.5 à 5.3 ; les classes et formulaires des plugins standards ne sont pas exhaustivement couverts ;
+- les méthodes d'inscription externes et les synchronisations doivent encore être analysées par plugin ;
+- le plugin Iomad enrol/license est étudié en 68.14–68.15 ; les autres interfaces et synchronisations spécifiques Iomad restent à compléter ;
 - aucun test runtime, mobile, clavier ou lecteur d'écran déclaré réalisé par cette analyse statique.
 
 ---
@@ -3985,6 +3984,7 @@ Une nouvelle passe de comparaison a été effectuée directement sur les branche
 | 68 | `enrol/instances.php` | 4.5 diffère ; 5.0 = 5.1 = 5.2 = 5.3 | Identique dans les quatre couples | Le contrôleur d'instances est commun depuis 5.0 |
 | 68 | `enrol/editinstance.php` | Identique sur les cinq générations | Non comparé Iomad dans cette passe | Les champs et validations restent fournis par le plugin d'inscription |
 | 68 | `enrol/manual/manage.php` | 4.5, 5.0 et 5.1 diffèrent ; 5.1 = 5.2 = 5.3 | Identique dans les quatre couples | Les changements repérés concernent le markup/classe CSS du tableau ; vérifier le rendu, sans inférer une évolution des droits |
+| 68 | Plugin Iomad `enrol/license` | Absent du Moodle standard 4.5 à 5.3 | Présent sur Iomad 4.5 à 5.2 ; `lib.php` 4.5 = 5.0 puis 5.1 = 5.2 | Inscription par licence entreprise, quotas, validité, cohortes, parcours et retrait automatique ; schéma `local_iomad` à partir de 5.1 |
 
 **Précisions sur les chemins :** les fichiers web passent sous `public/` à partir des branches Moodle/Iomad 5.1. Les chemins indiqués dans les tableaux sont les chemins relatifs au dépôt ; ils ne doivent pas être codés en dur dans le thème.
 
