@@ -418,6 +418,38 @@ Les fichiers 5.1 et 5.2 comparés sont identiques pour ces deux points d'entrée
 
 **Précaution fork 5.0 :** le fork Iomad 5.0 contient des modifications personnelles à préserver. Les empreintes et constats ci-dessus servent à documenter l'état consulté ; aucune mise à jour ni modification du fork Iomad n'a été effectuée.
 
+
+#### 9.7.2 Formulaire et sélecteurs d'utilisateurs : comparaison Iomad 4.5–5.2
+
+Les fichiers de formulaire ont été comparés sur les quatre branches :
+
+| Fichier | Iomad 4.5 | Iomad 5.0 | Iomad 5.1 | Iomad 5.2 |
+|---|---|---|---|---|
+| Formulaire `company_users_form.php` (classe) | `33b741de5c5e7e5d16b2baad622330cdd54601fc` | Identique à 4.5 | `94efc006e48bf4e0fe64168af091526e43da3d40` | Identique à 5.1 |
+| Contrôleur `company_users_form.php` | À la racine du bloc | À la racine du bloc | À la racine du bloc, chemin `public/` | Identique en structure de version 5.1 |
+
+Le formulaire 4.5 et 5.0 est strictement identique. Le formulaire 5.1 et 5.2 est également strictement identique. La modification de génération concerne notamment l'import des classes de sélecteur : les anciennes classes globales `current_company_users_user_selector` et `potential_company_users_user_selector` sont remplacées par `local_iomad\\user_selector\\current_company` et `potential_company`.
+
+Les sélecteurs 4.5/5.0 sont regroupés dans `blocks/iomad_company_admin/lib/user_selectors.php` sous une classe de base `company_user_selector_base`. Le fichier existe en deux empreintes distinctes :
+- 4.5 : `3f4876853f9b87b1934302f5c1d555c33fe829ef` ;
+- 5.0 : `667bef3904bd7aa1febc1915b4e2d06a24c5e87e`.
+
+À partir de 5.1, les sélecteurs principaux sont portés par `local/iomad/classes/user_selector/company_base.php`, `current_company.php` et `potential_company.php`. Les fichiers `company_base.php`, `current_company.php` et `potential_company.php` examinés en 5.1 et 5.2 ont respectivement les mêmes empreintes sur ces deux branches. L'architecture sépare désormais la base commune et les deux stratégies de sélection métier.
+
+Les comportements comparés sont :
+- liste courante limitée aux utilisateurs associés à l'entreprise et non suspendus ;
+- liste potentielle limitée par défaut aux utilisateurs sans association entreprise ;
+- exclusion des administrateurs de site pour les utilisateurs qui ne sont pas administrateurs ;
+- mode `allusers` conditionné à la capacité système `block/iomad_company_admin:company_add`, permettant de sélectionner des utilisateurs d'une autre entreprise sans sélectionner ceux déjà rattachés à l'entreprise cible ;
+- recherche standard Moodle ou recherche sur un champ de profil entreprise ;
+- limitation du nombre de résultats et recherche asynchrone via le mécanisme `core_user.init_user_selector`.
+
+Le formulaire conserve le mécanisme à deux listes multi-sélection et les opérations d'ajout/import/retrait. L'ajout vérifie le quota, affecte l'utilisateur au département par défaut, déclenche `user_updated` et `company_user_assigned). Le retrait utilise `unassign_user_from_company()` et déclenche `user_updated` et `company_user_unassigned`. Ces opérations sont protégées par la sesskey et les sélections sont invalidées après traitement.
+
+La base de sélecteurs 5.1+ utilise les tables `local_iomad_company_users` et les champs de profil entreprise de `local_iomad_companies`. Les versions 4.5/5.0 utilisent les tables historiques. Le thème ne doit pas interroger ces tables directement.
+
+**Limite de comparaison :** les empreintes des classes principales sont vérifiées, mais tous les sélecteurs contenus dans le fichier monolithique 4.5/5.0 n'ont pas été rapprochés de leurs classes déplacées en 5.1/5.2. Les parcours de responsables, cours, départements, licences et groupes doivent être suivis individuellement. Aucun test runtime, test d'accessibilité ni test responsive n'a été exécuté.
+
 ### 9.8 Gestion des catégories et cours à l'échelle de la plateforme
 
 Le contrôleur course/management.php est strictement identique sur les cinq branches Moodle. En revanche, ses dépendances de rendu évoluent :
