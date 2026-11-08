@@ -362,13 +362,13 @@ Pour le rapport des comptes, le système assemble les entités utilisateur, coho
 
 Pour les cohortes, le rapport système utilise les entités cohorte et membre de cohorte. Le contexte est une donnée de portée essentielle. La consultation, la sélection groupée, la modification, l'affichage/masquage, la suppression et l'affectation des membres dépendent des capacités dans ce contexte et de l'origine de la cohorte. Les cohortes synchronisées par un composant ne sont pas des objets librement modifiables.
 
-Les fichiers sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 :
+Les fichiers sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les quatre couples 4.5, 5.0, 5.1 et 5.2 :
 - rapport système utilisateurs ;
-- entité utilisateur et datasource utilisateurs ;
-- entités cohorte et membre de cohorte ;
+- entité utilisateur, filtre utilisateur et datasource utilisateurs ;
+- entités cohorte et membre de cohorte, filtre cohorte et datasource cohortes ;
 - rapport système des cohortes.
 
-Les fichiers sélectionnés sont identiques entre Moodle et Iomad sur chacun de ces deux couples. Les écrans spécifiques du bloc Iomad Company Admin, les filtres par entreprise/département et les règles de cloisonnement ne sont pas couverts par cette identité.
+Sur les couples 4.5 et 5.1, les fichiers nommés ci-dessus ont été vérifiés directement et sont identiques entre Moodle et Iomad. Les comparaisons des couples 5.0 et 5.2 déjà documentées confirment l'identité des fichiers de rapport système, entités et datasource sélectionnés. Les écrans spécifiques du bloc Iomad Company Admin, les filtres par entreprise/département et les règles de cloisonnement ne sont pas couverts par cette identité.
 
 La comparaison interversions montre que le rapport système utilisateurs change entre 4.5 et 5.0, reste identique entre 5.0 et 5.1, puis évolue en 5.2 et 5.3. Les entités cohorte et membre de cohorte évoluent également au fil des générations. L'interface Project N doit donc exploiter les colonnes, filtres, actions et contextes effectivement fournis par Report Builder plutôt que reproduire un tableau statique.
 
