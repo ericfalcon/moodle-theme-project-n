@@ -3364,11 +3364,11 @@ Cette migration est confirmée à la fois par les opérations rename_table de up
 
 #### 66.16.1 Conséquences sur les écrans d'administration
 
-La page editusers.php et la table editusers_table utilisent en 5.2 les tables local_iomad_company_users et local_iomad_company_departments. Les noms et namespaces du contexte entreprise évoluent également. La classe company passe de local/iomad/lib/company.php en 5.0 à local/iomad/classes/company.php à partir de 5.1 ; la classe iomad suit le même déplacement vers local/iomad/classes/iomad.php.
+La page editusers.php et la table editusers_table utilisent à partir de 5.1 les tables local_iomad_company_users et local_iomad_company_departments. Les noms et namespaces du contexte entreprise évoluent également. La classe company passe de local/iomad/lib/company.php en 5.0 à local/iomad/classes/company.php à partir de 5.1 ; la classe iomad suit le même déplacement vers local/iomad/classes/iomad.php.
 
 Le mécanisme des sélecteurs est déplacé :
 - en 5.0, les sélecteurs current_company_users_user_selector et potential_company_users_user_selector sont déclarés dans blocks/iomad_company_admin/lib/user_selectors.php ;
-- en 5.2, les classes current_company et potential_company sont déclarées dans local/iomad/classes/user_selector et héritent d'une classe commune company_base.
+- à partir de 5.1, les classes current_company et potential_company sont déclarées dans local/iomad/classes/user_selector et héritent d'une classe commune company_base.
 
 Le bloc Company Admin consomme ainsi des services et sélecteurs centralisés dans le plugin local_iomad. La gestion métier entreprise est moins dépendante du code interne du bloc.
 
