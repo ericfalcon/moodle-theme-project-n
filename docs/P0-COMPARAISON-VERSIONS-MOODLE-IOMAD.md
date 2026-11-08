@@ -392,6 +392,32 @@ Le parcours d'affectation des utilisateurs à l'entreprise est également une op
 
 La comparaison 5.0/5.2 est statique et n'a pas exécuté de migration de base de données. Elle n'établit pas que le passage d'une instance 5.0 à 5.2 a été testé. Les personnalisations propres au fork Iomad 5.0 sont conservées et doivent rester séparées du code amont.
 
+
+#### 9.7.1 Comparaison étendue des écrans Company Admin sur Iomad 4.5–5.2
+
+La comparaison a été étendue au contrôleur `editusers.php` et à la table `classes/tables/editusers_table.php` sur les quatre branches Iomad disponibles. Les chemins sont à la racine du dépôt en 4.5/5.0, puis sous `public/` en 5.1/5.2.
+
+| Fichier | Iomad 4.5 | Iomad 5.0 | Iomad 5.1 | Iomad 5.2 |
+|---|---|---|---|---|
+| `blocks/iomad_company_admin/editusers.php` (chemin adapté en 5.1+) | `6d553ea7232900dc4747dee1542f351f7cc6c9e8` | `c8717255d6f181a0ced158910115d4f7d2049143` | `006c78b420229f1c0bb01153651863a23f8261e5` | Identique à 5.1 |
+| `blocks/iomad_company_admin/classes/tables/editusers_table.php` (chemin adapté en 5.1+) | `c9538717c33dae2deaf66c777e3b0f18821f525d` | Identique à 4.5 | `e934760fb6cd77d3b44a09cd8ef687e16d6ea33e` | Identique à 5.1 |
+
+Le contrôleur évolue à chaque rupture de génération examinée : 4.5 diffère de 5.0, 5.0 diffère de 5.1, tandis que 5.1 et 5.2 sont identiques. La table est identique en 4.5/5.0, puis change en 5.1 et reste identique en 5.2.
+
+Les invariants du contrôleur restent la détermination de l'entreprise courante, le contrôle de la capacité `view_editusers`, les capacités `editusers`/ `editallusers`, la validation du département, la hiérarchie départementale, le contrôle `edit_all_departments`, la capacité `company_add` et la protection des opérations par sesskey.
+
+La rupture 5.0→5.1 se traduit notamment par :
+- le passage de `core\\context\\company` à `local_iomad\\custom_context\\context_company` ;
+- le remplacement des tables historiques `department` et `company_users` par `local_iomad_company_departments` et `local_iomad_company_users` ;
+- la centralisation des recherches via `iomad::get_user_sqlsearch()` ;
+- l'import du filtre utilisateur Moodle et la pagination pilotée par `local_iomad/max_list_users` ;
+- l'utilisation explicite des classes métier `company` et `company_user` dans la table 5.1+ ;
+- la distinction de rendu entre suspension du compte Moodle et suspension du rattachement entreprise.
+
+Les fichiers 5.1 et 5.2 comparés sont identiques pour ces deux points d'entrée. Cela ne démontre pas l'identité de tous les formulaires, sélecteurs, actions, services ou traitements différés. Les différences de contenu 4.5/5.0 ne sont pas toutes qualifiées comme fonctionnelles ; elles nécessitent une comparaison sémantique ciblée.
+
+**Précaution fork 5.0 :** le fork Iomad 5.0 contient des modifications personnelles à préserver. Les empreintes et constats ci-dessus servent à documenter l'état consulté ; aucune mise à jour ni modification du fork Iomad n'a été effectuée.
+
 ### 9.8 Gestion des catégories et cours à l'échelle de la plateforme
 
 Le contrôleur course/management.php est strictement identique sur les cinq branches Moodle. En revanche, ses dépendances de rendu évoluent :
