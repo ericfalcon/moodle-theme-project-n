@@ -3344,9 +3344,9 @@ L'ajout vérifie le quota maximal d'utilisateurs de l'entreprise, affecte l'util
 
 **Conséquence Project N :** une interface plus moderne peut remplacer visuellement la table HTML ou les deux listes, mais elle doit conserver les règles de quota, les sélections, les confirmations, les sesskeys, les événements et la distinction entre affectation à une entreprise et inscription à un cours.
 
-### 66.16 Évolution Iomad 5.0 vers 5.2 : déplacement du modèle entreprise vers local_iomad
+### 66.16 Évolution Iomad 5.0 vers 5.1/5.2 : déplacement du modèle entreprise vers local_iomad
 
-Une différence structurelle importante apparaît entre Iomad 5.0 et Iomad 5.2. La branche 5.0 utilise les anciennes tables Iomad telles que company, department et company_users. Dans Iomad 5.2, le plugin local_iomad porte désormais les tables préfixées local_iomad_.
+Une différence structurelle importante apparaît à partir d'Iomad 5.1. La branche 5.0 utilise les anciennes tables Iomad telles que company, department et company_users. À partir de 5.1, le plugin local_iomad porte les tables préfixées local_iomad_. La migration est réalisée par local/iomad/db/upgrade.php de la branche 5.1, puis reste la base du modèle en 5.2.
 
 Le fichier local/iomad/db/upgrade.php de la branche 5.2 contient des opérations explicites de renommage de tables. Parmi les migrations vérifiées :
 - company devient local_iomad_companies ;
@@ -3364,7 +3364,7 @@ Cette migration est confirmée à la fois par les opérations rename_table de up
 
 #### 66.16.1 Conséquences sur les écrans d'administration
 
-La page editusers.php et la table editusers_table utilisent en 5.2 les tables local_iomad_company_users et local_iomad_company_departments. Les noms et namespaces du contexte entreprise évoluent également.
+La page editusers.php et la table editusers_table utilisent en 5.2 les tables local_iomad_company_users et local_iomad_company_departments. Les noms et namespaces du contexte entreprise évoluent également. La classe company passe de local/iomad/lib/company.php en 5.0 à local/iomad/classes/company.php à partir de 5.1 ; la classe iomad suit le même déplacement vers local/iomad/classes/iomad.php.
 
 Le mécanisme des sélecteurs est déplacé :
 - en 5.0, les sélecteurs current_company_users_user_selector et potential_company_users_user_selector sont déclarés dans blocks/iomad_company_admin/lib/user_selectors.php ;
