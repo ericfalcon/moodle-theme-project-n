@@ -364,9 +364,9 @@ La comparaison des fichiers montre des évolutions importantes entre Iomad 5.0 e
 - editusers.php et editusers_table.php ont changé de contenu ;
 - company_users_form.php et classes/forms/company_users_form.php ont également évolué ;
 - en 5.0, les sélecteurs d'utilisateurs sont dans blocks/iomad_company_admin/lib/user_selectors.php ;
-- en 5.2, les sélecteurs current_company et potential_company sont déplacés dans local/iomad/classes/user_selector et héritent de company_base.
+- à partir de 5.1, les sélecteurs current_company et potential_company sont déplacés dans local/iomad/classes/user_selector et héritent de company_base.
 
-La migration est structurelle et confirmée dans local/iomad/db/upgrade.php et local/iomad/db/install.xml. Plusieurs tables historiques deviennent des tables préfixées local_iomad_ ; en particulier company, department et company_users deviennent local_iomad_companies, local_iomad_company_departments et local_iomad_company_users. La migration des départements renomme également les champs company en companyid et parent en parentid, puis réorganise les index. Les tables de cours, licences, groupes d'entreprise, rôles, domaines et options suivent le même mouvement de centralisation dans local_iomad.
+La migration structurelle commence en Iomad 5.1 ; elle est confirmée dans local/iomad/db/upgrade.php de cette branche et dans le schéma local_iomad des versions suivantes. Plusieurs tables historiques deviennent des tables préfixées local_iomad_ ; en particulier company, department et company_users deviennent local_iomad_companies, local_iomad_company_departments et local_iomad_company_users. La migration des départements renomme également les champs company en companyid et parent en parentid, puis réorganise les index. Les tables de cours, licences, groupes d'entreprise, rôles, domaines et options suivent le même mouvement de centralisation dans local_iomad.
 
 Cette évolution signifie que le code du bloc 5.0 et celui du bloc 5.2 ne partagent pas le même contrat de persistance. Le thème ne doit jamais interroger ces tables directement ni figer leurs noms. Il doit consommer les pages, classes de sortie et API prévues par la version Iomad active.
 
