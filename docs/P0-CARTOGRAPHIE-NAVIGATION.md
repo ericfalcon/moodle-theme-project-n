@@ -3837,6 +3837,7 @@ Le thème peut réorganiser visuellement les sections et les activités, mais do
 
 | Élément | Évolution vérifiée | Conséquence |
 |---|---|---|
+| classes/base.php (core_courseformat\\base) | Contenu différent sur les cinq branches ; nouvelles API de gestion d'état à partir de 5.0, API de retour/section à partir de 5.1, gestion explicite de l'affichage des restrictions en 5.2 et navigation linéaire en 5.3 | Ne pas coder contre une liste de méthodes supposée stable ; utiliser les contrats de la version cible |
 | section_renderer.php | Contenu différent entre les cinq branches ; fichier plus étoffé en 5.3 qu'en 5.0 | Renderer non figé |
 | output/local/content.php | Évolutions en 5.2 et 5.3 ; gestion du menu global de repli portée au niveau du contenu en 5.3 | Surcharge du template principal à revoir |
 | output/local/content/section.php | Évolutions successives ; ajout de returnoptions et dépréciation de sectionreturnnum en 5.3 | Préserver les paramètres de retour |
@@ -3850,7 +3851,7 @@ Les arbres des dépôts montrent aussi l'apparition de nouveaux éléments dans 
 
 #### 65.12.4 Contrôle Iomad sur le rendu du cours
 
-Neuf fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur le couple 5.0 ; sept fichiers communs ont été comparés sur le couple 5.2. Le périmètre 5.0 inclut le socle de format, le renderer, les classes content/section/cm, les templates content et section/content, le tiroir de l'index et le module AMD principal. Le périmètre 5.2 couvre le renderer, les classes content/section/cm, les templates content et section/content et le module AMD principal. Les fichiers sélectionnés sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. Les couples 4.5 et 5.1 restent à contrôler sur cette même sélection.
+Neuf fichiers du rendu standard ont été comparés intégralement entre Moodle et Iomad sur le couple 5.0 ; sept fichiers communs ont été comparés sur le couple 5.2. Le périmètre 5.0 inclut le socle de format, le renderer, les classes content/section/cm, les templates content et section/content, le tiroir de l'index et le module AMD principal. Le périmètre 5.2 couvre le renderer, les classes content/section/cm, les templates content et section/content et le module AMD principal. Les fichiers sélectionnés sont identiques dans chacun des deux couples. Cela confirme que la chaîne de rendu standard du format de cours n'est pas directement modifiée par Iomad dans ces fichiers. Le contrôle d'accès entreprise constaté dans course/view.php demeure distinct et s'exécute avant l'affichage du cours. La même sélection de neuf fichiers a également été comparée sur les couples 4.5 et 5.1 : les fichiers sélectionnés sont identiques dans chacun de ces couples. La couverture Iomad de cette chaîne de rendu est donc établie pour les quatre générations 4.5, 5.0, 5.1 et 5.2 sur les fichiers nommés, sans conclure à l'identité des autres plugins ou au contrôle d'accès global.
 
 ### 65.13 Interfaces d'évaluation : correction des devoirs et carnet de notes
 
