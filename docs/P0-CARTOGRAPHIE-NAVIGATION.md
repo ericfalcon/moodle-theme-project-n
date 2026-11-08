@@ -3391,6 +3391,79 @@ Le bloc Company Admin consomme ainsi des services et sélecteurs centralisés da
 
 La comparaison 5.0/5.2 porte ici sur le code du fork Iomad disponible pour chaque branche. Les personnalisations propres à la branche Iomad 5.0 doivent rester distinguées du code amont et être conservées ; cette analyse ne modifie aucun fichier de ces forks.
 
+
+### 66.17 Comparaison interversions de la gestion des utilisateurs Iomad Company Admin
+
+**Périmètre vérifié :** contrôleur `editusers.php` et table `classes/tables/editusers_table.php` dans les forks Iomad `IOMAD_405_STABLE`, `IOMAD_500_STABLE`, `IOMAD_501_STABLE` et `IOMAD_502_STABLE`. Les chemins sont à la racine en 4.5/5.0 et sous `public/` à partir de 5.1.
+
+| Élément | Iomad 4.5 | Iomad 5.0 | Iomad 5.1 | Iomad 5.2 | Résultat |
+|---|---|---|---|---|---|
+| Contrôleur `editusers.php` | SHA `6d553ea7232900dc4747dee1542f351f7cc6c9e8` | SHA `c8717255d6f181a0ced158910115d4f7d2049143` | SHA `006c78b420229f1c0bb01153651863a23f8261e5` | même SHA que 5.1 | 4.5 diffère de 5.0 ; 5.0 diffère de 5.1 ; 5.1 = 5.2 |
+| Table `editusers_table.php` | SHA `c9538717c33dae2deaf66c777e3b0f18821f525d` | même SHA que 4.5 | SHA `e934760fb6cd77d3b44a09cd8ef687e16d6ea33e` | même SHA que 5.1 | 4.5 = 5.0 ; 5.1 = 5.2 ; rupture de contenu entre 5.0 et 5.1 |
+
+#### 66.17.1 Éléments stables dans le contrôleur
+
+Les quatre générations conservent le même parcours fonctionnel général :
+- détermination de l'entreprise courante via `iomad::get_my_companyid()` ;
+- création du contexte d'entreprise et contrôle `block/iomad_company_admin:view_editusers` ;
+- contrôle du droit d'édition via `editusers` ou `editallusers` ;
+- validation du département demandé avec `company::check_valid_department()` ;
+- limitation du périmètre selon la hiérarchie départementale et `edit_all_departments` ;
+- prise en compte de `company_add` et du paramètre `showall` pour la recherche d'utilisateurs potentiels ;
+- opérations sensibles protégées par `confirm_sesskey()`.
+
+Ces invariants ne signifient pas que les contrôleurs sont interchangeables. Les fichiers 4.5 et 5.0 ont des empreintes distinctes ; le contrôleur 5.1/5.2 change plus nettement de structure et de dépendances.
+
+#### 66.17.2 Rupture technique entre Iomad 5.0 et 5.1
+
+Dans le contrôleur 4.5/5.0, le contexte est obtenu via `\\core\\context\\company` et les requêtes utilisent notamment les anciennes tables `department` et les anciennes associations. À partir de 5.1 :
+- le contexte utilisé est `local_iomad\\custom_context\\context_company` ;
+- les départements sont lus dans `local_iomad_company_departments` ;
+- les jointures et recherches utilisent les tables `local_iomad_*` ;
+- le contrôleur importe le filtre utilisateur Moodle et s'appuie sur `iomad::get_user_sqlsearch()` pour construire le périmètre de recherche ;
+- la pagination par défaut est reliée à la configuration `local_iomad/max_list_users`.
+
+Cette évolution concorde avec la migration du modèle de données décrite en 66.16. Elle doit être traitée comme une évolution d'architecture Iomad, pas comme une simple réorganisation de fichiers.
+
+#### 66.17.3 Évolution de la table des utilisateurs
+
+La table 4.5/5.0 utilise les anciennes tables `company_users` et `department`. La version 5.1/5.2 :
+- utilise `local_iomad_company_users` ;
+- importe explicitement les classes `company`, `company_user` et `iomad` depuis `local_iomad` ;
+- distingue davantage le statut suspendu du compte Moodle (`suspended`) et celui du rattachement entreprise (`companysuspended`) dans le rendu ;
+- s'appuie sur `company_user::get_department_name()` pour restituer les départements ;
+- tient compte du paramètre `local_iomad/autoenrol_managers` dans le traitement du statut éducateur ;
+- adapte les colonnes et les actions en fonction des capacités Iomad et du statut de l'utilisateur cible.
+
+Le changement de table n'est donc pas neutre pour l'interface : le tableau doit pouvoir présenter deux états de suspension indépendants, plusieurs départements et des actions dépendantes du périmètre entreprise.
+
+#### 66.17.4 Conséquences pour Project N
+
+1. Conserver le rapport système Moodle natif pour l'administration générale des comptes ; Company Admin reste un parcours Iomad séparé.
+2. Ne pas créer un modèle de données utilisateur Iomad parallèle dans le thème : s'appuyer sur les contrôleurs, tables, formulaires et API du plugin.
+3. Ne jamais coder en dur les noms des tables Iomad ni les classes de contexte dans les templates.
+4. Prévoir une présentation distincte du statut du compte Moodle et du rattachement entreprise.
+5. Préserver le filtrage hiérarchique, le département sélectionné, les utilisateurs potentiels, les quotas, les confirmations et les contrôles de session.
+6. La couche visuelle peut être commune entre versions, mais les données doivent provenir des composants Iomad de la version installée.
+
+**Précaution sur le fork personnel 5.0 :** le fichier 5.0 a une empreinte différente de 4.5. Cette comparaison ne permet pas, à elle seule, de qualifier chaque différence de personnalisation personnelle ou de changement amont. La branche Iomad 5.0 contient des modifications propres qui doivent être préservées ; aucune mise à jour ni réécriture de cette branche n'est effectuée dans cette analyse.
+
+#### 66.17.5 Limites et vérifications restantes
+
+| Sujet | État |
+|---|---|
+| Empreintes des deux fichiers sur Iomad 4.5/5.0/5.1/5.2 | Vérifiées |
+| Invariants du contrôle d'accès et du filtrage | Comparés statiquement sur les extraits de code |
+| Modèle de tables avant/après 5.1 | Confirmé avec la section 66.16 |
+| Diff sémantique complet 4.5 ↔ 5.0 du contrôleur | À approfondir |
+| Diff sémantique complet 5.0 ↔ 5.1 du contrôleur et de la table | À approfondir |
+| Formulaires de recherche et sélecteurs associés sur les quatre versions | À comparer |
+| Actions suspendre/réactiver/supprimer et leurs traitements complets | À comparer et relire |
+| Import et ajout/retrait d'utilisateurs d'entreprise | Déjà repérés ; comparaison interversions à effectuer |
+| Tests runtime, isolation multi-entreprise et accessibilité | Non réalisés |
+
+La prochaine sous-étape du point 66 consiste à comparer les formulaires et sélecteurs d'affectation des utilisateurs à l'entreprise, puis à vérifier les traitements complets des actions de ligne. La comparaison doit rester limitée aux couples Iomad de même génération et préserver les personnalisations du fork 5.0.
+
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
 > Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
