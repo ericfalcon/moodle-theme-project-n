@@ -3861,6 +3861,8 @@ La correction de devoir s'appuie sur plusieurs couches : la classe mod_assign ou
 
 La classe grading_app expose notamment des données liées à l'utilisateur évalué, au groupe, à l'assignation et aux marqueurs. À partir de Moodle 5.2, le constructeur prend explicitement en compte le paramètre marker pour les devoirs utilisant plusieurs évaluateurs. L'interface doit donc préserver la distinction entre attribution du travail de correction et notation finale.
 
+**Comparaison Iomad :** les fichiers `mod/assign/classes/output/renderer.php`, `classes/output/grading_app.php`, `templates/grading_app.mustache` et `amd/src/grading_panel.js` ont été comparés intégralement sur les quatre couples Moodle/Iomad 4.5, 5.0, 5.1 et 5.2 ; les contenus sont identiques pour chacun des couples. La différence de contrat introduite en Moodle 5.2 (paramètre `marker`) est donc également présente dans Iomad 5.2, sans adaptation propre d'Iomad dans ces fichiers. Cela ne prouve pas l'identité des données d'entrée, permissions, extensions de feedback ou contrôles d'accès en amont.
+
 Le template mod_assign/grading_app est un assemblage de zones fonctionnelles distinctes :
 - navigation entre les participants ;
 - panneau de consultation/relecture ;
