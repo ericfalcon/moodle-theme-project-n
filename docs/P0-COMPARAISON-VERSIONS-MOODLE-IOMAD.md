@@ -319,7 +319,21 @@ Constats :
 - le module AMD utilise l'import Bootstrap Collapse depuis bootstrap en 5.3, alors que Moodle 5.0 l'importait depuis theme_boost/bootstrap/collapse ;
 - les arbres de code révèlent des ajouts dans le sous-système : classes/templates d'aperçu d'activité en 5.0, architecture du sélecteur d'activité en 5.1, contenu de navigation linéaire en 5.3.
 
-Les fichiers de la chaîne de rendu standard sélectionnés sont identiques entre Moodle et Iomad : neuf fichiers ont été comparés sur le couple 5.0 et sept fichiers communs sur le couple 5.2. Les couples 4.5 et 5.1 restent à vérifier au même niveau.
+Les fichiers de la chaîne de rendu standard sélectionnés sont identiques entre Moodle et Iomad sur les quatre couples 4.5, 5.0, 5.1 et 5.2. Neuf fichiers ont été comparés sur les couples 4.5, 5.0 et 5.1 ; sept fichiers communs ont été comparés sur le couple 5.2. Les classes `core_courseformat\\base`, `section_renderer`, `output/local/content` et `output/local/content/section` sont identiques dans les couples 4.5 et 5.1 également. Cette comparaison porte sur les fichiers sélectionnés, pas sur l'ensemble des formats tiers, des plugins ou des contrôles d'accès.
+
+#### Évolution de l'API de base du format de cours
+
+La classe `core_courseformat\\base` a un contenu différent dans chacune des cinq branches Moodle comparées. Les évolutions d'API repérées dans les déclarations de méthodes sont progressives :
+
+| Génération | API ou capacité notable |
+|---|---|
+| 4.5 | API de base du format, sections, navigation, options et rendu |
+| 5.0 | Ajout des instances `stateupdates` et `stateactions`, du nom générique de section et de l'URL de mise à jour |
+| 5.1 | Ajout des informations de retour de section |
+| 5.2 | Ajout de l'état explicite d'affichage des restrictions (`set_show_restrictions_expanded`, `get_show_restrictions_expanded`) |
+| 5.3 | Ajout de `get_page_section`, `get_return_options` et `uses_linear_navigation` |
+
+Le renderer `core_courseformat\\output\\section_renderer` change également de contenu à chaque génération. Entre 4.5 et 5.3, plusieurs responsabilités historiquement portées par ce renderer (en-têtes, pieds de section, résumé, disponibilité, navigation et rendu des listes) sont désormais réparties entre les objets de sortie du format et leurs templates. Le thème doit donc éviter de surcharger des méthodes historiques sans vérifier leur présence et leur contrat sur la version cible.
 
 ### 9.5 Correction des devoirs et carnet de notes
 
