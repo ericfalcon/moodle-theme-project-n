@@ -450,6 +450,35 @@ La base de sélecteurs 5.1+ utilise les tables `local_iomad_company_users` et le
 
 **Limite de comparaison :** les empreintes des classes principales sont vérifiées, mais tous les sélecteurs contenus dans le fichier monolithique 4.5/5.0 n'ont pas été rapprochés de leurs classes déplacées en 5.1/5.2. Les parcours de responsables, cours, départements, licences et groupes doivent être suivis individuellement. Aucun test runtime, test d'accessibilité ni test responsive n'a été exécuté.
 
+
+#### 9.7.3 Affectation, hiérarchie, rôles et retrait d'un utilisateur — Iomad 4.5–5.2
+
+Les méthodes métier ont été examinées dans `local/iomad/lib/company.php` (4.5/5.0) puis `public/local/iomad/classes/company.php` (5.1/5.2), ainsi que dans `company_user.php` en 5.1/5.2.
+
+| Élément | Iomad 4.5 | Iomad 5.0 | Iomad 5.1 | Iomad 5.2 |
+|---|---|---|---|---|
+| `company.php` | SHA `dd7917c30e96739881316ce58cdcb94541911e59` | SHA `0823296f30216e311c49f6205ebe217146c4ac42` | SHA `33ade0ecb91ce4bfadf38b057ae333c9fe8c950a` | Identique à 5.1 |
+| `assign_user_to_company()` | Présente | Présente | Présente | Présente |
+| `upsert_company_user()` | Présente dans `company` | Présente dans `company` | Présente dans `company` | Présente dans `company` |
+| `unassign_user_from_company()` | Présente | Présente | Présente | Présente |
+| `company_user.php` dédié | Pas de classe séparée dans le chemin examiné | Pas de classe séparée dans le chemin examiné | SHA `bec9ceca3452bd18cff0bb11cbfeb5bb0db5c8b4` | Identique à 5.1 |
+
+**Affectation.** Les quatre versions vérifient l'existence et l'état du compte, contrôlent que le département appartient à l'entreprise cible, puis utilisent le département racine en valeur de repli. L'association est indexée logiquement par entreprise, utilisateur et département. Les paramètres de synchronisation du thème, de l'institution et du département Moodle ne sont appliqués que lorsqu'il s'agit de la première association entreprise. L'auto-inscription et l'import des historiques peuvent déclencher des traitements complémentaires.
+
+**Rupture de schéma 5.1.** Les tables historiques `company_users`, `department`, `company_course`, `iomad_courses` et `company` sont remplacées dans les traitements examinés par leurs équivalents `local_iomad_company_users`, `local_iomad_company_departments`, `local_iomad_company_courses`, `local_iomad_courses` et `local_iomad_companies`. Le contexte utilisé par l'upsert passe de `core\\context\\company` à `local_iomad\\custom_context\\context_company`.
+
+**Fonctions et rôles.** L'upsert attribue ou retire les rôles entreprise `companymanager`, `companydepartmentmanager` et `companyreporter`, et peut gérer les rôles de cours `companycourseeditor` / `companycoursenoneditor`. Le champ `educator` est distinct du type de gestion. En 4.5/5.0, l'entrée d'affectation utilise une validation numérique (`managertype > 2`), alors que 5.1/5.2 consultent `get_managertypes(true)`. Le code 4.5/5.0 contient un chemin reporter `managertype == 4` dans l'upsert alors que le contrôle d'entrée semble ramener une valeur supérieure à 2 à 0 : le parcours exact de cette fonction nécessite une vérification dédiée. Les valeurs ne doivent pas être codées en dur dans le thème.
+
+**Traitements différés.** En 5.1/5.2, plusieurs changements d'inscription des gestionnaires aux cours passent par `enroleducatortask` et une tâche ad hoc. En 4.5/5.0, les appels `company_user::enrol()` / `unenrol()` sont davantage effectués directement dans l'upsert. Les retours d'interface ne doivent donc pas présumer d'une mise à jour immédiate des inscriptions en 5.1/5.2.
+
+**Hiérarchie.** `assign_parent_managers()` et `unassign_parent_managers()` propagent récursivement les gestionnaires des entreprises parentes vers les entreprises filles. L'upsert propage également les fonctions de gestionnaire d'entreprise vers les entreprises filles descendantes et traite spécifiquement les gestionnaires provenant d'une autre entreprise. Les départements restent propres à une entreprise ; chaque entreprise fille dispose de son propre département racine. La hiérarchie des entreprises et l'arbre des départements sont deux structures distinctes.
+
+**Retrait.** `unassign_user_from_company()` traite les historiques de suivi, les licences réutilisables et non utilisées, les licences de programme, les rappels et les rôles de gestion avant de supprimer les associations. En 5.1/5.2, `company_user::delete()` retire les rôles de gestion au contexte entreprise et ne supprime le compte Moodle que lorsqu'aucune autre association entreprise ne subsiste. Le retrait d'une entreprise n'est donc pas la suppression du compte.
+
+**Conséquence thème.** Project N ne doit pas effectuer de requêtes SQL Iomad, ni réimplémenter la propagation des gestionnaires, la gestion des licences ou les changements de rôles. Il doit améliorer l'affichage de l'entreprise cible, du département, de la fonction, du statut d'éducateur, des appartenances multiples et des effets différés. Les opérations de retrait doivent être confirmées avec leur périmètre réel.
+
+**Preuve et limites.** Comparaison statique des fichiers des quatre branches. Les empreintes du fichier `company.php` sont distinctes en 4.5/5.0 et identiques en 5.1/5.2. Les parcours runtime, les accès directs, les tâches ad hoc, les cas multi-entreprises, les cours partagés et les licences en cours ne sont pas testés. Le fork 5.0 n'a pas été modifié.
+
 ### 9.8 Gestion des catégories et cours à l'échelle de la plateforme
 
 Le contrôleur course/management.php est strictement identique sur les cinq branches Moodle. En revanche, ses dépendances de rendu évoluent :
