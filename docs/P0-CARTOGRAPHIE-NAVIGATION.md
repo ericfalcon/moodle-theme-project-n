@@ -3464,6 +3464,106 @@ Le changement de table n'est donc pas neutre pour l'interface : le tableau doit 
 
 La prochaine sous-étape du point 66 consiste à comparer les formulaires et sélecteurs d'affectation des utilisateurs à l'entreprise, puis à vérifier les traitements complets des actions de ligne. La comparaison doit rester limitée aux couples Iomad de même génération et préserver les personnalisations du fork 5.0.
 
+
+### 66.18 Formulaires et sélecteurs d'utilisateurs Company Admin — comparaison Iomad 4.5 à 5.2
+
+**Périmètre vérifié :** formulaire `company_users_form`, contrôleur `company_users_form.php`, sélecteurs d'utilisateurs du bloc Iomad Company Admin et classes dédiées `current_company` / `potential_company`, sur les branches Iomad 4.5, 5.0, 5.1 et 5.2.
+
+#### 66.18.1 Architecture et évolution des fichiers
+
+| Élément | Iomad 4.5 | Iomad 5.0 | Iomad 5.1 | Iomad 5.2 |
+|---|---|---|---|---|
+| Formulaire `company_users_form` | SHA `33b741de5c5e7e5d16b2baad622330cdd54601fc` | Identique à 4.5 | SHA `94efc006e48bf4e0fe64168af091526e43da3d40` | Identique à 5.1 |
+| Sélecteurs du bloc | `blocks/iomad_company_admin/lib/user_selectors.php` (monolithe) | Même fichier, contenu modifié | Sélecteurs métier déplacés dans `local/iomad/classes/user_selector/` | Identique à 5.1 pour les classes principales |
+| Base des sélecteurs entreprise | `company_user_selector_base` dans le fichier du bloc | Même architecture | `local_iomad\\user_selector\\company_base` | Identique à 5.1 |
+| Sélecteur des membres actuels | `current_company_users_user_selector` | Même classe | `current_company` | Identique à 5.1 |
+| Sélecteur des utilisateurs potentiels | `potential_company_users_user_selector` | Même classe | `potential_company` | Identique à 5.1 |
+
+La rupture d'architecture est nette en 5.1 : le bloc ne porte plus seul les classes de sélection des utilisateurs. La logique mutualisable est déplacée dans le plugin `local_iomad`, avec un espace de noms et une classe de base dédiés. Le bloc Company Admin importe les classes `current_company` et `potential_company`.
+
+Le fichier historique `user_selectors.php` est volumineux et regroupe de nombreux sélecteurs utilisés par plusieurs écrans (entreprise, responsables, cours, départements et autres périmètres). Il ne faut donc pas assimiler la migration de ces deux sélecteurs à la disparition de tous les autres sélecteurs du bloc : le déplacement doit être cartographié classe par classe.
+
+#### 66.18.2 Fonctionnement du formulaire d'affectation à l'entreprise
+
+Le formulaire conserve le même parcours fonctionnel sur les quatre versions :
+- un sélecteur multi-utilisateur des membres déjà rattachés à l'entreprise ;
+- un sélecteur multi-utilisateur des personnes candidates ;
+- un bouton d'ajout, un bouton de retrait et, si le mode `allusers` est autorisé, une action d'import ;
+- un filtrage/recherche des personnes, avec possibilité de choisir un champ de profil entreprise ;
+- une liste actualisée après traitement, les sélecteurs invalidant leurs sélections après une opération.
+
+Le formulaire est construit en deux zones de sélection séparées par des actions. Le HTML historique est organisé sous forme de tableau à trois cellules (membres, boutons, candidats). Cette structure est un contrat de présentation actuel du plugin, pas une obligation pour Project N : le thème peut améliorer l'affichage à condition de conserver les noms des contrôles, les identifiants attendus par le JavaScript et le comportement de sélection.
+
+#### 66.18.3 Recherche, filtrage et chargement asynchrone
+
+La classe de base des sélecteurs :
+- hérite de `user_selector_base` du cœur Moodle ;
+- conserve l'identifiant de l'entreprise et le département de référence ;
+- construit les options de contexte et de recherche ;
+- utilise `users_search_sql()` pour les champs standards ou une recherche sur un champ de profil entreprise ;
+- enregistre les options du sélecteur dans la session utilisateur, sous une empreinte calculée à partir de ces options ;
+- initialise le module JavaScript de `core_user.init_user_selector` pour la recherche asynchrone ;
+- limite les résultats et renvoie le message « trop de résultats » au-delà du seuil configuré.
+
+La version 4.5/5.0 construit encore une partie de son HTML avec des chaînes. La base 5.1+ utilise davantage `html_writer` et déplace le module JavaScript sous `local/iomad/classes/user_selector/module.js`. Le rendu fonctionnel reste celui d'un sélecteur Moodle amélioré, pas celui d'un composant autonome du thème.
+
+#### 66.18.4 Règles de périmètre des deux listes
+
+**Membres actuels (`current_company`)**
+- recherche parmi les utilisateurs associés à l'entreprise sélectionnée ;
+- exclusion des comptes suspendus dans la requête de sélection ;
+- rattachement à l'entreprise déterminé par la table d'association entreprise-utilisateur ;
+- prise en compte du contexte départemental transmis au sélecteur.
+
+**Utilisateurs potentiels (`potential_company`)**
+- par défaut, recherche parmi les utilisateurs qui ne sont associés à aucune entreprise ;
+- les administrateurs du site sont exclus des résultats pour les utilisateurs qui ne sont pas eux-mêmes administrateurs ;
+- les comptes suspendus sont exclus ;
+- le mode `allusers` permet, si l'utilisateur possède la capacité système `block/iomad_company_admin:company_add`, de rechercher aussi des utilisateurs déjà rattachés à une autre entreprise, tout en excluant ceux déjà rattachés à l'entreprise cible ;
+- le résultat est limité par le paramètre `local_iomad/max_select_users` en 5.1+.
+
+La distinction « utilisateurs libres » / « utilisateurs déjà rattachés à une autre entreprise » est une règle métier importante. Le thème ne doit ni fusionner ces deux populations ni rendre le mode `allusers` accessible par une simple option visuelle.
+
+#### 66.18.5 Affectation et retrait : responsabilités du formulaire
+
+Le traitement métier reste dans le formulaire :
+- l'ajout et l'import exigent une sesskey valide ;
+- le nombre d'utilisateurs à affecter est contrôlé par rapport au quota de l'entreprise ;
+- chaque utilisateur est affecté au département par défaut au moyen de `company::assign_user_to_company()` ;
+- l'événement `user_updated` est déclenché, puis l'événement Iomad `company_user_assigned` ;
+- le retrait passe par `company::unassign_user_from_company()`, déclenche également `user_updated` et l'événement `company_user_unassigned` ;
+- les sélections des deux listes sont invalidées après traitement.
+
+Il ne s'agit donc pas d'une simple modification de rôle ou d'un ajout dans une cohorte. L'affectation crée/modifie le lien entreprise-utilisateur et déclenche les événements attendus par le reste de l'écosystème Iomad.
+
+#### 66.18.6 Différences interversions et conséquences pour Project N
+
+| Différence | Conséquence |
+|---|---|
+| Formulaire identique en 4.5/5.0, puis identique en 5.1/5.2 avec une empreinte différente | Le traitement métier est stable sur les versions comparées, mais le contrat de classe et les sélecteurs instanciés changent en 5.1 |
+| Sélecteurs regroupés dans le bloc jusqu'en 5.0, base et classes métier déplacées en 5.1 | Ne pas importer directement une classe Iomad depuis le thème ; laisser le bloc et `local_iomad` gérer le sélecteur |
+| Anciennes tables `company_users`, nouvelles tables `local_iomad_company_users` | Aucune requête SQL Iomad directe dans le thème |
+| Recherche profil entreprise et mode `allusers` | Préserver les filtres, leur état et les règles de visibilité |
+| Deux listes multi-sélection et actions d'affectation/retrait | Prévoir une interface responsive qui reste utilisable sur smartphone sans perdre la distinction des listes |
+| Seuil de résultats et recherche AJAX | Préserver le mécanisme de chargement et fournir un état de chargement accessible |
+
+**Décision ergonomique :** Project N ne réimplémente pas le formulaire Iomad. Il doit proposer une amélioration visuelle progressive du composant fourni par la version active : listes clairement identifiées, recherche accessible, commandes explicites, affichage des états de sélection, et adaptation mobile (empilement des listes et actions adaptées au tactile). Le comportement natif et les contrôles de sécurité restent prioritaires sur la refonte.
+
+#### 66.18.7 Limites de la vérification
+
+| Sujet | État |
+|---|---|
+| Empreintes du formulaire 4.5/5.0/5.1/5.2 | Vérifiées |
+| Empreintes de la base et des classes principales 5.1/5.2 | Vérifiées |
+| Contrat fonctionnel du formulaire (sélection, ajout, retrait, import, quota, événements) | Comparé statiquement |
+| Sélecteur potentiel et règle `allusers` | Vérifiés sur les branches 4.5 et 5.1 ; 5.0/5.2 suivent les mêmes générations mais diffèrent par empreinte ou identité de fichiers à approfondir |
+| Autres sélecteurs du fichier historique | Non exhaustivement comparés |
+| Accessibilité réelle du sélecteur, clavier et lecteur d'écran | À tester sur instance |
+| Adaptation responsive et utilisation mobile | À tester sur instance |
+| Scénarios multi-entreprises, quota atteint, utilisateurs déjà liés à une autre entreprise | À tester en runtime |
+
+Le point suivant approfondira les opérations d'affectation et de retrait comme parcours métier, notamment les conséquences sur les départements, les rôles/gestionnaires et les entreprises parentes ou filles. Les opérations de test ne doivent pas être réalisées sur des données de production.
+
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
 > Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
