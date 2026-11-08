@@ -3884,6 +3884,8 @@ Le rapport du correcteur gradereport_grader conserve un point d'entrée PHP iden
 
 Le rapport réutilise les composants communs de sélection de groupe, d'initiales, d'utilisateur et la barre d'action générale. La barre d'actions ne doit donc pas être redessinée comme un composant isolé propre au rapport.
 
+**Comparaison Iomad :** `grade/report/grader/classes/output/action_bar.php` et `templates/action_bar.mustache` sont identiques entre Moodle et Iomad dans chacun des couples 4.5, 5.0, 5.1 et 5.2. Le changement Moodle 5.3 vers le template commun `core/action_bar` doit donc être traité comme une évolution du socle Moodle, pas comme une différence Iomad. Le point d'entrée PHP du rapport est lui aussi identique dans les couples comparés selon la matrice précédente.
+
 **Conséquence Project N :** privilégier les composants communs de navigation/action de Moodle et prévoir une adaptation responsive sans substituer un système de filtres propriétaire. La surcharge historique du template propre au rapport doit être revue pour Moodle 5.3 et anticiper sa disparition à terme.
 
 #### 65.13.3 Limites de la comparaison
