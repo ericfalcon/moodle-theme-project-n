@@ -50,7 +50,7 @@ Un champ vide n'est pas une preuve d'identité entre versions. Il signifie « no
 | Rôles et capacités | Non vérifié | Cartographie partielle antérieure | Non vérifié | Non vérifié | Non vérifié | Contextes, héritage, rôles Iomad | À compléter |
 | Rapports d'administration | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Report Builder, exports, permissions | À analyser |
 | Paramètres de plateforme | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Non vérifié | Arborescence admin et capacités | À analyser |
-| Iomad multi-entreprise | À compléter | Comparaison ciblée : utilisateurs, licences, hiérarchie des départements et schéma local_iomad | À compléter | Comparaison ciblée : pages, sélecteurs, licences et schéma local_iomad | Non disponible | Portée entreprise, filtrage multi-département, licences, actions Iomad et migration des tables | Statique ; cartographie 66.15–66.16 et 68.17 ; migration et permissions runtime non testées |
+| Iomad multi-entreprise | À compléter | Comparaison ciblée : utilisateurs, licences, hiérarchie des départements et schéma historique | Transition local_iomad et sélecteurs constatée ; comparaison fonctionnelle à compléter | Comparaison ciblée : pages, sélecteurs, licences et schéma local_iomad | Non disponible | Portée entreprise, filtrage multi-département, licences, actions Iomad, migration et tâches adhoc de rôles | Statique ; cartographie 66.15–66.16 et 68.17 ; migration et permissions runtime non testées |
 
 Ce tableau est volontairement conservateur : « cartographie initiale antérieure » ne signifie pas comparaison interversions terminée.
 
