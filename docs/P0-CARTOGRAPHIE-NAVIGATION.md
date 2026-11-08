@@ -3275,6 +3275,16 @@ Les actions de ligne ne sont pas interchangeables :
 4. Suspension, verrouillage, confirmation, accès MNet et suppression doivent être présentés comme des états/opérations distincts.
 5. Les libellés et badges doivent être obtenus des données de rendu et des chaînes Moodle, pas reconstruits en fonction du seul nom de rôle ou d'un statut supposé.
 
+#### 66.13.1 Comparaison Moodle / Iomad du rapport des comptes
+
+Les fichiers suivants ont été comparés intégralement sur les couples 4.5 et 5.1 :
+- rapport système `admin/.../systemreports/users.php` ;
+- datasource `user/classes/reportbuilder/datasource/users.php` ;
+- entité `reportbuilder/classes/local/entities/user.php` ;
+- filtre `reportbuilder/classes/local/filters/user.php`.
+
+Les contenus sont identiques entre Moodle et Iomad sur chacun de ces deux couples. Les comparaisons des couples 5.0 et 5.2 déjà documentées aboutissent au même constat pour les fichiers sélectionnés. Le rapport système natif des comptes ne porte donc pas, dans ces fichiers, de filtre ou de variante de rendu propre à Iomad. Les filtres d'entreprise, de département et les restrictions multi-entreprises relèvent des interfaces Company Admin et des composants Iomad dédiés.
+
 ### 66.14 Report Builder des cohortes : portée et actions contextuelles
 
 Le rapport système des cohortes s'appuie sur deux entités : cohorte et membre de cohorte. Il joint les membres pour calculer le nombre de membres et expose notamment le contexte, le nom, l'identifiant, la description, la source/composant et les données de personnalisation.
@@ -3295,7 +3305,7 @@ La portée du rapport est contextuelle : une cohorte système et une cohorte de 
 
 #### 66.14.1 Comparaison Moodle / Iomad
 
-Les fichiers Report Builder sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les quatre couples 4.5, 5.0, 5.1 et 5.2. Pour 4.5 et 5.1, la vérification directe couvre le rapport système utilisateurs, la datasource utilisateurs, l'entité utilisateur, le filtre utilisateur, le rapport système des cohortes, les entités cohorte et membre de cohorte, la datasource cohortes et le filtre cohorte ; tous les fichiers sélectionnés sont identiques dans chacun de ces couples. Les comparaisons déjà réalisées en 5.0 et 5.2 confirment également l'identité des fichiers de rapport système, entités et datasource sélectionnés.
+Les fichiers Report Builder sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les quatre couples 4.5, 5.0, 5.1 et 5.2. Pour 4.5 et 5.1, la vérification directe couvre le rapport système utilisateurs, la datasource utilisateurs, l'entité utilisateur, le filtre utilisateur, le rapport système des cohortes, les entités cohorte et membre de cohorte, la datasource cohortes et le filtre cohorte ; tous les fichiers sélectionnés sont identiques dans chacun de ces couples. Les comparaisons des couples 5.0 et 5.2 déjà documentées confirment également l'identité des fichiers de rapport système, entités et datasource sélectionnés.
 
 Cette identité indique que ces rapports natifs du cœur ne sont pas directement modifiés dans les fichiers examinés. Elle ne signifie pas que l'expérience de gestion des comptes, cohortes ou utilisateurs Iomad est identique : Iomad fournit des parcours spécifiques dans le bloc iomad_company_admin, avec des filtres entreprise/département, des rôles et des règles de cloisonnement propres. Ces interfaces spécifiques doivent être analysées séparément, sans remplacer ni détourner les rapports natifs Moodle.
 
