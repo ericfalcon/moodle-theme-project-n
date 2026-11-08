@@ -3564,6 +3564,134 @@ Il ne s'agit donc pas d'une simple modification de rôle ou d'un ajout dans une 
 
 Le point suivant approfondira les opérations d'affectation et de retrait comme parcours métier, notamment les conséquences sur les départements, les rôles/gestionnaires et les entreprises parentes ou filles. Les opérations de test ne doivent pas être réalisées sur des données de production.
 
+
+### 66.19 Affectation et retrait des utilisateurs d'une entreprise — chaîne métier Iomad 4.5 à 5.2
+
+**Périmètre vérifié :** méthodes `company::assign_user_to_company()`, `company::upsert_company_user()`, `company::unassign_user_from_company()`, fonctions de propagation des gestionnaires parents/enfants, traitement des rôles et inscriptions aux cours, sur les branches Iomad 4.5, 5.0, 5.1 et 5.2. Les contrôles portent sur les sources des forks personnels. Aucune action de modification de données ni aucun test runtime n'a été exécuté.
+
+#### 66.19.1 Fichiers et rupture d'architecture
+
+| Version | Fichier métier principal | SHA du fichier | Stockage entreprise |
+|---|---|---|---|
+| Iomad 4.5 | `local/iomad/lib/company.php` | `dd7917c30e96739881316ce58cdcb94541911e59` | `company`, `company_users`, `department`, `company_course`, `iomad_courses` |
+| Iomad 5.0 | `local/iomad/lib/company.php` | `0823296f30216e311c49f6205ebe217146c4ac42` | Schéma historique ; fichier distinct du 4.5 |
+| Iomad 5.1 | `public/local/iomad/classes/company.php` | `33ade0ecb91ce4bfadf38b057ae333c9fe8c950a` | `local_iomad_companies`, `local_iomad_company_users`, `local_iomad_company_departments`, `local_iomad_company_courses` |
+| Iomad 5.2 | `public/local/iomad/classes/company.php` | Identique à 5.1 | Schéma `local_iomad` |
+
+La classe `company` conserve les méthodes d'affectation et de retrait après la migration 5.1 : il ne faut donc pas conclure que `company_user` remplace entièrement `company`. En revanche, les données et plusieurs responsabilités sont désormais organisées dans `local_iomad`. La classe `local_iomad\\company_user` existe en 5.1/5.2 dans `public/local/iomad/classes/company_user.php` (SHA identique sur ces deux branches : `bec9ceca3452bd18cff0bb11cbfeb5bb0db5c8b4`) et porte notamment les opérations de suppression, suspension, inscription et groupes.
+
+#### 66.19.2 Affectation à l'entreprise et au département
+
+Le flux `assign_user_to_company()` présente les invariants suivants sur les quatre générations :
+
+1. L'utilisateur doit exister, ne pas être supprimé et ne pas être suspendu au niveau Moodle ; sinon la méthode retourne `false`.
+2. Le département fourni est validé dans l'entreprise cible. S'il n'appartient pas à cette entreprise, ou s'il n'est pas fourni, l'affectation retombe sur le département racine de l'entreprise.
+3. L'association est identifiée par entreprise, utilisateur et département. Une association déjà existante à ce triplet est traitée comme un succès sans nouvelle insertion.
+4. Lorsqu'il s'agit de la première association entreprise de l'utilisateur, Iomad peut synchroniser le thème utilisateur, l'institution et le champ département Moodle selon les paramètres de configuration.
+5. L'affectation passe ensuite par `upsert_company_user()`, qui traite les fonctions de gestion, les rôles et les droits/inscriptions aux cours.
+6. Selon la configuration d'auto-inscription, la méthode peut déclencher l'inscription automatique aux cours. L'import des historiques d'achèvement, lorsqu'il est demandé, est confié à une tâche ad hoc.
+
+**Évolution 5.1 :** le contrôle du département utilise `local_iomad_company_departments` et `companyid`, au lieu de `department` et `company`. Les paramètres globaux historiques (`$CFG->iomad_*`) sont remplacés à plusieurs endroits par `get_config('local_iomad', ...)`. En 5.1/5.2, la liste des fonctions de gestion valides est obtenue via `get_managertypes(true)` ; en 4.5/5.0, le contrôle d'entrée est un test numérique (`$managertype > 2`). Ce changement doit être conservé dans l'adaptateur de version.
+
+**Point de vigilance à résoudre :** le code 4.5/5.0 contient aussi un traitement `managertype == 4` pour le reporter dans `upsert_company_user()`, alors que `assign_user_to_company()` ramène les valeurs supérieures à 2 à 0. Le chemin précis permettant d'affecter cette fonction doit être vérifié avec les formulaires et appels directs concernés. En 5.1/5.2, la validation par la liste des fonctions autorisées évite cette contradiction apparente. Ne pas figer les valeurs numériques des fonctions dans Project N.
+
+#### 66.19.3 Gestionnaires, rôles et statut d'éducateur
+
+`upsert_company_user()` ne se limite pas à enregistrer `managertype` :
+
+- Les fonctions de gestionnaire d'entreprise, gestionnaire de département et reporter déclenchent des attributions/retraits de rôles au contexte entreprise : notamment `companymanager`, `companydepartmentmanager` et `companyreporter`.
+- Le statut d'éducateur (`educator`) est un attribut distinct. Il peut être déterminé automatiquement par `autoenrol_managers` ou fourni séparément ; il ne doit pas être confondu avec la fonction de gestion.
+- Selon la fonction et les cours rattachés à l'entreprise, Iomad attribue les rôles de cours `companycourseeditor` ou `companycoursenoneditor`, ou retire des rôles/inscriptions antérieurs.
+- Les changements de fonction synchronisent les enregistrements de l'utilisateur dans les différents départements de la même entreprise afin d'éviter des fonctions divergentes selon le département.
+- Les événements `company_user_assigned` et les notifications de promotion/démotion font partie du traitement métier.
+
+**Différence 5.1/5.2 importante :** les inscriptions et changements de rôles pédagogiques des gestionnaires sont, dans plusieurs branches du flux, confiés à la tâche ad hoc `enroleducatortask` plutôt qu'effectués immédiatement dans la requête. L'interface ne doit donc pas supposer que tous les effets sont visibles immédiatement après l'enregistrement ; elle doit afficher un retour de traitement et laisser Moodle/Iomad exécuter les tâches différées.
+
+Les contrôles de capacités restent déterminants. Le nom du rôle ou le champ `managertype` ne suffit pas à établir les droits effectifs ; ceux-ci dépendent du contexte entreprise, des restrictions Iomad et des capacités configurées.
+
+#### 66.19.4 Entreprises parentes et entreprises filles
+
+Deux mécanismes complémentaires sont présents :
+
+- `assign_parent_managers()` ajoute dans une entreprise fille les gestionnaires de l'entreprise parente, puis remonte récursivement la chaîne des entreprises parentes. Le retrait de cette relation utilise `unassign_parent_managers()`.
+- Dans `upsert_company_user()`, la promotion ou la rétrogradation d'un gestionnaire d'entreprise (`managertype = 1)) est propagée aux entreprises filles descendantes. Les comptes de gestionnaires hérités sont créés ou retirés dans les entreprises concernées. Le code distingue le gestionnaire provenant d'une autre entreprise : il ne doit pas être propagé à toute la descendance comme s'il était gestionnaire natif de l'entreprise cible.
+
+La hiérarchie des entreprises est donc une relation distincte de la hiérarchie des départements. Les départements sont validés dans une entreprise précise ; les entreprises filles possèdent leur propre département racine. Il ne faut pas traiter un département d'une entreprise parente comme un département directement affectable dans l'entreprise fille.
+
+**Conséquence UX :** afficher explicitement l'entreprise cible, l'entreprise parente éventuelle et le caractère hérité/local de la fonction de gestionnaire. Toute modification de hiérarchie ou de fonction doit être présentée comme une opération pouvant avoir des effets sur plusieurs entreprises.
+
+#### 66.19.5 Départements et sous-départements
+
+Les méthodes de construction des arbres de départements parcourent récursivement les sous-départements. Des fonctions de navigation peuvent également ajouter les départements des entreprises filles lorsque l'option correspondante est demandée. Les affectations d'utilisateurs restent cependant contrôlées par l'identifiant du département et l'entreprise propriétaire.
+
+Il faut distinguer :
+- l'affectation d'un utilisateur à un département de l'entreprise ;
+- la visibilité d'une branche et de ses sous-départements dans un sélecteur ;
+- la propagation d'une fonction de gestionnaire à une entreprise fille ;
+- les droits effectifs d'un gestionnaire de département.
+
+Ces notions ne sont pas interchangeables. Le thème ne doit ni recalculer la portée d'un gestionnaire, ni inférer les droits à partir de la seule position du département dans l'arbre.
+
+#### 66.19.6 Retrait d'une entreprise : effets non réversibles et traitements différés
+
+`unassign_user_from_company()` est une opération métier plus large que la suppression d'une ligne d'association. Le code inspecté traite notamment :
+
+- les historiques de suivi/achèvement associés aux cours de l'entreprise, avec des suppressions ciblées via `company_user::delete_user_course()` ;
+- les licences réutilisables et les licences non utilisées, avec suppression des affectations, émission d'événements `user_license_unassigned` et recalcul de leur utilisation ;
+- les licences de programme et les données de suivi associées ;
+- l'arrêt des rappels de cours liés à l'entreprise ;
+- la rétrogradation des fonctions de gestion et le retrait des rôles entreprise correspondants avant suppression des associations ;
+- les associations multiples de l'utilisateur à plusieurs départements d'une même entreprise ;
+- les traitements liés à une boutique externe, lorsque la fonctionnalité correspondante est configurée.
+
+En 5.1/5.2, la classe `company_user::delete()` retire explicitement les rôles de gestionnaire d'entreprise ou de département du contexte entreprise, supprime l'association dans `local_iomad_company_users`, puis ne supprime le compte Moodle que s'il n'existe plus aucune association à une autre entreprise. La suppression d'un rattachement à une entreprise ne doit donc pas être assimilée à la suppression du compte utilisateur.
+
+**Attention :** la suppression d'une association peut entraîner la libération de licences et la modification des historiques ou rappels. L'écran doit annoncer clairement le périmètre de l'opération et demander une confirmation contextualisée. Les conséquences exactes sur les inscriptions Moodle, les cours partagés, les groupes et les licences en cours doivent être validées par scénarios runtime avant de définir le texte définitif de confirmation.
+
+#### 66.19.7 Cloisonnement et règles à préserver
+
+- Les méthodes métier reçoivent explicitement l'entreprise cible ; les sélecteurs et contrôleurs Company Admin déterminent qui peut agir sur cette entreprise.
+- Le département doit appartenir à l'entreprise cible ; une valeur étrangère est remplacée par le département racine plutôt que conservée.
+- Les associations multiples d'un utilisateur à différentes entreprises sont prises en compte. Un compte ne doit pas être supprimé tant qu'une autre association entreprise subsiste.
+- Les rôles de gestion sont attribués dans le contexte entreprise ; les rôles pédagogiques relèvent du contexte cours.
+- La hiérarchie parent/enfant influe sur la propagation de certains gestionnaires, mais ne constitue pas une autorisation générale d'accéder aux données des entreprises descendantes.
+- L'interface du thème ne doit jamais remplacer les contrôles de capacités, les contrôles de contexte ou les vérifications d'appartenance effectués côté serveur.
+
+#### 66.19.8 Différences de versions confirmées
+
+| Sujet | Iomad 4.5 / 5.0 | Iomad 5.1 / 5.2 | Impact Project N |
+|---|---|---|---|
+| Fichiers métier | `local/iomad/lib/company.php` | `public/local/iomad/classes/company.php` | Détecter les classes/API disponibles, ne pas inclure de chemins internes |
+| Tables entreprise | Noms historiques (`company_users`, `department`, etc.) | Tables préfixées `local_iomad_*` | Aucune requête directe du thème |
+| Contexte entreprise | `core\\context\\company` dans le flux étudié | `local_iomad\\custom_context\\context_company` | Utiliser l'API de contexte fournie par la version |
+| Configuration | Plusieurs clés `$CFG->iomad_*` | Paramètres `local_iomad` via `get_config()` | Ne pas lire directement les anciennes clés |
+| Validation fonction de gestion | Test numérique dans l'entrée d'affectation | Liste autorisée `get_managertypes(true)` | Ne pas coder en dur les valeurs |
+| Inscription des gestionnaires | Plusieurs traitements synchrones | Tâche ad hoc `enroleducatortask` pour les changements concernés | Prévoir un état de traitement différé |
+| Hiérarchie | Propagation récursive déjà présente | Propagation conservée, avec mêmes principes | Préserver les mécanismes Iomad, ne pas les dupliquer |
+
+Les méthodes de gestion de l'entreprise et les règles métier restent largement continues entre 4.5 et 5.2. Les changements 5.1 sont surtout une migration de stockage/API et une évolution de l'exécution différée de certaines inscriptions.
+
+#### 66.19.9 Conséquences pour Project N
+
+1. Le thème ne crée, ne déplace et ne supprime jamais directement les associations entreprise/utilisateur ou utilisateur/département.
+2. Les opérations doivent rester déléguées aux pages et API Iomad natives ; Project N intervient sur la présentation, la lisibilité, l'accessibilité et le responsive.
+3. Les écrans doivent séparer clairement entreprise, département, fonction de gestion, statut d'éducateur et rôles pédagogiques.
+4. Les actions destructrices doivent préciser qu'elles peuvent libérer des licences, interrompre des suivis et, dans certains cas, supprimer le compte Moodle si aucune autre association ne subsiste.
+5. Les listes doivent rendre visibles les appartenances multiples et la portée parent/enfant sans exposer des données hors périmètre.
+6. Les retours d'action doivent prendre en compte les tâches différées en 5.1/5.2.
+
+#### 66.19.10 Sources et limites
+
+Sources principales :
+- [Iomad 4.5 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.0 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.1 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/classes/company.php)
+- [Iomad 5.2 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company.php)
+- [Iomad 5.1 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/classes/company_user.php)
+- [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
+
+**Limites :** l'analyse est statique. Restent à vérifier en runtime : changements de parent d'entreprise, gestionnaires hérités à plusieurs niveaux, gestionnaire de département limité à une branche, utilisateur multi-entreprises, utilisateur présent dans plusieurs départements, rôles pédagogiques synchrones/différés, cours partagés, licences consommées/non consommées, comptes suspendus et suppression du compte après retrait de la dernière entreprise. Les permissions d'accès direct URL et les événements/tâches ad hoc doivent aussi être testés. Le fork Iomad 5.0 n'a pas été modifié ; ses personnalisations sont conservées.
+
 ## 67. Administration Moodle — catégories et gestion des cours à l'échelle de la plateforme
 
 > Deuxième tranche de la section 62. Lecture du code Moodle `MOODLE_500_STABLE`. Cette section distingue le catalogue de cours accessible aux utilisateurs de l'interface de gestion des catégories/cours. Elle complète la section 65 sur la gestion quotidienne d'un cours par le formateur, sans reprendre les fonctions déjà analysées.
