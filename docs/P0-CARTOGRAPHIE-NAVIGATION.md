@@ -3295,7 +3295,7 @@ La portée du rapport est contextuelle : une cohorte système et une cohorte de 
 
 #### 66.14.1 Comparaison Moodle / Iomad
 
-Les fichiers Report Builder sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les couples 5.0 et 5.2 : rapport système utilisateurs, entité utilisateur, datasource utilisateurs, entités cohorte et membre de cohorte, et rapport système des cohortes. Les fichiers comparés sont identiques dans chacun de ces couples.
+Les fichiers Report Builder sélectionnés ont été comparés intégralement entre Moodle et Iomad sur les quatre couples 4.5, 5.0, 5.1 et 5.2. Pour 4.5 et 5.1, la vérification directe couvre le rapport système utilisateurs, la datasource utilisateurs, l'entité utilisateur, le filtre utilisateur, le rapport système des cohortes, les entités cohorte et membre de cohorte, la datasource cohortes et le filtre cohorte ; tous les fichiers sélectionnés sont identiques dans chacun de ces couples. Les comparaisons déjà réalisées en 5.0 et 5.2 confirment également l'identité des fichiers de rapport système, entités et datasource sélectionnés.
 
 Cette identité indique que ces rapports natifs du cœur ne sont pas directement modifiés dans les fichiers examinés. Elle ne signifie pas que l'expérience de gestion des comptes, cohortes ou utilisateurs Iomad est identique : Iomad fournit des parcours spécifiques dans le bloc iomad_company_admin, avec des filtres entreprise/département, des rôles et des règles de cloisonnement propres. Ces interfaces spécifiques doivent être analysées séparément, sans remplacer ni détourner les rapports natifs Moodle.
 
