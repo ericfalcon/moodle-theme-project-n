@@ -350,6 +350,8 @@ Conséquence : privilégier les composants communs Moodle et préserver les rég
 
 Ces constats sont statiques ; ils ne valident ni les workflows de correction ni l'accessibilité réelle de l'interface.
 
+Pour le rapport du correcteur, `grade/report/grader/classes/output/action_bar.php` et `templates/action_bar.mustache` sont également identiques entre Moodle et Iomad dans les quatre couples 4.5 à 5.2. Le changement Moodle 5.3 vers `core/action_bar` est donc une évolution du socle commun, pas une adaptation Iomad.
+
 **Comparaison Iomad :** `mod/assign/classes/output/renderer.php`, `classes/output/grading_app.php`, `templates/grading_app.mustache` et `amd/src/grading_panel.js` ont été comparés intégralement sur les quatre couples Moodle/Iomad 4.5, 5.0, 5.1 et 5.2 ; les contenus sont identiques dans chaque couple. L'évolution du paramètre `marker` en 5.2 est donc commune aux deux plateformes. Ce résultat ne porte pas sur les données d'entrée, les permissions, les plugins de feedback ni les scénarios de correction multi-entreprise.
 
 ### 9.6 Report Builder des comptes et cohortes
