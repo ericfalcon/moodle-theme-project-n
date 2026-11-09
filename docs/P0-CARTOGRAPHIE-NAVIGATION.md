@@ -4521,3 +4521,89 @@ Les sections 65 à 68 ont d'abord été rédigées à partir de Moodle `MOODLE_5
 Cette couverture reste partielle : elle ne valide pas les parcours runtime, les migrations de base, l'accessibilité réelle, les plugins tiers ou l'ensemble des dépendances de rendu. La compatibilité du thème ne peut donc pas être déclarée acquise. Les éléments non comparés et les tests restants sont consignés dans la matrice.
 
 La compatibilité cible du thème reste Moodle 4.5, 5.0, 5.1, 5.2 et 5.3. Toute décision de surcharge devra être vérifiée sur les cinq générations, avec une stratégie explicite lorsqu'une API ou un template diffère.
+
+
+### 66.20 Suspension, réactivation et suppression d'un utilisateur — portée entreprise et compte global
+
+**Périmètre vérifié :** méthodes de suspension au niveau entreprise dans `local/iomad/lib/company.php` sur Iomad 4.5 et 5.0 ; méthodes `local_iomad\\company_user::suspend()`, `unsuspend()` et `delete()` dans `public/local/iomad/classes/company_user.php` sur Iomad 5.1 et 5.2. Lecture statique des sources du fork `ericfalcon/iomad`. Aucune opération n'a été exécutée sur des données.
+
+#### 66.20.1 Deux niveaux de suspension à distinguer
+
+Iomad 5.1/5.2 distingue explicitement :
+- le rattachement de l'utilisateur à une entreprise, stocké dans `local_iomad_company_users.suspended` ;
+- le compte Moodle global, stocké dans `user.suspended`.
+
+La méthode `company_user::suspend($userid, $companyid)` suspend d'abord l'association ciblée. Elle supprime ensuite les affectations de licences inutilisées de cette entreprise et recalcule le nombre de licences utilisées. Le compte Moodle n'est suspendu et ses sessions détruites que si aucun autre rattachement actif (`suspended = 0`) n'existe pour cet utilisateur.
+
+La suspension d'un utilisateur dans une entreprise ne signifie donc pas nécessairement qu'il perd l'accès à Moodle ou à ses autres entreprises. En revanche, lorsqu'il n'a plus aucune association active, son compte global est suspendu et ses sessions sont invalidées.
+
+#### 66.20.2 Réactivation : point de vigilance statique
+
+La méthode `company_user::unsuspend($userid, $companyid)` :
+1. remet à zéro le champ `suspended` du rattachement ciblé ;
+2. remet également à zéro le champ `user.suspended` du compte Moodle.
+
+**Anomalie potentielle à vérifier :** contrairement à `suspend()`, la méthode `unsuspend()` ne semble pas vérifier si l'utilisateur reste suspendu dans une autre entreprise, ni si le compte Moodle avait été suspendu indépendamment de ce rattachement. Une réactivation dans une entreprise pourrait donc réactiver globalement un compte dont une autre association reste suspendue ou dont la suspension globale avait une autre origine.
+
+Ce constat est une alerte issue de la lecture du code, pas une preuve d'exploitation ni un diagnostic runtime. Il faut vérifier les appels à `unsuspend()`, les contrôleurs qui les déclenchent, les règles de suspension manuelle Moodle et les scénarios multi-entreprises avant de conclure à un défaut. Aucune correction du fork n'est proposée ou appliquée.
+
+#### 66.20.3 Suppression du rattachement et suppression du compte
+
+La méthode `company_user::delete($userid, $companyid)` :
+- vérifie que le compte Moodle existe et n'est pas déjà supprimé ;
+- identifie l'entreprise concernée ;
+- retire les rôles de gestionnaire d'entreprise et de gestionnaire de département dans le contexte entreprise lorsque ces fonctions sont présentes ;
+- supprime l'association dans `local_iomad_company_users` ;
+- remet à vide le thème utilisateur ;
+- ne supprime réellement le compte Moodle que s'il ne reste aucune association à une autre entreprise.
+
+La suppression depuis Company Admin doit donc être présentée comme un retrait du périmètre entreprise, susceptible de devenir une suppression du compte global si cette association était la dernière. L'intitulé d'une action « Supprimer » est insuffisant pour informer l'administrateur de sa portée réelle.
+
+#### 66.20.4 Différences interversions observées
+
+| Sujet | Iomad 4.5 / 5.0 | Iomad 5.1 / 5.2 |
+|---|---|---|
+| API examinée | Méthode `company::suspend()` | Classe `company_user` avec méthodes `suspend`, `unsuspend`, `delete` |
+| Suspension entreprise | Parcourt les utilisateurs de l'entreprise et de ses enfants ; évite de suspendre globalement les utilisateurs associés à plusieurs entreprises | Suspension explicite du rattachement entreprise-utilisateur |
+| Suspension globale | Peut modifier `user.suspended` | Seulement si aucun rattachement actif ne subsiste |
+| Licences inutilisées | Pas de libération individuelle dans la méthode de suspension entreprise examinée | Suppression des affectations inutilisées du rattachement et recalcul du compteur |
+| Réactivation individuelle | Pas d'équivalent individuel identifié dans cette méthode de suspension entreprise | Réactivation du rattachement et du compte Moodle global |
+| Suppression | Non comparée ici au niveau de la chaîne complète | Suppression du rattachement ; suppression du compte Moodle seulement en l'absence d'autres rattachements |
+
+La comparaison porte sur les méthodes identifiées, pas sur tous les contrôleurs et boutons d'interface. Elle ne permet pas de conclure que les mêmes actions sont proposées de façon identique dans les quatre versions.
+
+#### 66.20.5 Conséquences pour Project N
+
+1. Afficher séparément le statut du compte Moodle et le statut du rattachement à l'entreprise courante.
+2. Ne pas afficher un utilisateur comme « suspendu » sans préciser le périmètre concerné lorsque plusieurs entreprises sont possibles.
+3. Distinguer les actions « suspendre dans cette entreprise », « réactiver dans cette entreprise », « retirer de cette entreprise » et « supprimer le compte Moodle ».
+4. Afficher un avertissement explicite avant une suppression susceptible d'entraîner la suppression globale du compte.
+5. Ne pas calculer les licences libérables dans le thème ; afficher le résultat retourné par le traitement métier.
+6. Prévoir des états de traitement et des retours explicites après les opérations, notamment si d'autres tâches ou synchronisations interviennent.
+7. Ne jamais permettre une action sur une autre entreprise par modification d'un identifiant dans l'URL ou dans le DOM ; le contrôle serveur et le contexte restent déterminants.
+
+#### 66.20.6 Vérifications nécessaires avant validation
+
+| Vérification | État |
+|---|---|
+| Suspension entreprise dans `company::suspend()` en 4.5 et 5.0 | Source lue |
+| Suspension individuelle 5.1 et 5.2 | Source lue |
+| Libération des licences inutilisées lors de la suspension | Source lue |
+| Réactivation globale sans vérification visible des autres rattachements | Anomalie potentielle à confirmer |
+| Suppression du rôle gestionnaire au contexte entreprise | Source lue |
+| Suppression du compte uniquement si aucune association ne subsiste | Source lue |
+| Contrôleurs et actions de ligne qui appellent ces méthodes | À comparer |
+| Droits précis de suspension, réactivation et suppression | À comparer |
+| Cas d'un compte suspendu manuellement au niveau Moodle | À tester |
+| Cas d'un utilisateur lié à deux entreprises, dont une suspendue | À tester |
+| Licences utilisées/non utilisées, programme et tâches différées | À tester |
+| Accès direct URL, sesskey, isolation et journalisation | À tester |
+| Accessibilité clavier, annonces de confirmation et responsive | À tester |
+
+**Sources :**
+- [Iomad 4.5 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.0 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.1 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/classes/company_user.php)
+- [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
+
+**Limites :** analyse statique des méthodes ciblées. Les contrôleurs, formulaires, permissions, journaux et appels complets doivent encore être rapprochés de ces méthodes. Le fork Iomad 5.0 n'a pas été modifié ; ses personnalisations sont conservées.
