@@ -5583,7 +5583,7 @@ Le détail des SHA et des chemins est consigné dans la matrice de compatibilit�
 - **5.1 → 5.2** : stabilisation du nouveau modèle de planification ; le rapport de liste et ses actions continuent d'évoluer.
 - **5.2 → 5.3** : les contrôleurs principaux `index.php`, `edit.php`, `view.php` et `download.php` examinés sont identiques en SHA ; certains rapports système et fichiers de données changent néanmoins.
 
-Le déplacement de `reportbuilder/` vers `public/reportbuilder/` en 5.1 est un changement de chemin dans le dépôt, pas une raison de modifier les URL fonctionnelles du thème.
+Le déplacement de `reportbuilder/` vers `public/reportbuilder/` en 5.1 est un changement de chemin dans le dépôt, pas une raison de modifier les URL fonctionnelles du thème. En 5.3, la classe de l'onglet Audience change également son contrat de données pour le template : `contextid` disparaît, tandis que `instanceid` et `showormessage` sont fournis. Le rapport système `reports_list` est lui aussi remanié en 5.3 (notamment colonnes Source/Tags et agrégation des tags) ; il ne faut donc pas déduire de la stabilité des contrôleurs une identité de toutes les interfaces de rapport.
 
 ### 71.7 Iomad : extension du Report Builder et rapports d'entreprise
 
