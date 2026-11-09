@@ -183,3 +183,17 @@ Sources : [Company Admin access.php](https://github.com/ericfalcon/iomad/blob/IO
 
 Les six déclarations ont été lues dans les fichiers core db/access.php des branches listées. Les valeurs décrivent les permissions initiales, pas les permissions effectives d'une installation. Les fichiers Moodle 5.2 et Iomad 5.2 déclarent 319 capacités avec les mêmes noms ; l'ajout d'archétype à moodle/role:switchroles constitue néanmoins un écart de contenu.
 
+
+### 7.7 Calcul des permissions et contrôle entreprise
+
+| Élément | Moodle 5.2 | Iomad 5.2 | Conséquence |
+|---|---|---|---|
+| `has_capability()` natif | Fonction native | Corps identique | Conserver le contrôle standard par capacité et contexte |
+| Hiérarchie des contextes | Chemin / profondeur et parents | Socle identique | Toujours résoudre le contexte de l'action |
+| Attributions de rôles | Rôle, utilisateur, contexte, composant, itemid | API native identique | Préserver l'origine des attributions |
+| Retrait de rôle | Retrait ciblé ; inclusion des attributions manuelles explicite | API native identique | Ne pas supprimer les rôles de plugins par défaut |
+| Cache d'accès | Données utilisateur, marquage dirty, cache de définitions | Fonctions examinées identiques | Ne jamais manipuler les caches depuis le thème |
+| Contrôle entreprise | Sans couche entreprise | `local_iomad\\iomad::has_capability()` ajoute le contrôle de membership et les restrictions par entreprise | Appeler l'API Iomad pour les workflows qui en dépendent |
+
+Le contrôle Iomad dépend du périmètre entreprise explicite ou courant ; en l'absence d'entreprise courante, sa méthode peut retourner vrai après validation Moodle. Ne pas supposer qu'elle constitue un contrôle d'appartenance obligatoire dans tous les cas. Contrôle statique uniquement, sans test runtime.
+
