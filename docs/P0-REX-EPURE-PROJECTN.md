@@ -1,7 +1,7 @@
 # P0 — Retour d’expérience Épure pour Project N
 
 **Statut :** analyse statique documentaire et code, à compléter pendant la cartographie P0.  
-**Dépôt de référence :** [ericfalcon/moodle-theme-iomad](https://github.com/ericfalcon/moodle-theme-iomad), branche `main`, thème `theme_epure`.  
+**Dépôt de référence :** [ericfalcon/moodle-theme_epure](https://github.com/ericfalcon/moodle-theme_epure), branche `main`, thème `theme_epure`.  
 **Dépôt cible :** [ericfalcon/moodle-theme-project-n](https://github.com/ericfalcon/moodle-theme-project-n), branche `main`.
 
 > Ce document distingue les mécanismes effectivement observés dans Épure, les décisions déjà prises pour Project N et les points qui exigent encore une vérification. Il ne vaut ni portage de code ni preuve de compatibilité runtime.
@@ -69,7 +69,7 @@ Le callback `theme_epure_pluginfile()` distingue les fichiers d’apparence entr
 
 ### 2.5 Déclaration des versions
 
-Le fichier `theme/epure/version.php` du snapshot consulté indique la version de thème `0.56.3`, une exigence Moodle 4.5 et une plage supportée déclarée jusqu’à Moodle 5.3. Ce sont des métadonnées du dépôt à un instant donné, pas une preuve que tous les parcours ont été exécutés sur toutes ces versions.
+Le fichier `version.php` du dépôt `ericfalcon/moodle-theme_epure`, branche `main`, relu le 9 novembre 2026, déclare Épure `1.14.0` (`version = 2026110906`), `MATURITY_STABLE`, `requires = 2024100700` (Moodle 4.5), `supported = [405, 503]`, et les dépendances Boost et `tool_customlang`. Le snapshot antérieur `0.56.3` est obsolète ; la valeur `0.56.4` signalée dans une vérification précédente a elle aussi été dépassée par l'état courant de `main`. Ces métadonnées ne prouvent pas que tous les parcours ont été exécutés sur toutes les versions.
 
 **Leçon pour Project N :** séparer explicitement :
 - version déclarée comme compatible ;
@@ -202,7 +202,7 @@ Cette tranche complète la lecture des classes d'adaptation et précise les limi
 | `theme/epure/classes/output/core/course_renderer.php` | `af5ceb9b8d6fe595afe63ffb444e6b71fcf53772` | Surcharge `core_course_renderer` et peut remplacer les listes/catégories de cours par un catalogue en cartes ; le commentaire indique que la barre d'actions native reste présente et qu'un réglage restaure les listes Moodle. | Le thème Project N doit préserver la sémantique et les actions natives, et ne pas imposer un catalogue si cela modifie la découverte, la pagination, les catégories ou les actions de gestion. Une surcharge de renderer doit avoir un contrat de repli testé. |
 | `theme/epure/config.php` | `071e794de655406131c6f995abe9979715c1344d` | Déclare Boost comme parent, callbacks SCSS, renderer factory, désactivation du dock et position d'ajout de blocs. | Point de comparaison utile pour le socle, mais chaque propriété doit être justifiée par les besoins Project N et les contrats de Boost des versions cibles. |
 | `theme/epure/lib.php` | `c56fb9c46bfec3a8226f969ca180b4e9644575cd` | Centralise plusieurs callbacks de génération de styles et des fonctions de configuration du thème. L'extrait consulté n'est pas suffisant pour dresser l'inventaire exhaustif de toutes les fonctions. | Examiner les fonctions appelées par `config.php` et les callbacks de fichiers séparément ; ne pas considérer la lecture des premières lignes comme une revue complète de `lib.php`. |
-| `theme/epure/version.php` | `a66c4ff53cd83fbf94dd40e523a61def8441c1a8` | Le snapshot annonce Épure `0.56.3`, `requires = 2024100700`, `supported = [405, 503]`, Boost et `tool_customlang` comme dépendance. La maturité est `MATURITY_RC`. | Distinguer version déclarée, disponibilité des branches, installation réussie, tests exécutés et compatibilité publiée. Ne pas transposer la dépendance `tool_customlang` sans nécessité fonctionnelle. |
+| `theme/epure/version.php` | Blob SHA `132c2b0d870ce7cc7475d0bd1df1656ea544b638` au snapshot relu le 9 novembre 2026 | Le fichier courant déclare Épure `1.14.0`, `version = 2026110906`, `MATURITY_STABLE`, `requires = 2024100700`, `supported = [405, 503]`, Boost et `tool_customlang`. | Distinguer version déclarée, disponibilité des branches, installation réussie, tests exécutés et compatibilité publiée. |
 
 ### 8.1 Leçon importante sur les pages « Mes cours »
 
