@@ -4548,6 +4548,122 @@ Les fichiers comparés entre 5.0 et 5.2 changent pour company_license_list.php, 
 4. Préserver les contrôles de quota et la distinction entre affectation utilisateur/licence et affectation licence/utilisateur/cours.
 5. Le thème ne doit pas recalculer les quotas ni la validité : les valeurs métier viennent des classes et formulaires Iomad.
 
+### 68.18 Synthèse ergonomique — parcours d'inscription et accès aux cours
+
+Cette synthèse transforme les constats fonctionnels des sections 68.1 à 68.17 en principes de conception pour Project N. Elle couvre Moodle standard et l'extension Iomad par licence, sans proposer de remplacer les mécanismes métier des plugins.
+
+#### 68.18.1 Distinguer les intentions et les acteurs
+
+Les interfaces ne doivent pas mélanger trois parcours qui répondent à des intentions différentes :
+
+| Parcours | Acteur habituel | Question à laquelle l'interface répond | Point d'entrée métier |
+|---|---|---|---|
+| Découvrir et rejoindre un cours | Apprenant | « Puis-je accéder à ce cours, et comment ? » | Options fournies par les instances via `enrol_page_hook()` |
+| Gérer les participants d'un cours | Formateur / gestionnaire | « Qui est inscrit, avec quel statut et par quelle méthode ? » | Participants et gestionnaire d'inscriptions du cours |
+| Administrer les méthodes d'inscription | Gestionnaire de cours / administrateur autorisé | « Quelles méthodes permettent l'accès à ce cours, et comment sont-elles configurées ? » | Instances `enrol` et formulaires propres aux plugins |
+| Gérer les licences | Gestionnaire d'entreprise Iomad | « Qui dispose d'un droit d'accès, sur quels cours et pendant quelle période ? » | Company Admin et plugin `enrol/license` |
+
+Un même utilisateur peut intervenir dans plusieurs parcours selon ses capacités et le contexte. Le thème ne doit donc pas créer une navigation fondée sur une identité de rôle unique.
+
+#### 68.18.2 Parcours apprenant : expliquer l'accès plutôt que simuler une inscription
+
+Sur la page d'un cours, Project N doit laisser le plugin décider quelles options d'accès sont réellement disponibles. Il peut améliorer leur lisibilité, mais ne doit ni fabriquer un bouton universel « S'inscrire », ni calculer lui-même l'éligibilité.
+
+Principes :
+- afficher les options d'accès renvoyées par les plugins, avec leur libellé et leurs éventuelles conditions ;
+- conserver les formulaires, clés, mots de passe et confirmations propres à chaque méthode ;
+- distinguer accès invité, auto-inscription, inscription déjà effective et accès conditionné par une licence ;
+- si le plugin fournit une raison de blocage, la présenter sans la remplacer par une déduction locale ;
+- ne pas exposer des détails de licence ou de quota à un utilisateur qui n'est pas autorisé à les consulter ;
+- après une action, afficher un retour explicite et actualiser l'état à partir du résultat serveur.
+
+Pour Iomad, une licence manquante, non valide, expirée ou épuisée ne doit pas être traduite automatiquement en « cours indisponible » si une autre méthode d'accès peut être proposée. Les possibilités réelles restent celles déclarées par les plugins et le périmètre entreprise.
+
+#### 68.18.3 Parcours formateur : une vue participants, plusieurs dimensions
+
+La liste des participants doit rendre compréhensibles les dimensions distinctes sans les fusionner dans un badge unique :
+- présence d'une inscription effective ;
+- statut actif ou suspendu de cette inscription ;
+- période de validité (à venir, en cours, expirée) ;
+- méthode d'inscription et instance concernée ;
+- rôle attribué par l'inscription ;
+- appartenance éventuelle à un groupe ;
+- éventuelle affectation de rôle sans inscription effective.
+
+Les filtres doivent rester progressifs : recherche textuelle d'abord, puis méthode, rôle, groupe et statut lorsque ces filtres sont disponibles et autorisés. Sur smartphone, les filtres avancés peuvent être regroupés dans un panneau repliable, mais le nombre de résultats et les filtres actifs doivent rester perceptibles.
+
+Les actions d'ajout et de retrait ne doivent pas être fusionnées. Pour une inscription manuelle, la sélection doit conserver les paramètres métier indispensables : rôle autorisé dans le contexte, date de début, durée et date de fin. La suspension d'une inscription, la désinscription et la suppression d'un compte sont des opérations distinctes et doivent conserver des libellés explicites.
+
+#### 68.18.4 Administration des méthodes : une liste d'instances extensible
+
+L'écran des méthodes d'un cours doit présenter chaque instance comme une configuration indépendante : méthode, nom personnalisé, état, période, nombre d'inscriptions associé et actions permises. Le nombre associé ne doit pas être présenté comme un nombre de participants actifs sans calcul métier approprié.
+
+La configuration doit rester déléguée au plugin :
+- le thème ne présume pas des champs d'un formulaire ;
+- les méthodes peuvent avoir une interface de configuration spécifique ;
+- les actions d'activation, de désactivation, de déplacement ou de suppression restent conditionnées par les méthodes et capacités ;
+- les réglages globaux du plugin restent séparés des instances locales au cours.
+
+La page d'administration ne doit pas transformer les méthodes en simples interrupteurs universels. Une méthode peut avoir des dépendances, synchronisations ou effets de cycle de vie qui ne sont pas visibles dans une case à cocher.
+
+#### 68.18.5 Parcours Iomad : rendre lisible la chaîne licence → utilisateur → cours
+
+L'interface de gestion entreprise doit montrer la relation entre :
+1. le pool de licences de l'entreprise et, le cas échéant, sa hiérarchie parent/enfant ;
+2. l'affectation de licences à des utilisateurs ;
+3. les cours couverts par une licence ou un programme ;
+4. l'instance `enrol/license` dans le cours ;
+5. l'inscription effective et sa période d'accès.
+
+Les vues « affecter des utilisateurs à une licence » et « gérer les cours couverts par les licences d'un utilisateur » doivent rester deux opérations différentes. Pour une licence programme, le quota et la consommation peuvent dépendre du nombre de cours associés ; une valeur agrégée ne doit pas masquer cette règle.
+
+Sur smartphone, privilégier une consultation synthétique avec accès au détail : type de licence, entreprise, statut, dates, allocation/utilisation et cours associés. Les opérations complexes de répartition, de partage ou d'allocation multi-cours peuvent conserver les formulaires natifs adaptés plutôt que d'être artificiellement condensées dans une carte.
+
+Les données de licence doivent être obtenues par les API et écrans Iomad prévus. Le thème ne doit pas interroger directement les tables historiques ou `local_iomad`, ni recalculer les quotas.
+
+#### 68.18.6 États, messages et confirmations
+
+Le design system devra prévoir des états distincts et nommés, sans s'appuyer uniquement sur la couleur :
+- méthode disponible / indisponible globalement ;
+- instance activée / désactivée ;
+- inscription active / suspendue ;
+- inscription à venir / expirée ;
+- utilisateur ayant un rôle dans le cours mais sans inscription ;
+- accès invité ;
+- licence non affectée / affectée / utilisée / expirée / quota épuisé, uniquement lorsque le plugin fournit ces informations.
+
+Toute action ayant un effet sur l'accès doit préciser sa portée avant confirmation : utilisateur, cours, entreprise, licence et effet attendu. Pour les actions asynchrones, conserver un état de chargement, annoncer le résultat aux technologies d'assistance, gérer les erreurs serveur et ne modifier l'interface qu'après succès confirmé.
+
+Les suppressions ou retraits susceptibles d'entraîner la suppression de notes, d'achèvements ou d'autres données pédagogiques exigent une vigilance particulière. Le thème ne doit pas minimiser ces effets ni présenter une désinscription comme une simple suppression de ligne.
+
+#### 68.18.7 Décisions de conception pour Project N
+
+1. **Réutiliser les parcours natifs** : le thème améliore l'orientation, la hiérarchie visuelle et la lisibilité ; les plugins restent maîtres des règles d'accès, formulaires et validations.
+2. **Séparer les quatre espaces fonctionnels** : accès apprenant, participants du cours, configuration des méthodes, gestion des licences Iomad.
+3. **Ne jamais déduire l'accès d'un seul statut** : instance, inscription individuelle, dates, rôles, groupes, cohorte et licence peuvent se combiner.
+4. **Respecter les capacités et contextes** : l'affichage d'une action n'est jamais un contrôle d'autorisation ; le serveur reste l'autorité.
+5. **Préserver les contrats d'interface** : templates, sélecteurs DOM, attributs `data-*`, composants AMD, modales, retours de focus et annonces d'état ne doivent pas être supprimés lors d'une adaptation.
+6. **Concevoir mobile-first sans appauvrir les opérations** : listes synthétiques, filtres repliables et détails progressifs ; conserver les paramètres essentiels et les actions accessibles.
+7. **Ne pas réimplémenter la synchronisation** : cohorte, catégorie, base externe, licence et autres méthodes peuvent déclencher des tâches différées ou des retraits automatiques.
+8. **Isoler Iomad** : aucune dépendance à `enrol/license`, `local_iomad` ou Company Admin ne doit être introduite dans le parcours Moodle standard.
+
+#### 68.18.8 Vérifications nécessaires avant validation
+
+| Scénario | Vérification attendue |
+|---|---|
+| Auto-inscription avec et sans clé | Éligibilité, validation, durée, groupe éventuel et retour utilisateur |
+| Accès invité | Accès sans création d'inscription effective et comportement après expiration de session |
+| Plusieurs instances dans un cours | Ordre, états, options visibles et interactions entre méthodes |
+| Inscription manuelle | Rôles autorisés, dates, durées, suspension, retrait et groupes |
+| Cohorte et synchronisation | Ajout/retrait différé, groupe associé et conséquences sur l'accès |
+| Sources externes | Synchronisation, indisponibilité de la source et politique de retrait |
+| Licence Iomad | Licence individuelle, globale, programme, quota, dates et hiérarchie entreprise |
+| Cron de licence | Reproduire le cas d'inactivité et vérifier précisément les effets sur notes/achèvements signalés en 68.15 |
+| Droits | Capacités distinctes de consultation, configuration, inscription, désinscription et gestion de licence |
+| Responsive et accessibilité | Tableaux, sélecteurs, modales, filtres, confirmations, annonces de statut, clavier, TalkBack/NVDA et reflow |
+
+**Niveau de preuve :** synthèse de conception issue de l'analyse statique des contrôleurs, plugins et interfaces décrits en 68.1–68.17. Aucun de ces scénarios n'est déclaré testé en environnement installé. Le point 68 est documenté fonctionnellement et ergonomiquement, mais sa validation runtime, responsive, accessibilité et non-régression reste ouverte.
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
