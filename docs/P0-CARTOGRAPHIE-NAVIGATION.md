@@ -4360,7 +4360,7 @@ Niveau de preuve : lecture de `blocks/iomad_company_admin/company_user_create_fo
 
 L'inventaire historique du fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, recense six fichiers comme personnalisés par rapport à l'amont Iomad 5.0. **Le diff exact, la liste des changements et le nombre de commits d'avance doivent être revalidés** sur les têtes actuelles avant toute conclusion. Les identifiants de fusion/amont précédemment relevés sont conservés comme repères historiques, non comme preuve de l'état courant.
 
-| Fichier local | Personnalisation conservée |
+| Fichier recensé | Personnalisation rapportée — à revalider |
 |---|---|
 | `blocks/iomad_company_admin/classes/forms/company_ccu_courses_form.php` | Requête dédiée pour présenter les cours de l'entreprise sous la forme `[shortname] fullname` |
 | `blocks/iomad_company_admin/classes/forms/company_groups_form.php` | Préfixe `[shortname]` dans le sélecteur de cours |
