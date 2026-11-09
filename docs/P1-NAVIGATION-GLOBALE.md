@@ -23,7 +23,7 @@ Ce périmètre réduit permet de valider la chaîne technique complète avant d'
 | `templates/global_navigation.mustache` | Produit le balisage sémantique |
 | `lang/en/theme_projectn.php` | Libellés anglais |
 | `lang/fr/theme_projectn.php` | Libellés français |
-| `scss/projectn.scss` | Présentation responsive du composant |
+| `scss/projectn.scss` | Présentation responsive du composant |\n| `tests/output/global_navigation_test.php` | Tests PHPUnit du contrat de données |
 
 La séparation données / callback / template évite de mélanger la logique de préparation et le HTML.
 
@@ -33,7 +33,7 @@ La séparation données / callback / template évite de mélanger la logique de 
 - Elle est masquée sur les layouts spécialisés `login`, `popup`, `embedded`, `maintenance`, `print` et `secure`.
 - L'état courant est exposé par `aria-current="page"` et renforcé autrement que par la couleur seule.
 - Les liens utilisent les URL natives Moodle ; aucune liste de cours ou donnée utilisateur n'est reconstruite.
-- Le composant est dans le flux normal du document : aucun positionnement fixe ou superposé.
+- Sur smartphone, les destinations utilisent une grille compacte avec des cibles d'au moins 44 CSS px ; sur écran plus large, elles sont présentées en ligne.\n- Le composant reste dans le flux normal du document : aucun positionnement fixe ou superposé susceptible de masquer le contenu.
 - Moodle conserve les contrôles d'accès sur les pages cibles et reste responsable des navigations primaire/secondaire, du fil d'Ariane, de l'index de cours, des activités et de l'administration.
 - Aucun code Iomad n'est appelé. Le composant doit donc rester utilisable sur Moodle standard.
 
@@ -72,6 +72,6 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 - Le nombre et l'ordre définitifs des destinations ne sont pas figés.
 - Les entrées « Activités » et « Plus » ne sont pas ajoutées tant que leur contenu utile n'est pas défini par les parcours P0.
 - Les raccourcis formateur et gestionnaire Iomad nécessiteront une construction conditionnée par les capacités et contextes, sans logique d'autorisation parallèle.
-- Le placement visuel (barre horizontale, menu compact ou barre inférieure) reste à évaluer ; cette première version utilise une barre horizontale dans le flux du document.
+- Le placement visuel est provisoirement une grille compacte dans le flux du document sur smartphone et une ligne sur écran large ; il reste à confronter aux tests utilisateurs et à la référence ergonomique Chamilo.
 
-**Prochaine tranche :** installer le thème sur un environnement Moodle de référence, vérifier la chaîne hook → callback → fournisseur de données → Mustache, puis corriger les écarts avant d'élargir les destinations.
+**Prochaine tranche :** exécuter les tests PHPUnit et installer le thème sur un environnement Moodle de référence ; vérifier la chaîne hook → callback → fournisseur de données → Mustache, contrôler le rendu réel et corriger les écarts avant de construire la navigation d'espace.
