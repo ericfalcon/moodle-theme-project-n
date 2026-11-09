@@ -12,3 +12,9 @@ $string['privacy:metadata'] = 'Le thème Project N ne stocke aucune donnée pers
 $string['globalnavigation'] = 'Navigation principale';
 $string['home'] = 'Accueil';
 $string['courses'] = 'Formations';
+
+$string['learnerdashboardheading'] = 'Mes formations';
+$string['learnerdashboarddescription'] = 'Retrouvez les formations auxquelles vous êtes inscrit et accédez directement à leur contenu.';
+$string['learnerdashboardmore'] = 'Accéder à la formation';
+$string['learnerdashboardemptytitle'] = 'Aucune formation à afficher';
+$string['learnerdashboardemptydescription'] = 'Les formations auxquelles vous êtes inscrit apparaîtront ici.';
