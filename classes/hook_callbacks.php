@@ -40,26 +40,7 @@ class hook_callbacks {
             return;
         }
 
-        $currentpath = $PAGE->url instanceof \moodle_url ? $PAGE->url->get_path() : '';
-        $homeurl = new \moodle_url('/');
-        $coursesurl = new \moodle_url('/my/courses.php');
-
-        $context = [
-            'label' => get_string('globalnavigation', 'theme_projectn'),
-            'items' => [
-                [
-                    'label' => get_string('home', 'theme_projectn'),
-                    'url' => $homeurl->out(false),
-                    'current' => $currentpath === $homeurl->get_path(),
-                ],
-                [
-                    'label' => get_string('courses', 'theme_projectn'),
-                    'url' => $coursesurl->out(false),
-                    'current' => $currentpath === $coursesurl->get_path(),
-                ],
-            ],
-        ];
-
+        $context = \\theme_projectn\\output\\global_navigation::get_template_context();
         $html = $hook->renderer->render_from_template('theme_projectn/global_navigation', $context);
         $hook->add_html($html);
     }
