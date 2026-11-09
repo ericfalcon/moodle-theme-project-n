@@ -79,6 +79,6 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 **Prochaine tranche :** exécuter `php -l` sur les fichiers PHP modifiés et les tests PHPUnit, puis installer le thème sur un environnement Moodle de référence. Vérifier la chaîne hook → callback → fournisseur de données → Mustache, en particulier l'absence de rendu avec un autre thème actif et le chevauchement éventuel avec la barre Boost `fixed-top`. Corriger les écarts visuels avant de construire la navigation d'espace.
 
 
-## 6. Extension au tableau de bord apprenant
+## 6. Préparation du tableau de bord apprenant
 
-Une première composition de l'espace apprenant est maintenant ajoutée sur `/my/` et `/my/index.php`. Elle est décrite dans [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le callback rend la navigation globale puis le composant « Mes formations » sur ces seules pages. Les données proviennent de l'API d'inscription Moodle ; aucune logique de rôle ni aucun contrôle d'accès n'est dupliqué. Les tests du fournisseur de données sont ajoutés, mais ne sont pas encore exécutés.
+Le fournisseur de données, le template Mustache et les styles du composant « Mes formations » sont préparés pour le tableau de bord personnel. Ils ne sont pas encore raccordés au rendu de la page : le hook actuellement utilisé pour la navigation globale intervient avant le layout Boost et placerait les cartes avant l'en-tête et le contenu principal. Le point d'insertion adapté est à définir sans surcharge complète du layout ni manipulation DOM fragile. Les données s'appuient sur l'API d'inscription Moodle ; aucune logique de rôle ni aucun contrôle d'accès n'est dupliqué. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Les tests du fournisseur sont ajoutés mais non exécutés.
