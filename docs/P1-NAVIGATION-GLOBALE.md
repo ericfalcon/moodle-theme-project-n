@@ -68,10 +68,12 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 
 ## 5. Limites connues et suite
 
-- La destination « Accueil » pointe actuellement vers la racine du site ; le respect des préférences individuelles de page d'accueil reste à traiter.
+- La destination « Accueil » pointe vers la racine du site ; la racine et le tableau de bord personnel sont tous deux reconnus comme états courants. Le respect des préférences individuelles de page d'accueil reste à traiter.
 - Le nombre et l'ordre définitifs des destinations ne sont pas figés.
 - Les entrées « Activités » et « Plus » ne sont pas ajoutées tant que leur contenu utile n'est pas défini par les parcours P0.
 - Les raccourcis formateur et gestionnaire Iomad nécessiteront une construction conditionnée par les capacités et contextes, sans logique d'autorisation parallèle.
 - Le placement visuel est provisoirement une grille compacte dans le flux du document sur smartphone et une ligne sur écran large ; il reste à confronter aux tests utilisateurs et à la référence ergonomique Chamilo.
+- Le hook insère le composant au début du `<body>`. La barre de navigation Boost pouvant être `fixed-top`, il faut contrôler le chevauchement, l'empilement (`z-index`) et l'espace réellement disponible sur Moodle et Iomad. Aucun décalage CSS préventif n'est ajouté avant cette vérification visuelle, afin de ne pas dégrader les autres thèmes ou configurations.
+- Le callback vérifie désormais que `$PAGE->theme->name` vaut `projectn` avant tout rendu, car les hooks déclarés par un plugin peuvent être appelés dans un contexte où un autre thème est actif.
 
-**Prochaine tranche :** exécuter les tests PHPUnit et installer le thème sur un environnement Moodle de référence ; vérifier la chaîne hook → callback → fournisseur de données → Mustache, contrôler le rendu réel et corriger les écarts avant de construire la navigation d'espace.
+**Prochaine tranche :** exécuter `php -l` sur les fichiers PHP modifiés et les tests PHPUnit, puis installer le thème sur un environnement Moodle de référence. Vérifier la chaîne hook → callback → fournisseur de données → Mustache, en particulier l'absence de rendu avec un autre thème actif et le chevauchement éventuel avec la barre Boost `fixed-top`. Corriger les écarts visuels avant de construire la navigation d'espace.
