@@ -57,7 +57,8 @@ final class learner_dashboard_test extends \advanced_testcase {
         ], '*', MUST_EXIST);
         $roles = get_archetype_roles('student');
         $manual = enrol_get_plugin('manual');
-        $manual->enrol_user($instance, $user->id, reset($roles));
+        $studentrole = reset($roles);
+        $manual->enrol_user($instance, $user->id, $studentrole->id);
 
         $context = learner_dashboard::get_template_context();
 
