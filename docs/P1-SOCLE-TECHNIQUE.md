@@ -12,8 +12,8 @@ Cette tranche pose uniquement le squelette du plugin Moodle `theme_projectn`, av
 - héritage du thème parent Boost ;
 - conservation des layouts, templates et composants natifs ;
 - chaînes de langue anglaises et françaises ;
-- premier fichier SCSS complémentaire ;
-- premiers tokens d'interface sans figer la palette de marque.
+- fichier SCSS complémentaire ;
+- première couche de tokens sémantiques et de primitives de composants, sans figer la palette de marque (voir [P1-DESIGN-SYSTEM.md](P1-DESIGN-SYSTEM.md)).
 
 Elle ne constitue pas encore un thème validé comme installable. Aucune compatibilité runtime n'est déclarée.
 
