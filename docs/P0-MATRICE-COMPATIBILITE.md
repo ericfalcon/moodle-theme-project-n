@@ -282,7 +282,7 @@ Les SHA ci-dessous sont ceux des blobs récupérés dans les branches du fork `e
 | `classes/permission.php` | `8ca222f3` | `48cc1645` | `48cc1645` | `48cc1645` | `48cc1645` |
 | `classes/local/systemreports/reports_list.php` | `9cf21f88` | `7348d029` | `b4325bf9` | `b4325bf9` | `bbc30503` |
 | `classes/output/dynamictabs/editor.php` | `829e4c33` | `829e4c33` | `829e4c33` | `829e4c33` | `829e4c33` |
-| `classes/output/dynamictabs/audience.php` | `fe736d41` | `fe736d41` | `fe736d41` | `fe736d41` | `fe736d41` |
+| `classes/output/dynamictabs/audience.php` | `fe736d41` | `fe736d41` | `fe736d41` | `fe736d41` | `393e0aee` |
 | `classes/output/dynamictabs/access.php` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` |
 | `classes/output/dynamictabs/schedules.php` | `0dfa0c01` | `6bb81407` | `17c02c3b` | `17c02c3b` | `17c02c3b` |
 
@@ -314,7 +314,7 @@ Comparaison des tables dans `lib/db/install.xml` (puis `public/lib/db/install.xm
 | 4.5 → 5.0 | Ajout de `reportbuilder_user_filter), de `moodle/reportbuilder:configurecustomfields), de la duplication des rapports et du filtre de liste relatif aux planifications. | `lib/db/install.xml`, `lib/db/access.php`, `form/duplicate_report.php`, `permission.php`, `reports_list.php` |
 | 5.0 → 5.1 | Déplacement physique vers `public/`. Introduction des classes de planification extensibles et du stockage `classname/configdata`. | `public/reportbuilder/classes/local/schedules/base.php`, `local/helpers/schedule.php`, `task/send_schedule.php`, `lib/db/install.xml` |
 | 5.1 → 5.2 | Le nouveau modèle de planification est conservé ; le type natif `message` est présent. Le rapport de gestion des planifications et les actions de liste sont implémentés par des rapports système. | `reportbuilder/schedule/message.php`, `local/systemreports/report_schedules.php`, `local/systemreports/report_access_list.php` |
-| 5.2 → 5.3 | Les quatre contrôleurs principaux et plusieurs classes de base restent identiques ; `reports_list.php` évolue encore. Le schéma des tables Report Builder relevé reste identique sur les champs étudiés. | `index.php`, `edit.php`, `view.php`, `download.php`, `reports_list.php`, `lib/db/install.xml` |
+| 5.2 → 5.3 | Les quatre contrôleurs principaux et plusieurs classes de base restent identiques. En revanche, `audience.php` modifie les données transmises au template (suppression de `contextid`, ajout de `instanceid` et `showormessage`) ; `reports_list.php` remanie les colonnes Source/Tags et l'agrégation des tags. Le schéma des tables Report Builder relevé reste identique sur les champs étudiés. | `index.php`, `edit.php`, `view.php`, `download.php`, `classes/output/dynamictabs/audience.php`, `reports_list.php`, `lib/db/install.xml` |
 
 ### 8.4 Écarts Iomad à prendre en compte
 
