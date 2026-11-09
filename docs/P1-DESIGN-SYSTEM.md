@@ -5,9 +5,12 @@
 
 ## 1. Intention
 
-Construire un langage visuel cohérent, mobile-first et accessible, sans figer prématurément l'identité de marque. Cette tranche ne cherche pas à redessiner globalement Boost : elle fournit des tokens et des classes explicitement destinés aux futurs composants Project N.
+Construire un langage visuel cohérent, mobile-first et accessible, en prenant Chamilo comme référence ergonomique — hiérarchie claire, espaces de travail lisibles, cartes fonctionnelles et administration organisée par domaines — sans figer prématurément l'identité de marque. Moodle reste le socle fonctionnel : ses activités, formulaires, permissions, navigations contextuelles et mécanismes d'administration sont conservés. Cette tranche ne cherche pas à redessiner globalement Boost : elle fournit des tokens et des classes explicitement destinés aux composants Project N.
 
 ## 2. Décisions de conception
+
+- **Référence Chamilo :** reprendre les qualités de présentation et de repérage, pas son modèle fonctionnel. Les écrans Project N doivent rendre les tâches évidentes sans remplacer les pages, API ou mécanismes Moodle.
+- **Principe de composition :** Project N porte les espaces, les tableaux de bord et les raccourcis ; Moodle conserve les contenus pédagogiques, les opérations métier, les contrôles d'accès et les navigations contextuelles.
 
 - **Palette de marque :** non définie à ce stade. Les couleurs neutres des surfaces et du texte servent de base provisoire ; la couleur d'accent doit être décidée après validation de la direction graphique.
 - **Typographie :** héritage des polices et mécanismes natifs de Boost. Aucun chargement de police externe ou Google Fonts. Cette décision évite une dépendance réseau et préserve la politique de confidentialité. Le changement de police par défaut de Boost en Moodle 5.3 doit rester pris en charge.
