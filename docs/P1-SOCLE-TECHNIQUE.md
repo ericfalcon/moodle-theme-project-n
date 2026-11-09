@@ -1,6 +1,6 @@
 # Project N — P1 : socle technique
 
-**Statut :** première implémentation amorcée, non installée ni testée à ce stade.  
+**Statut :** socle et premier composant de navigation codés ; installation et tests runtime non encore effectués.  
 **Branche de travail :** `feature/p1-foundation`  
 **Base :** branche `main` du dépôt `ericfalcon/moodle-theme-project-n`.
 
@@ -13,7 +13,8 @@ Cette tranche pose uniquement le squelette du plugin Moodle `theme_projectn`, av
 - conservation des layouts, templates et composants natifs ;
 - chaînes de langue anglaises et françaises ;
 - fichier SCSS complémentaire ;
-- première couche de tokens sémantiques et de primitives de composants, sans figer la palette de marque (voir [P1-DESIGN-SYSTEM.md](P1-DESIGN-SYSTEM.md)).
+- première couche de tokens sémantiques et de primitives de composants, sans figer la palette de marque (voir [P1-DESIGN-SYSTEM.md](P1-DESIGN-SYSTEM.md)) ;
+- premier composant de navigation globale, rendu par hook et template Mustache (voir [P1-NAVIGATION-GLOBALE.md](P1-NAVIGATION-GLOBALE.md)).
 
 Elle ne constitue pas encore un thème validé comme installable. Aucune compatibilité runtime n'est déclarée.
 
@@ -61,7 +62,7 @@ Ces règles constituent des intentions de conception, pas une preuve WCAG/RGAA. 
 
 ## 4. Hors périmètre de cette tranche
 
-- nouvelle navigation globale ;
+- navigation d'espace apprenant, formateur et administrateur ;
 - surcharge de templates ;
 - tableau de bord apprenant ;
 - espace formateur ;
