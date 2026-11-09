@@ -4607,3 +4607,130 @@ La comparaison porte sur les méthodes identifiées, pas sur tous les contrôleu
 - [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
 
 **Limites :** analyse statique des méthodes ciblées. Les contrôleurs, formulaires, permissions, journaux et appels complets doivent encore être rapprochés de ces méthodes. Le fork Iomad 5.0 n'a pas été modifié ; ses personnalisations sont conservées.
+
+
+### 66.21 Contrôleurs, permissions et actions de ligne
+
+#### 66.21.1 Deux écrans à ne pas confondre
+
+L'interface Company Admin expose au moins deux flux distincts :
+
+- `company_users_form.php` et sa classe `classes/forms/company_users_form.php` : affecter des utilisateurs à l'entreprise courante ou les retirer de cette entreprise ;
+- `editusers.php` et `classes/tables/editusers_table.php` : consulter la liste des utilisateurs de l'entreprise, modifier leurs informations et proposer des actions individuelles (édition, réinitialisation du mot de passe, suppression, suspension/réactivation, inscriptions et licences).
+
+Le premier flux ne doit donc pas être interprété comme l'écran de suspension/suppression. Le retrait d'une association entreprise depuis le premier écran et la suppression/suspension depuis le second sont des opérations métier différentes.
+
+#### 66.21.2 Affectation et retrait dans `company_users_form.php`
+
+Sur Iomad 4.5, 5.0, 5.1 et 5.2, le contrôleur :
+
+1. exige une session authentifiée ;
+2. détermine l'entreprise courante avec `iomad::get_my_companyid()` ;
+3. construit le contexte de cette entreprise (contexte `core\\context\\company` en 4.5/5.0, classe `context_company` en 5.1/5.2) ;
+4. exige la capacité `block/iomad_company_admin:company_user` dans ce contexte ;
+5. transmet l'identifiant d'entreprise à la classe de formulaire.
+
+Le traitement du formulaire ne procède à l'affectation (`add` / `import`) ou au retrait (`remove`) que si `confirm_sesskey()` est valide. Il récupère les sélections depuis les sélecteurs de l'écran, vérifie le quota avant affectation, appelle les méthodes métier de l'entreprise et déclenche les événements d'affectation/désaffectation.
+
+Différence visible : les sélecteurs de personnes sont instanciés explicitement dans le formulaire en 4.5/5.0 ; en 5.1/5.2, la construction passe par les classes de sélection Iomad et le code adopte les espaces de noms/classes réorganisés. Le flux fonctionnel observé reste équivalent. Les filtres exacts des sélecteurs et leurs requêtes doivent encore être examinés pour valider complètement l'isolation des listes proposées.
+
+#### 66.21.3 Liste et actions individuelles : Iomad 4.5 et 5.0
+
+Le contrôleur `editusers.php` exige d'abord `view_editusers` dans le contexte entreprise. Il détermine ensuite si l'utilisateur courant peut activer le mode édition avec `editusers` ou `editallusers`.
+
+La table `editusers_table::col_actions()` conditionne l'affichage des actions par les capacités et par le statut de la personne ciblée. Elle distingue notamment :
+- `editusers` / `editallusers` pour afficher l'édition et le groupe d'actions ;
+- `editmanagers` pour permettre d'agir sur certains gestionnaires ;
+- `deleteuser` pour afficher l'action de suppression ;
+- `suspenduser` pour afficher l'action de suspension/réactivation ;
+- `edituserpassword` pour afficher la réinitialisation du mot de passe.
+
+Les opérations de suppression, suspension et réactivation sont toutefois traitées directement dans `editusers.php`. Elles exigent `confirm_sesskey()`, contrôlent l'existence du compte, appellent `company::check_canedit_user()`, empêchent explicitement certaines opérations sur un administrateur du site et affichent une confirmation avant l'opération. La confirmation renvoie un paramètre `confirm` calculé à partir du type d'action et de l'identifiant utilisateur. Les événements métier correspondants sont ensuite déclenchés.
+
+**Écart statique important entre affichage et traitement serveur :**
+- la table n'affiche suppression et suspension que si les capacités dédiées `deleteuser` et `suspenduser` sont présentes ;
+- les branches de traitement de `editusers.php` vérifient `editusers`, mais ne vérifient pas explicitement `deleteuser` pour supprimer ni `suspenduser` pour suspendre/réactiver ;
+- la table et le contrôleur autorisent l'affichage du mode édition avec `editallusers`, alors que les branches de traitement direct vérifient `editusers` seul.
+
+Cela crée deux incohérences potentielles entre les droits affichés et les droits effectivement vérifiés côté serveur. Selon la configuration des capacités, une requête directe correctement munie du `sesskey` pourrait ne pas être soumise au même contrôle fin que l'interface ; inversement, un utilisateur ayant seulement `editallusers` peut voir des actions que le contrôleur direct refuse ensuite. Il s'agit d'un constat de lecture du code, pas d'une exploitation testée. À valider avec des rôles dont les capacités sont volontairement dissociées.
+
+#### 66.21.4 Liste et actions individuelles : Iomad 5.1 et 5.2
+
+À partir de 5.1, les actions de suspension/réactivation et de suppression sont déportées vers des fonctions AJAX externes, appelées depuis `amd/src/edit_users.js` :
+
+- `block_iomad_company_admin_suspend_user` ;
+- `block_iomad_company_admin_delete_user`.
+
+Le JavaScript ouvre une confirmation modale puis transmet l'identifiant de l'entreprise et celui de l'utilisateur. Il actualise ensuite l'état de la ligne ou la retire de la table, et affiche un retour de succès/erreur.
+
+Les classes serveur `classes/external/suspend_user.php` et `classes/external/delete_user.php` :
+1. valident les paramètres ;
+2. construisent le contexte entreprise fourni ;
+3. appellent `validate_context()` ;
+4. exigent respectivement `suspenduser` ou `deleteuser` dans ce contexte ;
+5. vérifient l'existence du compte ;
+6. contrôlent `company::check_canedit_user()` ;
+7. appellent la méthode métier `company_user::suspend()`, `unsuspend()` ou `delete()` ;
+8. déclenchent l'événement métier et renvoient un résultat explicite.
+
+Le contrôle du contexte et la capacité spécifique sont ainsi réalisés dans le point d'entrée serveur AJAX, et pas seulement dans la construction du menu. Le client ne constitue jamais la frontière de sécurité : modifier `companyid` ou `userid` dans les attributs HTML ne doit pas suffire à autoriser l'opération, puisque le serveur valide le contexte et l'accès à l'utilisateur.
+
+L'interface de confirmation est passée d'une page de confirmation complète avec redirection (4.5/5.0) à une modale asynchrone (5.1/5.2). Le mécanisme de protection n'est donc plus le même au niveau du contrôleur visible : les appels passent par l'infrastructure AJAX/external API de Moodle, qui gère l'authentification et la validation du contexte.
+
+#### 66.21.5 Comparaison synthétique
+
+| Sujet | 4.5 | 5.0 | 5.1 | 5.2 |
+|---|---|---|---|---|
+| Écran d'affectation/retrait | Formulaire + `sesskey` | Équivalent 4.5 | Formulaire + `sesskey`, classes/contextes réorganisés | Équivalent 5.1 |
+| Écran liste utilisateurs | `editusers.php` | Équivalent 4.5 | `editusers.php` + table | Équivalent 5.1 |
+| Suspension/réactivation | Traitement direct dans le contrôleur | Équivalent 4.5 | External API + AJAX | Équivalent 5.1 |
+| Suppression | Traitement direct dans le contrôleur | Équivalent 4.5 | External API + AJAX | Équivalent 5.1 |
+| Confirmation | Page de confirmation + `sesskey` | Équivalent 4.5 | Modale JS + appel AJAX | Équivalent 5.1 |
+| Contrôle fin côté serveur | `editusers` vérifié ; capacités spécifiques non vérifiées dans les branches directes examinées | Même constat | `suspenduser` / `deleteuser` exigées par les méthodes externes | Même constat |
+| Protection du périmètre | `check_canedit_user()` + contrôle administrateur du site | Équivalent 4.5 | `validate_context()` + `check_canedit_user()` | Équivalent 5.1 |
+
+#### 66.21.6 Conséquences pour Project N
+
+1. Construire les menus et boutons à partir des capacités effectives dans le contexte entreprise, et non du seul rôle ou d'une règle visuelle.
+2. Garder une séparation entre « retirer de cette entreprise », « suspendre dans cette entreprise » et « supprimer le rattachement / le compte », avec un libellé qui explicite la portée.
+3. Ne jamais considérer la visibilité d'une action comme un contrôle de sécurité : chaque action doit être autorisée côté serveur.
+4. Pour toute action AJAX, afficher un état de chargement, gérer les erreurs serveur et ne modifier la ligne qu'après confirmation du succès.
+5. Prévoir une confirmation compréhensible, accessible au clavier et aux technologies d'assistance, avec le nom de la personne et la portée exacte de l'opération.
+6. Pour les rôles, permettre une matrice de tests où `editusers`, `editallusers`, `deleteuser` et `suspenduser` sont accordées séparément.
+7. Ne pas recopier les incohérences statiques relevées dans les contrôleurs 4.5/5.0 ; si le thème appelle une API existante, il doit respecter les permissions réelles de cette API.
+8. Prévoir le rafraîchissement de la ligne et des indicateurs globaux après suspension/réactivation/suppression, sans déduire l'état global Moodle du seul état entreprise.
+
+#### 66.21.7 Vérifications restantes
+
+| Vérification | État |
+|---|---|
+| Contrôleur et formulaire d'affectation/retrait sur les quatre versions | Source lue |
+| Capacité `company_user` et contrôle `sesskey` du formulaire | Source lue |
+| Contrôleur `editusers.php` et actions de table 4.5/5.0 | Source lue |
+| Capacités affichées versus capacités vérifiées côté serveur en 4.5/5.0 | Écart statique identifié ; tests de rôles à réaliser |
+| External API de suspension et suppression en 5.1/5.2 | Sources lues |
+| Validation du contexte et capacités dédiées en 5.1/5.2 | Source lue |
+| Protection contre modification des identifiants entreprise/utilisateur | À tester en runtime |
+| Interdiction de modifier/supprimer/suspendre un administrateur ou gestionnaire protégé | À tester selon rôles et configurations |
+| Compte multi-entreprises, compte suspendu globalement, licences et réactivation | À tester en runtime |
+| Journalisation, événements et retours d'erreur AJAX | À tester |
+| Accessibilité de la modale, annonce des retours, navigation clavier et mobile | À tester |
+
+**Sources du fork Iomad :**
+- [4.5 — company_users_form.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/blocks/iomad_company_admin/company_users_form.php)
+- [4.5 — classes/forms/company_users_form.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/blocks/iomad_company_admin/classes/forms/company_users_form.php)
+- [4.5 — editusers.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/blocks/iomad_company_admin/editusers.php)
+- [4.5 — classes/tables/editusers_table.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+- [5.0 — editusers.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/editusers.php)
+- [5.0 — classes/tables/editusers_table.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+- [5.1 — editusers.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/blocks/iomad_company_admin/editusers.php)
+- [5.1 — external/suspend_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/blocks/iomad_company_admin/classes/external/suspend_user.php)
+- [5.1 — external/delete_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/blocks/iomad_company_admin/classes/external/delete_user.php)
+- [5.1 — classes/tables/editusers_table.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+- [5.2 — editusers.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/editusers.php)
+- [5.2 — amd/src/edit_users.js](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/amd/src/edit_users.js)
+- [5.2 — external/suspend_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/external/suspend_user.php)
+- [5.2 — external/delete_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/external/delete_user.php)
+- [5.2 — classes/tables/editusers_table.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/tables/editusers_table.php)
+
+**Limites :** analyse statique du code du fork. Aucun appel AJAX n'a été exécuté, aucun rôle n'a été configuré pour reproduire les écarts et aucun test runtime n'a été effectué. Aucune modification du fork Iomad n'a été réalisée.
