@@ -62,4 +62,4 @@ Les couleurs de bordure ne sont pas destinées à porter seules une information.
 
 ## 7. Suite
 
-La prochaine tranche doit définir le prototype de navigation globale mobile-first en respectant l'architecture hybride documentée dans `docs/P0-NAVIGATION.md` : navigation globale Project N, navigation contextuelle et pédagogique native Moodle/Iomad. La navigation 5.3 basée sur React ne doit pas être copiée ni manipulée directement.
+La prochaine tranche doit valider le composant global déjà codé sur un environnement Moodle, puis construire progressivement la navigation d'espace et les composants de tableau de bord inspirés de la clarté de Chamilo. L'architecture hybride de `docs/P0-NAVIGATION.md` reste la règle : navigation globale et espaces Project N, navigation contextuelle et pédagogique native Moodle/Iomad. La navigation 5.3 basée sur React ne doit pas être copiée ni manipulée directement.
