@@ -259,3 +259,79 @@ Une analyse antérieure attribue à la tâche ad hoc `resetrolestask` (Iomad 5.1
 Le rattachement utilisateur–entreprise–département est porté par `local_iomad_company_users`. Les types métier `managertype` (0 utilisateur, 1 gestionnaire entreprise, 2 gestionnaire département, 3 éducateur, 4 rapporteur entreprise) sont distincts des rôles Moodle. Les gestionnaires sont affectés dans le contexte entreprise ; le périmètre départemental est calculé à partir des associations départementales et des fonctions Iomad de parcours récursif. Les restrictions de capacités sont stockées par entreprise/rôle/capacité et appliquées en complément des capacités natives.
 
 **Limite de comparaison :** les composants correspondants n'ont pas encore été comparés sur Iomad 4.5 et 5.0. Les personnalisations du fork 5.0 doivent être préservées et examinées séparément. Analyse statique, sans validation runtime.
+
+
+## 8. Résultats vérifiés — point 71 : rapports et Report Builder
+
+### 8.1 Empreintes des fichiers principaux par génération
+
+Chemins physiques :
+- Moodle 4.5 et 5.0 : `reportbuilder/...`, `lib/db/...`.
+- Moodle 5.1, 5.2 et 5.3 : `public/reportbuilder/...`, `public/lib/db/...`.
+
+Les SHA ci-dessous sont ceux des blobs récupérés dans les branches du fork `ericfalcon/moodle`. Un SHA identique établit l'identité du fichier dans ces snapshots, pas l'identité de toute la version.
+
+| Fichier (chemin relatif à reportbuilder/) | Moodle 4.5 | Moodle 5.0 | Moodle 5.1 | Moodle 5.2 | Moodle 5.3 |
+|---|---|---|---|---|---|
+| `index.php` | `25e18aec` | `ac965c16` | `ac965c16` | `ac965c16` | `ac965c16` |
+| `edit.php` | `773e2252` | `773e2252` | `773e2252` | `773e2252` | `773e2252` |
+| `view.php` | `9aab7a39` | `9aab7a39` | `9aab7a39` | `9aab7a39` | `9aab7a39` |
+| `download.php` | `cb05a3d1` | `cb05a3d1` | `cb05a3d1` | `cb05a3d1` | `cb05a3d1` |
+| `classes/datasource.php` | `3aec964d` | `c3c32d14` | `c3c32d14` | `7a607624` | `7a607624` |
+| `classes/system_report.php` | `9be0b61b` | `9be0b61b` | `9be0b61b` | `9be0b61b` | `9be0b61b` |
+| `classes/permission.php` | `8ca222f3` | `48cc1645` | `48cc1645` | `48cc1645` | `48cc1645` |
+| `classes/local/systemreports/reports_list.php` | `9cf21f88` | `7348d029` | `b4325bf9` | `b4325bf9` | `bbc30503` |
+| `classes/output/dynamictabs/editor.php` | `829e4c33` | `829e4c33` | `829e4c33` | `829e4c33` | `829e4c33` |
+| `classes/output/dynamictabs/audience.php` | `fe736d41` | `fe736d41` | `fe736d41` | `fe736d41` | `fe736d41` |
+| `classes/output/dynamictabs/access.php` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` | `5bebd8b9` |
+| `classes/output/dynamictabs/schedules.php` | `0dfa0c01` | `6bb81407` | `17c02c3b` | `17c02c3b` | `17c02c3b` |
+
+### 8.2 Capacités et données persistées
+
+Capacités Report Builder dans `lib/db/access.php` (puis `public/lib/db/access.php` à partir de 5.1) :
+- Moodle 4.5 : `view`, `viewall`, `edit`, `editall`, `scheduleviewas`.
+- Moodle 5.0 à 5.3 : les cinq précédentes et `configurecustomfields`.
+
+SHA du fichier de déclaration :
+- 4.5 : `29db4c7b` ;
+- 5.0 : `75ed0984` ;
+- 5.1 : `9c0c402a` ;
+- 5.2 : `53e99f65` ;
+- 5.3 : `7d0c5fa4`.
+
+Les archétypes par défaut relevés sont stables : `view` est accordé à l'archétype `user`, `edit` à `manager`; `viewall`, `editall`, `scheduleviewas` et `configurecustomfields` n'ont pas d'archétype autorisé par défaut.
+
+Comparaison des tables dans `lib/db/install.xml` (puis `public/lib/db/install.xml`) :
+- `reportbuilder_user_filter` est absente en 4.5 et présente à partir de 5.0. Elle stocke les données de filtre par rapport et utilisateur.
+- En 4.5 et 5.0, `reportbuilder_schedule` conserve les champs orientés message : `subject`, `message`, `messageformat`, `reportempty`.
+- À partir de 5.1, ces champs sont remplacés par `classname` et `configdata`; `audiences` devient nullable. Cette évolution accompagne l'architecture de types de planification extensibles.
+- Les tables principales `reportbuilder_report`, `reportbuilder_column`, `reportbuilder_filter` et `reportbuilder_audience` conservent les champs fonctionnels relevés dans les cinq snapshots.
+
+### 8.3 Évolutions fonctionnelles par version
+
+| Passage | Constat statique vérifié | Fichiers / objets de référence |
+|---|---|---|
+| 4.5 → 5.0 | Ajout de `reportbuilder_user_filter), de `moodle/reportbuilder:configurecustomfields), de la duplication des rapports et du filtre de liste relatif aux planifications. | `lib/db/install.xml`, `lib/db/access.php`, `form/duplicate_report.php`, `permission.php`, `reports_list.php` |
+| 5.0 → 5.1 | Déplacement physique vers `public/`. Introduction des classes de planification extensibles et du stockage `classname/configdata`. | `public/reportbuilder/classes/local/schedules/base.php`, `local/helpers/schedule.php`, `task/send_schedule.php`, `lib/db/install.xml` |
+| 5.1 → 5.2 | Le nouveau modèle de planification est conservé ; le type natif `message` est présent. Le rapport de gestion des planifications et les actions de liste sont implémentés par des rapports système. | `reportbuilder/schedule/message.php`, `local/systemreports/report_schedules.php`, `local/systemreports/report_access_list.php` |
+| 5.2 → 5.3 | Les quatre contrôleurs principaux et plusieurs classes de base restent identiques ; `reports_list.php` évolue encore. Le schéma des tables Report Builder relevé reste identique sur les champs étudiés. | `index.php`, `edit.php`, `view.php`, `download.php`, `reports_list.php`, `lib/db/install.xml` |
+
+### 8.4 Écarts Iomad à prendre en compte
+
+Sources ajoutées par `local_iomad` dans les trois branches examinées : `companies`, `company_users`, `company_users_course_completions`, `companylicense_users`, `companylicenses`, `coursesettings`.
+
+Pour les trois sources suivantes, les SHA en Iomad 4.5 et 5.0 sont identiques ; en Iomad 5.2, les chemins passent sous `public/` et les noms de tables sont actualisés :
+
+| Source | Iomad 4.5 / 5.0 SHA | Iomad 5.2 SHA |
+|---|---|---|
+| `companies.php` | `643eebbe` | `b7264fb6` |
+| `company_users.php` | `8397b858` | `2d7b9103` |
+| `company_users_course_completions.php` | `595b8856` | `316ded85` |
+
+Constat de sécurité à qualifier : les sources étudiées construisent les jointures et exposent des conditions par défaut entreprise/département/utilisateur, mais ne posent pas de condition fixe de périmètre dans leur méthode `initialise()`. Les audiences natives `systemrole` sont fondées sur les rôles du contexte système ; aucune audience entreprise spécifique n'a été trouvée dans l'extension `local_iomad/classes/reportbuilder` examinée. Ce constat impose une validation runtime de l'isolation des lignes avant tout accès des gestionnaires d'entreprise ; il ne constitue pas, à lui seul, la démonstration d'une fuite de données.
+
+Les rapports Iomad `local/report_users`, `local/report_companies` et `local/report_completion_overview` utilisent des pages autonomes. Les contrôleurs vérifiés utilisent un contexte entreprise et des capacités de plugin dédiées ; le rapport utilisateurs applique en plus des clauses SQL explicites de filtrage par entreprise et département. Ils doivent rester distingués des rapports personnalisés Moodle.
+
+### 8.5 État de preuve
+
+Analyse statique des branches du fork Moodle `MOODLE_405_STABLE` à `MOODLE_503_STABLE` et du fork Iomad `IOMAD_405_STABLE`, `IOMAD_500_STABLE`, `IOMAD_502_STABLE`. Les SHA identifient les fichiers examinés. Aucun test runtime, contrôle d'isolation multi-tenant, envoi de planification, export réel, test mobile ou test d'accessibilité n'a été exécuté.
