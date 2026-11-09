@@ -55,6 +55,23 @@ final class global_navigation_test extends \advanced_testcase {
     }
 
     /**
+     * The personal dashboard is treated as the user's home workspace.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_home_destination_is_current_on_dashboard(): void {
+        global $PAGE;
+
+        $this->resetAfterTest();
+        $PAGE->set_url(new \\moodle_url('/my/'));
+
+        $context = global_navigation::get_template_context();
+
+        $this->assertTrue($context['items'][0]['current']);
+        $this->assertFalse($context['items'][1]['current']);
+    }
+
+    /**
      * A different page does not incorrectly mark a global destination current.
      *
      * @covers ::get_template_context
