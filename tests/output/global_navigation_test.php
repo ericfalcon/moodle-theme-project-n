@@ -63,7 +63,7 @@ final class global_navigation_test extends \advanced_testcase {
         global $PAGE;
 
         $this->resetAfterTest();
-        $PAGE->set_url(new \\moodle_url('/my/'));
+        $PAGE->set_url(new \moodle_url('/my/'));
 
         $context = global_navigation::get_template_context();
 
