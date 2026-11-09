@@ -4664,6 +4664,132 @@ Les suppressions ou retraits susceptibles d'entraîner la suppression de notes, 
 
 **Niveau de preuve :** synthèse de conception issue de l'analyse statique des contrôleurs, plugins et interfaces décrits en 68.1–68.17. Aucun de ces scénarios n'est déclaré testé en environnement installé. Le point 68 est documenté fonctionnellement et ergonomiquement, mais sa validation runtime, responsive, accessibilité et non-régression reste ouverte.
 
+## 70. Administration Moodle — rôles, capacités et permissions
+
+Cette section prolonge les points 66 (comptes et cohortes), 67 (catégories et cours) et 68 (inscriptions). Elle porte sur le modèle d'autorisation Moodle : définition des rôles, attribution dans un contexte, dérogation aux capacités, consultation des permissions effectives et contrôle d'accès. Les fonctions d'entreprise Iomad sont traitées comme une couche complémentaire, jamais comme un remplacement du modèle Moodle.
+
+### 70.1 Le modèle à ne pas simplifier
+
+Moodle sépare plusieurs objets qui sont souvent confondus dans les interfaces :
+
+| Objet | Fonction | Ce qu'il ne signifie pas |
+|---|---|---|
+| Rôle | Ensemble de permissions associées à un archétype et à des capacités | Une identité permanente de la personne |
+| Capacité | Permission technique nommée par composant, par exemple `moodle/course:view` | Une action toujours autorisée quel que soit le contexte |
+| Attribution de rôle | Association d'un utilisateur, d'un rôle et d'un contexte | Une inscription à un cours |
+| Dérogation (override) | Modification d'une capacité pour un rôle dans un contexte donné | Une modification du rôle de base |
+| Contexte | Périmètre hiérarchique où s'appliquent les attributions et permissions | Une simple catégorie d'écran |
+| Permission effective | Résultat du calcul Moodle dans un contexte, tenant compte des attributions, héritages, dérogations et interdictions | Une propriété qu'un thème peut calculer à partir du nom du rôle |
+
+Les contextes Moodle usuels sont système, catégorie de cours, cours, activité/module, bloc et utilisateur. Ils s'inscrivent dans une hiérarchie. Une attribution à un contexte parent peut produire des effets dans ses descendants ; une attribution ou dérogation locale peut modifier le résultat selon les règles Moodle. Il est donc incorrect de présenter un rôle comme une permission globale valable partout.
+
+Un utilisateur peut cumuler plusieurs rôles dans des contextes différents. Il peut être étudiant dans un cours, enseignant dans un autre, gestionnaire dans une catégorie et disposer d'une attribution particulière dans le contexte utilisateur. Le thème ne doit pas réduire cette situation à un unique « profil » ou à un unique badge de rôle.
+
+### 70.2 Les cinq opérations d'administration des rôles
+
+Les écrans natifs identifiés dans `admin/roles` couvrent des opérations distinctes :
+
+| Écran / contrôleur | Opération | Permission d'accès observée en Moodle 5.3 |
+|---|---|---|
+| `manage.php` et `define.php` | Créer, modifier, réordonner et supprimer les définitions de rôles | `moodle/role:manage` au contexte système |
+| `assign.php` | Attribuer ou retirer un rôle à un utilisateur dans un contexte | `moodle/role:assign` dans le contexte cible |
+| `override.php` | Définir des dérogations avancées pour un rôle dans un contexte | `moodle/role:override`, ou `moodle/role:safeoverride` pour les capacités déclarées sûres |
+| `permissions.php` | Consulter et modifier les permissions d'un contexte | `moodle/role:review` pour consulter ; capacités de dérogation pour modifier |
+| `check.php` | Examiner les capacités calculées pour un utilisateur dans un contexte | Contrôle fondé sur plusieurs capacités de gestion/consultation des rôles |
+
+Ces écrans ne sont pas interchangeables. « Gérer les rôles » concerne les définitions à l'échelle du système ; « attribuer un rôle » concerne une personne et un contexte ; « modifier les permissions » concerne les capacités d'un rôle dans un contexte ; « vérifier les permissions » explique le résultat effectif pour une personne.
+
+Le thème doit conserver ces distinctions dans les intitulés, les liens et les confirmations. Il ne doit pas réunir toutes ces fonctions sous une seule commande générique « Gérer les rôles ».
+
+### 70.3 Attribution et retrait : rôle manuel ou rôle attribué par un composant
+
+Le contrôleur `assign.php` :
+- reçoit un identifiant de contexte et le résout en contexte Moodle ;
+- exige `moodle/role:assign` dans ce contexte ;
+- construit la liste des rôles attribuables avec `get_assignable_roles()` ;
+- vérifie que le rôle demandé appartient bien à cette liste ;
+- propose deux sélecteurs distincts : utilisateurs potentiels et détenteurs actuels du rôle ;
+- traite l'ajout et le retrait après validation du `sesskey` ;
+- utilise `role_assign()` pour attribuer et `role_unassign()` pour retirer.
+
+Point technique important : le retrait natif montré dans ce contrôleur cible les attributions manuelles (composant vide). Le commentaire du code précise qu'il ne faut pas supprimer les attributions produites par d'autres composants. Une inscription, une synchronisation de cohorte ou un plugin peut être à l'origine d'une attribution de rôle. Un écran de thème ne doit donc jamais transformer « retirer ce rôle » en suppression indistincte de toutes les associations correspondantes.
+
+L'attribution d'un rôle ne crée pas une inscription au cours. Inversement, une méthode d'inscription peut attribuer un rôle dans le contexte cours. Les deux flux doivent rester séparés dans l'interface et dans les opérations disponibles.
+
+### 70.4 Dérogations : quatre états de permission
+
+Les écrans `permissions.php` et `override.php` exposent les états de permission Moodle :
+- `CAP_INHERIT` : hériter du résultat défini dans les contextes parents ;
+- `CAP_ALLOW` : autoriser la capacité dans le contexte ;
+- `CAP_PREVENT` : empêcher la capacité dans le contexte, avec possibilité d'une autre décision dans un contexte descendant selon les règles Moodle ;
+- `CAP_PROHIBIT` : interdire la capacité de manière prioritaire, sans qu'une dérogation descendante puisse rétablir l'autorisation.
+
+L'interface simplifiée de permissions propose des opérations contextualisées et des confirmations. La page avancée affiche une matrice de capacités pour un rôle et un contexte ; les cellules mises en évidence signalent l'héritage. Les personnes disposant seulement de `moodle/role:safeoverride` ne peuvent modifier que les capacités que Moodle considère comme sûres (`is_safe_capability()`). Le thème ne doit ni élargir cette liste ni rendre éditables des cellules que le moteur Moodle verrouille.
+
+La représentation visuelle devra expliciter l'état et sa provenance (hérité ou défini localement), et ne pas s'appuyer uniquement sur une couleur. Les états « autorisé », « empêché », « interdit » et « hérité » doivent rester compréhensibles au clavier et avec un lecteur d'écran.
+
+### 70.5 Vérification des permissions effectives
+
+Le contrôleur `check.php` est un outil de diagnostic, pas un éditeur de rôle. Il examine les capacités d'un utilisateur dans un contexte donné et présente les attributions de rôles qui contribuent au résultat. Les administrateurs ayant `moodle/role:manage` disposent d'un périmètre de consultation plus large ; d'autres utilisateurs doivent satisfaire les capacités spécifiques prévues par le contrôleur.
+
+Pour Project N, une action ne doit être affichée que si elle est pertinente, mais son affichage ne constitue jamais une autorisation. Le contrôle final doit rester effectué par l'API ou le contrôleur serveur Moodle/Iomad au bon contexte. Il faut éviter :
+- de déduire les droits depuis le nom ou l'archétype du rôle ;
+- de tester uniquement `is_siteadmin()` pour une action qui dépend d'une capacité ;
+- de mémoriser un booléen global « administrateur » pour toutes les pages ;
+- de supposer qu'une permission visible au niveau système est identique dans un cours ou une activité ;
+- de recalculer localement la permission effective à partir des lignes de rôle visibles dans le DOM.
+
+Le thème peut utiliser les capacités pour adapter la navigation et les actions, mais doit interroger les mécanismes Moodle dans le contexte pertinent. Une URL saisie directement doit rester protégée côté serveur.
+
+### 70.6 Comparaison statique des contrôleurs Moodle / Iomad et des versions
+
+Les branches examinées sont celles des forks personnels. Les couples Iomad/Moodle sont comparés à génération équivalente.
+
+| Fichier | Moodle 4.5 → 5.3 | Comparaison Moodle / Iomad disponible | Conclusion |
+|---|---|---|---|
+| `admin/roles/manage.php` | 4.5 diffère de 5.0 ; 5.0 diffère de 5.1 ; 5.1 = 5.2 ; 5.3 évolue à nouveau | Identique dans les couples 4.5, 5.0, 5.1 et 5.2 | Iomad ne remplace pas l'écran standard de gestion des définitions ; Moodle 5.3 introduit notamment une récupération des rôles avec compteurs |
+| `admin/roles/assign.php` | 4.5, 5.0, 5.1/5.2 et 5.3 présentent des contenus distincts selon les générations | Identique dans les couples 4.5, 5.0, 5.1 et 5.2 | Le flux d'attribution natif reste commun entre Moodle et Iomad sur les couples contrôlés |
+| `admin/roles/define.php` | Comparaison détaillée interversions à compléter | Identique entre Moodle 5.3 et Iomad 5.2 sur le fichier examiné | Pas de différence Iomad détectée sur cette version du contrôleur |
+| `admin/roles/managetabs.php` | Non comparé sur toutes les générations | Identique Moodle 5.3 / Iomad 5.2 | Navigation native des onglets partagée sur ce couple |
+| `admin/roles/override.php` et `permissions.php` | Structure et API à comparer sur les cinq générations | Pas de conclusion générale à ce stade | À ne pas déclarer identiques sur la seule base des contrôleurs consultés |
+| `lib/accesslib.php` | Fichier volumineux et évolutif ; comparaison fonction par fonction non achevée | Fichier différent Moodle 5.3 / Iomad 5.2 | Ne pas assimiler une différence de fichier à une différence du modèle sans isoler les fonctions concernées |
+
+**Constat Iomad :** sur les couples disponibles, les contrôleurs centraux de gestion et d'attribution des rôles examinés restent les contrôleurs Moodle standards. Les extensions Iomad ajoutent des rôles, capacités et contextes entreprise, et leur affectation est orchestrée par les composants Iomad (notamment Company Admin et `local_iomad`). Cela ne signifie pas que le rôle standard Moodle « Gestionnaire » est remplacé : les fonctions Iomad sont distinctes et doivent être traitées séparément.
+
+**Limite de version :** aucun Iomad 5.3 n'est disponible dans le périmètre du fork au moment de cette comparaison. La colonne Moodle 5.3 ne permet donc pas de conclure sur le comportement d'un futur Iomad 5.3.
+
+### 70.7 Conséquences ergonomiques pour Project N
+
+1. Organiser l'administration autour de tâches distinctes : définitions, attributions, permissions par contexte et diagnostic des droits effectifs.
+2. Afficher le contexte courant de manière persistante et explicite : système, catégorie, cours, activité, bloc ou utilisateur.
+3. Dans les listes de personnes, présenter les attributions par contexte et leur origine lorsque l'information est disponible ; ne pas fusionner rôle manuel et rôle attribué par un plugin.
+4. Dans les interfaces d'attribution, afficher uniquement les rôles attribuables retournés par Moodle et rappeler le périmètre exact de l'opération.
+5. Pour le retrait, préserver les attributions détenues par un composant externe ; ne pas contourner les méthodes natives.
+6. Pour les dérogations, distinguer héritage, autorisation, empêchement et interdiction ; conserver les restrictions de `safeoverride`.
+7. Ne pas concevoir un éditeur de matrice de permissions mobile qui réduirait les états ou masquerait le contexte. Prévoir une vue synthétique accessible, puis le détail de la capacité.
+8. Pour Iomad, présenter séparément les fonctions entreprise/département, le statut d'éducateur et les rôles Moodle réellement attribués, conformément au point 66.19.
+9. Réutiliser les contrôles natifs et les capacités serveur ; ne pas dupliquer le moteur de calcul des permissions dans le thème.
+
+### 70.8 Vérifications restantes
+
+| Vérification | État |
+|---|---|
+| Contrôleurs `manage.php`, `assign.php`, `override.php`, `permissions.php`, `define.php`, `check.php` Moodle 5.3 | Sources lues |
+| `manage.php` Moodle/Iomad 4.5 à 5.2 | Comparaison statique par SHA ; identiques sur chaque couple |
+| `assign.php` Moodle/Iomad 4.5 à 5.2 | Comparaison statique par SHA ; identiques sur chaque couple |
+| `manage.php` Moodle 4.5 à 5.3 | Comparaison par SHA effectuée |
+| `assign.php` Moodle 4.5 à 5.3 | Comparaison par SHA effectuée |
+| Matrice complète des capacités `role:manage/assign/override/safeoverride/review` par contexte et rôle | À vérifier dans les définitions de rôles et les tests |
+| Différences `accesslib.php` fonction par fonction | À analyser |
+| Contrôleurs de définition et de dérogation sur les cinq générations | À comparer |
+| Rôles Iomad, capacités `block_iomad_company_admin` et contexte entreprise | Partiellement documentés en 66.19–66.21 ; matrice exhaustive à établir |
+| Effet des rôles attribués par inscription, cohorte, synchronisation et tâches différées | À tester |
+| Accès direct URL, modification d'identifiants, sesskey et permissions effectives | À tester en runtime |
+| Navigation clavier, matrice de permissions, sélecteurs, lecteur d'écran et smartphone | À tester |
+
+**Niveau de preuve :** lecture statique des contrôleurs et comparaison des empreintes de fichiers. Aucun rôle n'a été créé/modifié, aucune capacité n'a été attribuée en environnement installé, et aucun scénario d'accès n'a été exécuté. Cette section est une spécification fonctionnelle et technique, pas une validation de sécurité ou de compatibilité runtime.
+
+
 ## 69. Matrice de compatibilité et méthode de mise à jour de la cartographie
 
 Le registre opérationnel des versions, points communs et différences est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](P0-MATRICE-COMPATIBILITE.md). Cette matrice est un document vivant, à mettre à jour à chaque tranche.
