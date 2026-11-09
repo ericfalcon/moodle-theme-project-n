@@ -624,3 +624,24 @@ Cette interface repose sur les tables local_iomad_company_licenses, local_iomad_
 - [Iomad 5.2 — layout Boost](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/theme/boost/layout/drawers.php)
 - [Notes de version développeur Moodle 5.2](https://moodledev.io/general/releases/5.2) *(non consultée)*
 - [Notes de mise à jour développeur Moodle 5.2](https://moodledev.io/docs/5.2/devupdate) *(non consultée)*
+
+
+### 9.8 Suspension, réactivation et suppression des rattachements utilisateurs
+
+La comparaison statique des méthodes de suspension révèle une évolution du modèle entre Iomad 4.5/5.0 et Iomad 5.1/5.2.
+
+- En 4.5 et 5.0, la méthode `company::suspend()` suspend les utilisateurs rattachés à l'entreprise et à ses entreprises filles. Elle évite de modifier le compte Moodle global lorsque l'utilisateur possède plusieurs associations entreprise-utilisateur.
+- En 5.1 et 5.2, `local_iomad\\company_user::suspend()` modifie le statut du rattachement ciblé dans `local_iomad_company_users`. Elle libère les licences non utilisées de l'entreprise concernée et ne suspend le compte Moodle global que si aucun autre rattachement actif n'existe.
+- La méthode `company_user::delete()` retire les rôles de gestionnaire dans le contexte entreprise, supprime le rattachement et ne supprime le compte Moodle que si aucune autre association entreprise ne subsiste.
+
+**Point de vigilance :** `company_user::unsuspend()` remet à zéro le statut du rattachement puis celui du compte Moodle global sans vérifier, dans le corps de méthode examiné, si un autre rattachement reste suspendu ou si le compte a été suspendu indépendamment. Cette asymétrie avec `suspend()` constitue une anomalie potentielle à confirmer en examinant tous les appelants et par des tests runtime multi-entreprises. Elle ne doit pas être corrigée dans le thème.
+
+**Conséquence de conception :** le statut global Moodle et le statut du rattachement à l'entreprise courante doivent être présentés séparément. Les actions doivent expliciter leur périmètre et la suppression doit avertir qu'elle peut entraîner la suppression du compte Moodle si le rattachement retiré est le dernier.
+
+**Limite de comparaison :** les contrôleurs, formulaires, capacités exactes et actions de ligne appelant ces méthodes restent à comparer sur les quatre branches. Les constats sont statiques ; aucun scénario runtime n'a été exécuté.
+
+Sources :
+- [Iomad 4.5 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.0 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/local/iomad/lib/company.php)
+- [Iomad 5.1 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/classes/company_user.php)
+- [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
