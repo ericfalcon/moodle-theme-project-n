@@ -12,3 +12,9 @@ $string['privacy:metadata'] = 'The Project N theme does not store any personal d
 $string['globalnavigation'] = 'Main navigation';
 $string['home'] = 'Home';
 $string['courses'] = 'Courses';
+
+$string['learnerdashboardheading'] = 'My learning';
+$string['learnerdashboarddescription'] = 'Find your enrolled courses and open their content directly.';
+$string['learnerdashboardmore'] = 'Open course';
+$string['learnerdashboardemptytitle'] = 'No courses to display';
+$string['learnerdashboardemptydescription'] = 'Courses you are enrolled in will appear here.';
