@@ -5475,3 +5475,166 @@ Sources du fork :
 - [Iomad 5.2 — formulaire utilisateur](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/forms/user_edit_form.php)
 - [Iomad 5.2 — workflow de création utilisateur](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/company_user_create_form.php)
 - [Iomad 5.2 — capacités Company Admin](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php)
+
+
+## 71. Administration Moodle — rapports et Report Builder
+
+### 71.1 Distinguer les rapports système, les rapports personnalisés et les rapports de plugins
+
+Trois mécanismes doivent être séparés dans la navigation et dans le modèle de permissions :
+
+1. **Rapports système Moodle** : classes qui étendent `core_reportbuilder\system_report`. Leurs colonnes, filtres, actions et règles d'accès sont définis par Moodle ou par le plugin qui les fournit. Ils ne sont pas des rapports personnalisés créés par l'administrateur.
+2. **Rapports personnalisés (Custom reports)** : rapports enregistrés dans `reportbuilder_report`, construits à partir d'une source de données déclarée par un composant. L'accès à la liste dépend notamment de `$CFG->enablecustomreports` et des capacités Report Builder.
+3. **Rapports propres à un plugin** : pages de rapports autonomes, avec leurs propres contrôleurs, filtres, tables et permissions. Ils peuvent utiliser Report Builder, mais ce n'est pas systématique.
+
+Exemples de rapports système Moodle relevés dans le fork :
+- `admin/classes/reportbuilder/local/systemreports/users.php` : liste des utilisateurs, déjà étudiée au point 66 ;
+- `admin/classes/reportbuilder/local/systemreports/task_logs.php` : journaux des tâches ;
+- `cohort/classes/reportbuilder/local/systemreports/cohorts.php` : liste des cohortes ;
+- `reportbuilder/classes/local/systemreports/reports_list.php`, `report_schedules.php` et `report_access_list.php` : rapports internes de gestion du Report Builder.
+
+Il ne faut donc pas créer une page générique Project N qui supposerait que tous les rapports d'administration sont des rapports personnalisés.
+
+### 71.2 Parcours d'un rapport personnalisé
+
+Entrée de navigation : page `/reportbuilder/index.php`, initialisée par `admin_externalpage_setup('customreports')`.
+
+Le parcours observé est le suivant :
+
+1. **Liste des rapports** : rapport système `reports_list`, avec nom, source, dates et métadonnées. Les actions disponibles dépendent de la validité de la source et des permissions de l'utilisateur.
+2. **Création** : formulaire dynamique `form/report.php`. Il permet de définir le nom, la source de données, l'inclusion éventuelle de la configuration par défaut, l'unicité des lignes et les tags.
+3. **Édition** : `/reportbuilder/edit.php?id=...`, dans une présentation de type popup avec quatre onglets dynamiques : Éditeur, Audience, Planifications et Accès.
+4. **Consultation** : `/reportbuilder/view.php?id=...`. Le rapport applique ses conditions permanentes et expose les filtres de consultation prévus par sa source.
+5. **Export** : `/reportbuilder/download.php`, avec contrôle de la possibilité de télécharger le rapport.
+
+La classe `manager` découvre les sources via les classes déclarées dans l'espace de noms `reportbuilder\\datasource` des composants. Une source expose les entités, colonnes, filtres et conditions utilisables. Le Report Builder n'est donc pas un constructeur SQL libre : les champs disponibles sont définis par les sources installées.
+
+### 71.3 Éditeur : colonnes, filtres, conditions et tris
+
+L'onglet Éditeur présente plusieurs familles d'éléments :
+
+- **Colonnes** : sélection parmi les colonnes proposées par la source, ordre d'affichage, intitulé, agrégation lorsqu'elle est disponible.
+- **Tri initial** : colonnes triables, activation/désactivation du tri et ordre de priorité.
+- **Filtres** : critères exposés à l'utilisateur qui consulte le rapport. Le formulaire de filtres est construit à partir des filtres actifs de la source.
+- **Conditions** : critères enregistrés dans la définition du rapport et appliqués à son jeu de données. Ils sont distincts des filtres interactifs.
+- **Lignes uniques** : option de configuration du rapport, distincte du choix des colonnes.
+
+Le modèle de données matérialise cette distinction : `reportbuilder_filter.iscondition` différencie filtres et conditions dans la même table. Le tableau de bord du thème ne doit pas confondre « filtre proposé à l'utilisateur » et « condition qui restreint le rapport ».
+
+À partir de Moodle 5.0, la table `reportbuilder_user_filter` permet de conserver des valeurs de filtres propres à un utilisateur et à un rapport. Il s'agit d'un état de consultation, pas d'une modification de la définition du rapport.
+
+### 71.4 Audiences, accès et permissions
+
+Les audiences natives observées dans le composant Report Builder sont :
+- administrateurs du site (`admins`) ;
+- tous les utilisateurs (`allusers`) ;
+- utilisateurs sélectionnés manuellement (`manual`) ;
+- utilisateurs possédant un rôle dans le contexte système (`systemrole`).
+
+L'audience détermine quels utilisateurs peuvent consulter un rapport. L'onglet Accès affiche la population résultant de cette configuration ; il ne constitue pas un second système indépendant d'attribution de permissions.
+
+Les contrôles de `core_reportbuilder\\permission` établissent notamment les règles suivantes :
+
+- La liste des rapports n'est accessible que si les rapports personnalisés sont activés et si l'utilisateur dispose d'au moins une des capacités `moodle/reportbuilder:edit`, `editall`, `view` ou `viewall`.
+- `moodle/reportbuilder:viewall` permet de consulter tous les rapports.
+- À défaut, un rapport est visible si l'utilisateur peut le modifier ou s'il appartient à l'une de ses audiences.
+- Pour modifier son propre rapport, l'utilisateur doit avoir `edit` ou `editall`. Pour modifier le rapport d'un autre utilisateur, `editall` est requis.
+- La création nécessite `edit` ou `editall`, et reste soumise à la limite de rapports configurée.
+- La duplication nécessite à la fois le droit de modifier le rapport source et celui de créer un rapport.
+
+Capacités natives déclarées dans le contexte système :
+- `moodle/reportbuilder:view` : archétype `user` autorisé ;
+- `moodle/reportbuilder:edit` : archétype `manager` autorisé ;
+- `moodle/reportbuilder:viewall`, `editall` et `scheduleviewas` : aucun archétype par défaut ;
+- `moodle/reportbuilder:configurecustomfields` : ajoutée à partir de Moodle 5.0, sans archétype par défaut.
+
+Les vérifications sont également réalisées dans les formulaires dynamiques et les appels associés. Le thème ne doit ni masquer une action en considérant cela comme un contrôle d'accès, ni déduire une permission du nom du rôle.
+
+### 71.5 Planifications et envois automatiques
+
+En Moodle 4.5 et 5.0, la planification est centrée sur un envoi de rapport par message :
+- audience de destinataires ;
+- format de fichier ;
+- objet et contenu du message ;
+- utilisateur au nom duquel le rapport est calculé ;
+- date initiale et récurrence ;
+- comportement prévu lorsque le rapport ne contient aucune ligne ;
+- date du dernier et du prochain envoi.
+
+La tâche planifiée `send_schedules` repère les envois arrivés à échéance et déclenche une tâche ad hoc `send_schedule`. L'envoi et la génération du fichier sont donc asynchrones et dépendent du cron.
+
+**À partir de Moodle 5.1**, le modèle devient extensible :
+- introduction de `core_reportbuilder\\local\\schedules\\base` ;
+- découverte des types de planification dans l'espace de noms `reportbuilder\\schedule` ;
+- stockage du type dans `reportbuilder_schedule.classname` et de sa configuration dans `configdata` ;
+- exécution déléguée à la classe de planification ;
+- type natif `message` présent dans Moodle 5.2.
+
+La table abandonne alors les champs propres au message (`subject`, `message`, `messageformat`, `reportempty`) au profit de la classe et de sa configuration. Le champ `audiences` devient nullable car tous les types de planification ne nécessitent pas nécessairement une audience.
+
+Dans les versions 5.1 à 5.3, l'onglet Planifications découvre les types disponibles et ne propose que ceux dont `user_can_add()` autorise la création. Project N ne doit donc pas figer l'interface sur un unique formulaire d'envoi par courriel.
+
+### 71.6 Différences interversions observées
+
+Le détail des SHA et des chemins est consigné dans la matrice de compatibilité, section 8. Les évolutions fonctionnelles établies sont :
+
+- **4.5 → 5.0** : mémorisation des filtres personnels, capacité de configuration des champs personnalisés, duplication des rapports et filtre de liste relatif aux planifications.
+- **5.0 → 5.1** : déplacement physique des composants web dans `public/` et refonte extensible des types de planification.
+- **5.1 → 5.2** : stabilisation du nouveau modèle de planification ; le rapport de liste et ses actions continuent d'évoluer.
+- **5.2 → 5.3** : les contrôleurs principaux `index.php`, `edit.php`, `view.php` et `download.php` examinés sont identiques en SHA ; certains rapports système et fichiers de données changent néanmoins.
+
+Le déplacement de `reportbuilder/` vers `public/reportbuilder/` en 5.1 est un changement de chemin dans le dépôt, pas une raison de modifier les URL fonctionnelles du thème.
+
+### 71.7 Iomad : extension du Report Builder et rapports d'entreprise
+
+Le composant `local_iomad` ajoute six sources de données Report Builder :
+- `companies` ;
+- `company_users` ;
+- `company_users_course_completions` ;
+- `companylicense_users` ;
+- `companylicenses` ;
+- `coursesettings`.
+
+Il ajoute également des entités entreprise, département, utilisateurs d'entreprise, licences, cours et complétions. Les sources sont découvertes par le mécanisme natif des composants Moodle.
+
+**Point de vigilance majeur pour le multi-tenant :** dans les sources `companies`, `company_users` et `company_users_course_completions` examinées en Iomad 5.2, l'initialisation assemble les tables et les entités, puis ajoute les colonnes, filtres et conditions disponibles. Elle ne pose pas, dans ce code d'initialisation, de condition fixe limitant les lignes à l'entreprise ou au département courant. Les conditions par défaut telles que entreprise, département ou utilisateur sont des éléments de configuration du rapport ; elles ne doivent pas être considérées comme une frontière de sécurité.
+
+Le répertoire `local_iomad/classes/reportbuilder` examiné contient des sources et entités, mais pas de type d'audience entreprise. Les audiences natives `systemrole` interrogent les rôles du contexte système ; elles ne représentent pas automatiquement les fonctions Iomad attribuées au contexte entreprise.
+
+Cela ne suffit pas à établir une fuite de données exploitable : il faut encore confirmer les permissions réellement attribuées aux gestionnaires Iomad et exécuter des scénarios multi-entreprises. En revanche, **aucun accès de gestionnaire d'entreprise aux sources Iomad du Report Builder ne doit être considéré sûr sans vérification de l'isolation des lignes côté serveur**, y compris pour les exports et les planifications.
+
+En parallèle, Iomad conserve des rapports dédiés sous forme de plugins `local/report_*`. Exemples :
+- `local/report_users` ;
+- `local/report_companies` ;
+- `local/report_completion` et `local/report_completion_overview` ;
+- `local/report_license_usage` ;
+- `local/report_user_logins` ;
+- `local/report_user_license_allocations` ;
+- `local/report_emails`.
+
+Ces pages ne sont pas toutes des rapports Report Builder. Le rapport utilisateurs, par exemple, utilise son propre contrôleur, un contexte entreprise, une capacité dédiée `local/report_users:view` et des requêtes SQL filtrées par `companyid` et périmètre départemental. Le rapport entreprises applique également une capacité propre au contexte entreprise.
+
+### 71.8 Conséquences de conception pour Project N
+
+1. Conserver l'accès natif à la liste et à l'éditeur Report Builder ; ne pas réimplémenter l'éditeur, ses formulaires dynamiques ou son moteur de données.
+2. Présenter séparément les rapports système, les rapports personnalisés et les rapports fournis par des plugins.
+3. Prévoir un point d'entrée « Rapports » Moodle et, en contexte Iomad, une zone « Rapports de l'entreprise » qui ne mélange pas les rapports globaux et les rapports à périmètre entreprise.
+4. Pour les rapports Iomad, conserver le contexte entreprise/département, les capacités propres au plugin et les contrôles serveur natifs. Ne jamais simuler l'isolation par un filtre d'interface.
+5. Ne pas coder en dur la liste des sources, des audiences ou des types de planification : ces éléments sont extensibles par les composants.
+6. En affichage mobile, préserver les filtres, les actions de ligne et les exports sans supprimer d'information. Les tableaux larges devront être évalués sur appareil réel ; aucune validation responsive n'est revendiquée ici.
+
+### 71.9 Vérifications runtime à programmer
+
+Les tests suivants restent à exécuter sur des installations Moodle et Iomad représentatives :
+
+- activation/désactivation de `enablecustomreports` ;
+- utilisateur sans capacité, utilisateur avec `view`, `viewall`, `edit`, `editall`, `scheduleviewas` et `configurecustomfields` ;
+- propriétaire du rapport, autre gestionnaire, utilisateur inclus dans une audience et utilisateur hors audience ;
+- accès direct aux URL, appels AJAX de filtres/conditions, duplication, suppression et téléchargement ;
+- modification ou suppression des conditions par défaut d'une source Iomad ;
+- deux entreprises avec utilisateurs, départements, cours et licences distincts : contrôle des lignes affichées, exports, destinataires et rapports planifiés ;
+- rôles Iomad gestionnaire d'entreprise, gestionnaire de département, éducateur et administrateur client ;
+- exécution du cron, tâches ad hoc, destinataires suspendus, rapport vide, récurrence et calcul « voir en tant que » ;
+- usage mobile des listes, filtres, onglets d'édition et actions.
+
+**État de preuve :** analyse statique des branches et fichiers cités. Aucun test runtime, test d'isolation multi-tenant, test d'envoi réel, test responsive ou test d'accessibilité n'a été exécuté dans cette tranche.
