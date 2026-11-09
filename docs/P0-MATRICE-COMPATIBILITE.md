@@ -197,3 +197,21 @@ Les six déclarations ont été lues dans les fichiers core db/access.php des br
 
 Le contrôle Iomad dépend du périmètre entreprise explicite ou courant ; en l'absence d'entreprise courante, sa méthode peut retourner vrai après validation Moodle. Ne pas supposer qu'elle constitue un contrôle d'appartenance obligatoire dans tous les cas. Contrôle statique uniquement, sans test runtime.
 
+
+
+### 7.7 Résolution effective des permissions et extension Iomad
+
+| Élément | Moodle 4.5 / 5.2 / 5.3 | Iomad 5.2 | Conséquence thème |
+|---|---|---|---|
+| Résolution des rôles et des chemins de contexte | Moteur natif | Même moteur global Moodle | Ne pas recalculer les droits |
+| Rôles cumulés dans plusieurs contextes | Oui | Oui | Ne pas retenir un « rôle principal » unique |
+| `CAP_PROHIBIT` | Refus prioritaire | Refus prioritaire dans le calcul repris par Iomad | Ne pas agréger les droits visuellement |
+| Changement temporaire de rôle | Pris en compte par le moteur | Mécanisme Moodle conservé | Ne pas confondre avec une attribution réelle |
+| Cache et invalidation accesslib | API native | API native conservée | Ne pas manipuler les caches internes |
+| Restrictions entreprise | Sans objet | Contrôle supplémentaire via `local_iomad_company_role_restrictions` | Utiliser l'API Iomad dans les parcours entreprise |
+| Contexte entreprise | Absent | `CONTEXT_COMPANY`, branche distincte sous le système | Ne pas le simuler dans Moodle |
+
+Iomad 5.2 conserve les fonctions centrales de calcul et de cache d'accesslib comparées à Moodle 5.2. Sa méthode `local_iomad\iomad::has_capability()` applique en plus les contrôles d'appartenance et de restrictions par entreprise. La classe `context_company` est une branche distincte du contexte système et ne devient pas le parent des contextes de cours.
+
+Les fonctions `has_capability()` et `has_capability_in_accessdata()` ont le même corps dans les branches Moodle 4.5, 5.2, 5.3 et Iomad 5.2 consultées. La classe Iomad et la classe de contexte entreprise ont un SHA identique entre Iomad 5.1 et 5.2 ; les autres générations restent à vérifier.
+
