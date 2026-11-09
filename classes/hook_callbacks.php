@@ -47,6 +47,17 @@ class hook_callbacks {
 
         $context = \theme_projectn\output\global_navigation::get_template_context();
         $html = $hook->renderer->render_from_template('theme_projectn/global_navigation', $context);
+
+        // Add the first learner workspace only on the personal dashboard.
+        $currentpath = $PAGE->url instanceof \moodle_url ? $PAGE->url->get_path() : '';
+        if (in_array($currentpath, ['/my/', '/my/index.php'], true)) {
+            $dashboardcontext = \theme_projectn\output\learner_dashboard::get_template_context();
+            $html .= $hook->renderer->render_from_template(
+                'theme_projectn/learner_dashboard',
+                $dashboardcontext
+            );
+        }
+
         $hook->add_html($html);
     }
 }
