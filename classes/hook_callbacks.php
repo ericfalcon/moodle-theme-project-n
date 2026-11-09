@@ -27,7 +27,7 @@ class hook_callbacks {
     public static function before_standard_top_of_body_html_generation(
         \core\hook\output\before_standard_top_of_body_html_generation $hook
     ): void {
-        global $PAGE, $CFG;
+        global $PAGE;
 
         // The global navigation is intended for authenticated, non-guest users.
         if (!isloggedin() || isguestuser()) {
