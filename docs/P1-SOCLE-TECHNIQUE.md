@@ -6,7 +6,7 @@
 
 ## 1. Périmètre de cette première tranche
 
-Cette tranche pose uniquement le squelette du plugin Moodle `theme_projectn` :
+Cette tranche pose uniquement le squelette du plugin Moodle `theme_projectn`, avec les fichiers d'entrée à la racine du dépôt comme attendu pour un dépôt de plugin Moodle :
 
 - métadonnées du plugin et version de développement ;
 - héritage du thème parent Boost ;
