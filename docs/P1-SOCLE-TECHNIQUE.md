@@ -14,7 +14,7 @@ Cette tranche pose uniquement le squelette du plugin Moodle `theme_projectn`, av
 - chaînes de langue anglaises et françaises ;
 - fichier SCSS complémentaire ;
 - première couche de tokens sémantiques et de primitives de composants, sans figer la palette de marque (voir [P1-DESIGN-SYSTEM.md](P1-DESIGN-SYSTEM.md)) ;
-- premier composant de navigation globale, rendu par hook et template Mustache (voir [P1-NAVIGATION-GLOBALE.md](P1-NAVIGATION-GLOBALE.md)).
+- premier composant de navigation globale, rendu par hook et template Mustache, avec tests PHPUnit du fournisseur de données ajoutés mais non exécutés (voir [P1-NAVIGATION-GLOBALE.md](P1-NAVIGATION-GLOBALE.md)).
 
 Elle ne constitue pas encore un thème validé comme installable. Aucune compatibilité runtime n'est déclarée.
 
@@ -51,7 +51,7 @@ Ces règles constituent des intentions de conception, pas une preuve WCAG/RGAA. 
 
 ## 3. Points de contrôle avant la suite
 
-1. Vérifier la syntaxe PHP et les conventions Moodle du plugin.
+1. Vérifier la syntaxe PHP et les conventions Moodle du plugin, puis exécuter les tests PHPUnit de `tests/output/global_navigation_test.php`.
 2. Installer le thème sur Moodle 4.5 puis sur les générations 5.x.
 3. Vérifier la compilation SCSS et le chargement effectif des styles.
 4. Vérifier que les layouts, tiroirs et navigations Boost restent fonctionnels.
