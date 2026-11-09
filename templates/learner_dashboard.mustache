@@ -1,0 +1,39 @@
+{{!
+    Project N learner dashboard.
+    Course data is supplied by Moodle's enrolment API; course pages retain
+    their native access checks and functionality.
+}}
+<section class="projectn-learner-dashboard" aria-labelledby="projectn-learner-dashboard-title">
+    <div class="projectn-learner-dashboard__header">
+        <div>
+            <h2 id="projectn-learner-dashboard-title">{{heading}}</h2>
+            <p class="projectn-learner-dashboard__description">{{description}}</p>
+        </div>
+        {{#hascourses}}
+            <a class="projectn-learner-dashboard__more" href="{{moreurl}}">{{morelabel}}</a>
+        {{/hascourses}}
+    </div>
+
+    {{#hascourses}}
+        <ul class="projectn-course-grid">
+            {{#courses}}
+                <li class="projectn-course-card">
+                    <div class="projectn-course-card__body">
+                        <p class="projectn-course-card__eyebrow">{{shortname}}</p>
+                        <h3 class="projectn-course-card__title">
+                            <a href="{{url}}">{{fullname}}</a>
+                        </h3>
+                        <a class="projectn-course-card__action" href="{{url}}">{{morelabel}}</a>
+                    </div>
+                </li>
+            {{/courses}}
+        </ul>
+    {{/hascourses}}
+
+    {{^hascourses}}
+        <div class="projectn-learner-dashboard__empty">
+            <h3>{{emptytitle}}</h3>
+            <p>{{emptydescription}}</p>
+        </div>
+    {{/hascourses}}
+</section>
