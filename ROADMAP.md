@@ -9,8 +9,8 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | Phase | Objet | Périmètre cible | État |
 |---|---|---|---|
 | P0 | Cadrage, spécifications et décisions | MVP | En cours |
-| P1 | Socle Boost, design system et premiers composants d'interface | MVP | En cours — navigation globale codée, tests PHPUnit ajoutés mais non exécutés ; compilation et installation non vérifiées |
-| P2 | Espace apprenant | MVP | À réaliser |
+| P1 | Socle Boost, design system et premiers composants d'interface | MVP | En cours — navigation globale et première tranche du tableau de bord apprenant codées ; tests ajoutés mais non exécutés ; compilation et installation non vérifiées |
+| P2 | Espace apprenant | MVP | Première tranche codée en parallèle dans P1 : cartes des formations inscrites ; progression et prochaines actions à développer après validation |
 | P3 | Espace formateur | MVP progressif | À réaliser |
 | P4 | Espace administrateur | Version 1.x, après cadrage de la valeur ajoutée | À réaliser |
 | P5 | Adaptation Iomad | Fondations et cloisonnement dans le MVP | À réaliser |
@@ -94,7 +94,7 @@ Critères d'acceptation :
 
 ## P1 — Socle Boost et design system responsive
 
-**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. L'audit des points d'extension s'appuie sur P0 et sur [docs/P1-POINTS-EXTENSION-NAVIGATION.md](docs/P1-POINTS-EXTENSION-NAVIGATION.md) ; l'installation, le rendu effectif et les tests multi-versions restent à faire.
+**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. Une première vue « Mes formations » est également rendue sur le tableau de bord personnel, à partir de l'API d'inscription Moodle ; voir [docs/P1-ESPACE-APPRENANT.md](docs/P1-ESPACE-APPRENANT.md). Les tests des fournisseurs sont ajoutés mais non exécutés. L'audit des points d'extension s'appuie sur P0 et sur [docs/P1-POINTS-EXTENSION-NAVIGATION.md](docs/P1-POINTS-EXTENSION-NAVIGATION.md) ; l'installation, le rendu effectif et les tests multi-versions restent à faire.
 
 **Objectif :** créer une base installable, maintenable et cohérente, conçue mobile-first.
 
