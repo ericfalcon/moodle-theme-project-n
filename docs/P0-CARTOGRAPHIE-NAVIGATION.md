@@ -4734,3 +4734,111 @@ L'interface de confirmation est passée d'une page de confirmation complète ave
 - [5.2 — classes/tables/editusers_table.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/tables/editusers_table.php)
 
 **Limites :** analyse statique du code du fork. Aucun appel AJAX n'a été exécuté, aucun rôle n'a été configuré pour reproduire les écarts et aucun test runtime n'a été effectué. Aucune modification du fork Iomad n'a été réalisée.
+
+
+### 67.13 Synthèse fonctionnelle et conséquences ergonomiques pour Project N
+
+Cette section transforme les constats techniques des points 67.1 à 67.12 en décisions de conception. Elle ne propose pas de remplacer le gestionnaire Moodle : l'objectif est de rendre ses fonctions plus lisibles, cohérentes et utilisables sur smartphone, tout en conservant les contrôles métier du cœur.
+
+#### 67.13.1 Distinguer trois espaces
+
+Project N doit séparer explicitement :
+1. **Catalogue / découverte** : parcourir les catégories visibles et accéder aux formations ; parcours porté par `course/index.php`.
+2. **Gestion des catégories et cours** : administrer l'arborescence, rechercher, filtrer, déplacer, masquer/afficher, créer et supprimer ; parcours porté par `course/management.php`.
+3. **Configuration de plateforme** : paramètres par défaut, groupes, sauvegardes/restaurations et sélecteur d'activités ; parcours d'administration système.
+
+Ces espaces peuvent être rapprochés dans la navigation selon les capacités, mais ne doivent pas être fusionnés dans une interface unique. Un formateur, un gestionnaire de catégorie et un administrateur système n'ont ni les mêmes tâches ni le même périmètre.
+
+#### 67.13.2 Modèle de navigation recommandé
+
+La gestion doit conserver une progression intelligible :
+- **Périmètre** : système ou catégorie courante, avec indication du parent et possibilité de remonter dans l'arborescence ;
+- **Recherche et filtres** : recherche de cours, sélection de catégorie et filtres de visibilité ;
+- **Vue** : catégories + cours, catégories seules ou cours seuls ;
+- **Résultats** : liste des catégories et cours avec pagination, compteurs et états ;
+- **Détail** : panneau ou écran secondaire pour le cours sélectionné, sans le confondre avec la page pédagogique du cours ;
+- **Actions** : opérations sur une ligne, actions de contexte et opérations groupées visuellement séparées.
+
+Sur mobile, privilégier une navigation progressive (périmètre → liste → détail) ou des panneaux empilés. Ne pas transposer la disposition multi-colonnes desktop telle quelle, ni imposer un tableau avec défilement horizontal de toute la page. Le retour à la liste doit conserver le contexte, la recherche et la pagination lorsque le comportement natif le permet.
+
+#### 67.13.3 Cartes et lignes de gestion
+
+Une carte de cours de gestion ne doit pas reprendre sans adaptation la carte destinée à l'apprenant. Elle doit prioriser :
+- nom complet et nom abrégé ;
+- catégorie / chemin hiérarchique ;
+- visibilité et éventuel état de suppression programmée ;
+- informations utiles au tri ou à la recherche ;
+- actions autorisées pour ce cours et ce contexte.
+
+Les catégories doivent être distinguées des cours par leur structure et leurs affordances. Le nombre d'éléments, les compteurs et les états de sélection doivent rester accessibles. Ne pas afficher un bouton d'action lorsque la capacité métier correspondante est absente.
+
+#### 67.13.4 Actions et prévention des erreurs
+
+Regrouper les actions en trois familles :
+- **Actions sur l'élément** : modifier, afficher/masquer, déplacer, copier ou supprimer selon les possibilités ;
+- **Actions sur le contexte** : gérer permissions, cohortes, filtres, verrouillage, restauration ou fonctionnalités de plugins ;
+- **Actions groupées** : déplacer ou réordonner plusieurs éléments.
+
+La suppression d'une catégorie doit conserver le choix métier proposé par Moodle (suppression complète ou déplacement du contenu, selon les possibilités). L'interface doit expliquer que supprimer une catégorie ne signifie pas automatiquement que l'utilisateur possède le droit de supprimer les cours qu'elle contient. Les déplacements doivent expliciter la destination et ne jamais permettre une hiérarchie circulaire.
+
+Pour les opérations groupées, présenter avant validation le nombre d'éléments sélectionnés, leur nature et la destination ou l'effet attendu. Après traitement, distinguer réussite, échec et résultat partiel. Les contrôles et confirmations du cœur restent la référence.
+
+#### 67.13.5 Capacités et périmètres
+
+L'interface doit refléter les capacités dans le contexte concerné, et non un statut global « administrateur ». Un Gestionnaire peut disposer de droits de gestion dans un contexte catégorie sans être administrateur de plateforme. Les capacités `moodle/category:manage`, `moodle/course:create`, `moodle/category:viewhiddencategories` et les autres capacités métier restent évaluées par Moodle.
+
+Dans Iomad, ne pas assimiler automatiquement :
+- catégorie Moodle ;
+- entreprise ;
+- département ;
+- cours créé par une entreprise ;
+- cours partagé ou accessible via licence.
+
+Les six personnalisations du fork Iomad 5.0 décrites en 67.10 doivent être préservées : préfixe `[shortname]` dans les listes et sélecteurs pour désambiguïser les cours homonymes, restriction du clonage aux cours de l'entreprise et à la capacité `createcourse`, et suppression du mécanisme temporaire d'attribution du rôle Manager. Elles ne doivent pas être généralisées comme comportement natif Iomad sans nouvelle vérification.
+
+#### 67.13.6 Contrats techniques à préserver
+
+Le thème doit s'appuyer sur le rendu natif et préserver :
+- l'arbre récursif des catégories et ses rôles ARIA ;
+- les états développé/replié et sélectionné ;
+- les attributs `data-action`, `data-id`, `data-visible` et les identifiants utilisés par le module de gestion ;
+- les mécanismes de sélection, pagination, recherche et menus ;
+- la distinction entre actions de ligne, actions de contexte et actions groupées ;
+- les états de suppression programmée et les retours de traitement.
+
+Il faut éviter de remplacer l'arbre par un composant visuellement équivalent mais incompatible avec le JavaScript Moodle. Le renderer change à chaque génération et le helper évolue en 5.3 : une surcharge fragile du DOM serait coûteuse à maintenir. Les personnalisations doivent être limitées aux points d'extension documentés et validées sur chaque version cible.
+
+#### 67.13.7 Matrice des priorités de conception
+
+| Priorité | Besoin | Décision |
+|---|---|---|
+| P1 | Identifier le périmètre administré | Afficher clairement système / catégorie / chemin hiérarchique |
+| P1 | Retrouver cours et catégories | Recherche visible, filtres et pagination conservés |
+| P1 | Comprendre les vues | Trois modes accessibles sans perdre le contexte |
+| P1 | Éviter les erreurs de manipulation | Actions contextuelles, confirmation et destination explicite |
+| P1 | Administrer sur smartphone | Navigation progressive, listes/cartes compactes, commandes tactiles |
+| P1 | Respecter les droits | Actions fondées sur les capacités effectives et le contexte |
+| P1 | Préserver Iomad | Ne pas confondre périmètre entreprise et catégorie ; préserver les personnalisations du fork 5.0 |
+| P2 | Réduire la charge cognitive | Distinguer visuellement cours, catégories et actions avancées |
+| P2 | Améliorer le suivi | Résultats détaillés pour les actions groupées et traitements différés |
+
+#### 67.13.8 Vérifications restant à effectuer
+
+| Vérification | État |
+|---|---|
+| Comparaison statique Moodle 4.5–5.3 des fichiers listés en 67.12 | Réalisée |
+| Comparaison des six fichiers cœur Moodle/Iomad 5.0 et 5.2 | Réalisée |
+| Vérification des mêmes dépendances Iomad 4.5 et 5.1 | À faire |
+| Analyse des six personnalisations du fork Iomad 5.0 | Réalisée statiquement ; revue des risques documentée en 67.10 |
+| Tests des capacités par rôle et contexte catégorie | À faire en runtime |
+| Tests du périmètre entreprise / catégorie Iomad | À faire en runtime |
+| Tests JavaScript de l'arbre et des actions groupées | À faire |
+| Tests clavier, lecteur d'écran et axe-core | À faire |
+| Tests responsive sur smartphones réels | À faire |
+| Tests utilisateurs avec administrateur, gestionnaire de catégorie et formateur | À organiser |
+
+#### 67.13.9 Décision de cadrage
+
+**Project N améliore la lisibilité, la navigation, la hiérarchie visuelle et l'ergonomie mobile du gestionnaire natif ; il ne réimplémente ni le moteur de gestion, ni les permissions, ni les règles de déplacement/suppression.** Le catalogue apprenant, la gestion des catégories/cours et la configuration de plateforme restent trois parcours distincts.
+
+Le point 67 est documenté fonctionnellement, mais sa validation technique complète reste conditionnée aux tests runtime, aux contrôles Iomad 4.5/5.1 et aux tests d'accessibilité/mobile.
