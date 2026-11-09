@@ -169,3 +169,17 @@ Le contexte CONTEXT_COMPANY et les contrôles de local_iomad\iomad constituent u
 
 Sources : [Company Admin access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php), [local_iomad access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/access.php), [Iomad accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/accesslib.php).
 
+
+### 7.6 Capacités natives moodle/role:* — contrôle des déclarations
+
+| Capacité | Contexte | Archétypes par défaut | Moodle 4.5 / 5.2 / 5.3 | Iomad 4.5 / 5.2 |
+|---|---|---|---|---|
+| moodle/role:manage | Système | manager | Identique | Identique |
+| moodle/role:assign | Cours | editingteacher, manager | Identique | Identique |
+| moodle/role:review | Cours | teacher, editingteacher, manager | Identique | Identique |
+| moodle/role:override | Cours | manager | Identique | Identique |
+| moodle/role:safeoverride | Cours | editingteacher | Identique | Identique |
+| moodle/role:switchroles | Cours | editingteacher, manager | Identique | Iomad ajoute companycourseeditor |
+
+Les six déclarations ont été lues dans les fichiers core db/access.php des branches listées. Les valeurs décrivent les permissions initiales, pas les permissions effectives d'une installation. Les fichiers Moodle 5.2 et Iomad 5.2 déclarent 319 capacités avec les mêmes noms ; l'ajout d'archétype à moodle/role:switchroles constitue néanmoins un écart de contenu.
+
