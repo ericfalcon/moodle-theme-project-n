@@ -54,6 +54,7 @@ Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). I
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
 ### Priorité de la cartographie restante
+- **Point 70 — rôles et permissions :** contrôleurs natifs et premières comparaisons documentés ; analyse des déclarations de capacités Iomad 5.2 et des extensions d'archétypes ajoutée. Restent à comparer les déclarations sur Iomad 4.5–5.1, les capacités Moodle core et les permissions effectives en runtime.
 
 La cartographie technique doit désormais privilégier **Moodle standard**. Les travaux déjà réalisés sur Iomad constituent une base suffisante pour suspendre l'approfondissement de son administration, sauf lorsqu'un écart Iomad conditionne directement un parcours Moodle ou une décision d'architecture.
 
