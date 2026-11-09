@@ -31,13 +31,16 @@ class global_navigation {
         $homeurl = new \moodle_url('/');
         $coursesurl = new \moodle_url('/my/courses.php');
 
+        // Treat the personal dashboard as the user's home workspace as well.
+        $ishome = in_array($currentpath, ['/', '/my/', '/my/index.php'], true);
+
         return [
             'label' => get_string('globalnavigation', 'theme_projectn'),
             'items' => [
                 [
                     'label' => get_string('home', 'theme_projectn'),
                     'url' => $homeurl->out(false),
-                    'current' => $currentpath === $homeurl->get_path(),
+                    'current' => $ishome,
                 ],
                 [
                     'label' => get_string('courses', 'theme_projectn'),
