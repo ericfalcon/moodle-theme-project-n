@@ -4358,7 +4358,7 @@ Niveau de preuve : lecture de `blocks/iomad_company_admin/company_user_create_fo
 
 ### 67.10 Différences du fork Iomad 5.0 — gestion des cours
 
-Le fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, conserve six fichiers personnalisés par rapport à l'amont Iomad 5.0. Après synchronisation amont, la branche est en avance de 15 commits et en retard de zéro commit. Le commit de fusion est `40f37899a1d89bf307bd0cc0d205c01c03f78e5e`; le commit amont intégré est `77c795dca4fd423e7b76c5996413f33b0679ba85`.
+L'inventaire historique du fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, recense six fichiers comme personnalisés par rapport à l'amont Iomad 5.0. **Le diff exact, la liste des changements et le nombre de commits d'avance doivent être revalidés** sur les têtes actuelles avant toute conclusion. Les identifiants de fusion/amont précédemment relevés sont conservés comme repères historiques, non comme preuve de l'état courant.
 
 | Fichier local | Personnalisation conservée |
 |---|---|
@@ -4369,7 +4369,7 @@ Le fork personnel `ericfalcon/iomad`, branche `IOMAD_500_STABLE`, conserve six f
 | `blocks/iomad_company_admin/iomad_courses_form.php` | Vérification que le cours source du clonage appartient à `company_created_courses` ; suppression du mécanisme d'attribution temporaire du rôle Manager |
 | `blocks/iomad_company_admin/lib/course_selectors.php` | Préfixe `[shortname]` centralisé pour différencier les cours homonymes dans les sélecteurs |
 
-Ces modifications sont propres au fork et ne doivent pas être présentées comme le comportement natif d'Iomad. Leur objectif principal est de lever les ambiguïtés entre cours portant le même fullname dans des entreprises différentes et de resserrer les conditions de clonage.
+Selon l'analyse antérieure, ces modifications seraient propres au fork et ne doivent en aucun cas être présentées comme le comportement natif d'Iomad sans revalidation. Leur objectif rapporté est de lever les ambiguïtés entre cours portant le même fullname dans des entreprises différentes et de resserrer les conditions de clonage. Le détail de chaque diff reste à confirmer.
 
 **Points de revue technique à conserver :**
 - `company_groups_form.php` et `company_gu_courses_form.php` effectuent une lecture `get_field()` par cours pour récupérer le shortname : risque de requêtes N+1 lorsque les listes sont volumineuses. Une récupération groupée est à étudier.
@@ -4377,7 +4377,7 @@ Ces modifications sont propres au fork et ne doivent pas être présentées comm
 - Dans `iomad_courses_form.php`, la récupération du cours source est effectuée deux fois dans le même bloc. C'est redondant, à confirmer avant nettoyage.
 - Le changement de clonage est une modification de règle métier et de permission : il nécessite des tests avec cours créés par l'entreprise, cours partagés, cours sous licence et rôles concernés avant toute reprise dans une autre version.
 
-Le fork Moodle personnel a été comparé aux branches officielles 4.5, 5.0, 5.1, 5.2 et 5.3 : les cinq têtes de branche étaient identiques. Aucune synchronisation Moodle n'était nécessaire.
+Une analyse antérieure indiquait que les têtes du fork Moodle étaient identiques aux branches officielles 4.5, 5.0, 5.1, 5.2 et 5.3. **Cette identité n'a pas été recontrôlée dans la présente passe** ; les SHAs courants du fork ne suffisent pas à l'établir sans comparaison avec les références amont.
 
 ### 68.12 Comparaison ciblée Moodle / Iomad — inscriptions
 
@@ -5285,10 +5285,10 @@ Dans Iomad 5.2, la classe `local_iomad\\iomad` fournit un contrôle complémenta
 - `has_capability($capability, $context, $companyid)` commence par appeler le `has_capability()` natif de Moodle. Si Moodle refuse, Iomad refuse également.
 - Un administrateur du site est ensuite accepté par ce contrôle Iomad.
 - Si un `companyid` explicite est fourni, Iomad vérifie que l'utilisateur courant est membre de cette entreprise dans `local_iomad_company_users`.
-- Sans identifiant explicite, Iomad détermine l'entreprise courante de l'utilisateur. Si aucune entreprise courante n'est trouvée, cette méthode retourne vrai après le contrôle Moodle ; il ne faut donc pas la traiter comme un contrôle d'appartenance entreprise universel.
+- Sans identifiant explicite, Iomad tente de déterminer l'entreprise courante de l'utilisateur. **Le résultat exact lorsque cette entreprise n'est pas déterminée doit être revalidé dans le code et par un test runtime avant de conclure à un retour vrai ou faux.** En attendant, cette méthode ne doit pas être considérée comme un contrôle d'appartenance universel : le workflow doit fournir et vérifier explicitement le périmètre attendu.
 - Lorsque le périmètre entreprise est déterminé, Iomad appelle son contrôle interne `has_capability_in_accessdata()`.
 
-Ce contrôle interne parcourt le chemin du contexte courant vers ses parents, collecte les rôles pertinents (avec un traitement spécifique du changement de rôle), charge leurs définitions et vérifie les restrictions enregistrées dans `local_iomad_company_role_restrictions` pour le triplet entreprise / rôle / capacité. Une restriction correspondante provoque un refus. La logique de prohibition `CAP_PROHIBIT` est également explicitement bloquante.
+Ce contrôle interne parcourt le chemin du contexte courant vers ses parents, collecte les rôles pertinents (avec un traitement spécifique du changement de rôle), charge leurs définitions et vérifie les restrictions enregistrées dans `local_iomad_company_role_restrictions` pour le triplet entreprise / rôle / capacité. Une restriction correspondante provoque un refus. La priorité native de `CAP_PROHIBIT` est documentée dans l'analyse du moteur Moodle ; **son articulation précise avec ce chemin d'évaluation Iomad doit être revalidée séparément** et n'est pas présentée ici comme un résultat confirmé pour tous les cas.
 
 #### Contexte entreprise : une branche distincte
 
@@ -5321,7 +5321,7 @@ Sources :
 | Rôles cumulés et changement temporaire de rôle | Algorithme statique examiné ; scénarios runtime à réaliser |
 | Attribution / retrait et traçabilité composant-itemid | Analyse statique des API natives effectuée |
 | Cache des définitions de rôles et invalidation | Principales fonctions examinées ; mécanismes de cache statique, MUC et contexte identifiés |
-| Contrôle complémentaire Iomad par entreprise | Classe local_iomad\\iomad Iomad 5.2 examinée ; SHA identique entre Iomad 5.1 et 5.2 |
+| Contrôle complémentaire Iomad par entreprise | Classe `local_iomad\iomad` Iomad 5.2 examinée ; SHA identique entre Iomad 5.1 et 5.2. Cas sans entreprise courante et interaction `CAP_PROHIBIT` à revalider |
 | Différences du moteur Moodle entre 4.5 et 5.3 | Comparaison fonction par fonction effectuée pour les fonctions clés ; autres fonctions accesslib à comparer |
 | Différences Iomad 4.5, 5.0 et 5.1 | À comparer, en tenant compte des six personnalisations du fork Iomad 5.0 |
 | Scénarios multi-entreprises, changement d'entreprise, accès direct URL et restrictions entreprise | À tester en runtime |
@@ -5369,9 +5369,9 @@ Le fichier `local/iomad/db/access.php` examiné en Iomad 5.1 et 5.2 est égaleme
 
 #### Réinitialisation asynchrone des rôles
 
-L'installation programme une tâche ad hoc `local_iomad\task\resetrolestask`. En Iomad 5.1 et 5.2, son code est identique. Elle appelle `reset_role_capabilities()` pour six rôles : `companymanager`, `companydepartmentmanager`, `companycourseeditor`, `companycoursenoneditor`, `companyreporter` et `clientreporter`. `clientadministrator` n'est pas dans cette liste.
+Une analyse antérieure a identifié une tâche ad hoc `local_iomad\task\resetrolestask` et lui a attribué un appel à `reset_role_capabilities()` pour six rôles, sans `clientadministrator`. **Le contenu exact de cette tâche, sa présence sur les deux branches et son enregistrement/planification doivent être revalidés** avant de tenir cette liste pour acquise. Le lien source ci-dessous constitue un point de contrôle, pas à lui seul une preuve de son exécution ni de ses effets runtime.
 
-Cette tâche doit être prise en compte lorsqu'on analyse les permissions après installation : l'état des capacités peut être réinitialisé de façon asynchrone. Les administrateurs peuvent ensuite personnaliser les rôles ; le thème ne doit pas supposer que les permissions d'une installation restent identiques aux valeurs initiales.
+Conséquence qui reste valable indépendamment de cette tâche : les administrateurs peuvent personnaliser les rôles après installation ; le thème ne doit donc jamais supposer que les permissions d'une installation correspondent durablement aux valeurs initiales.
 
 #### Évolution des versions et migration des attributions
 
