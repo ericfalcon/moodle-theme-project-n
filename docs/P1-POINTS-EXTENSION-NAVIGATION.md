@@ -86,7 +86,8 @@ Si le hook ne permet pas une position visuelle acceptable ou s'il est incompatib
 
 ## 5. Vérifications nécessaires avant implémentation
 
-- [ ] Confirmer la convention d'enregistrement des callbacks de hooks dans un composant de type thème sur Moodle 4.5 et 5.3.
+- [x] Confirmer dans le gestionnaire Moodle 4.5 que les fichiers `db/hooks.php` sont recherchés pour tous les types de plugins, dont les thèmes.
+- [ ] Vérifier le chargement effectif d'un callback de thème sur Moodle 4.5 et 5.3.
 - [ ] Confirmer le chargement du callback et du template Mustache après installation, mise à niveau et purge des caches.
 - [ ] Vérifier le rendu sur les layouts standard, course, admin, login, embedded, popup, maintenance, print et secure.
 - [ ] Vérifier l'ordre avec les liens d'évitement, les annonces d'accessibilité, les messages et les sorties de plugins.
@@ -111,4 +112,14 @@ Les chemins et branches sont ceux des forks personnels :
 - [Iomad 5.2 — core_renderer.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/output/core_renderer.php)
 - [Iomad 5.2 — hook de sortie](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/hook/output/before_standard_top_of_body_html_generation.php)
 
-**État de preuve :** comparaison statique des fichiers source. Aucun callback Project N n'a été enregistré, aucun template n'a été injecté et aucun test runtime ou accessibilité n'a été exécuté.
+## 7. Contrat d'enregistrement des callbacks confirmé dans Moodle 4.5
+
+Le gestionnaire `core\\hook\\manager` construit la liste des fichiers de callbacks à partir de `core_component::get_plugin_types()`, puis associe à chaque composant son chemin `db/hooks.php`. Le fichier est inclus et doit renseigner un tableau local `$callbacks`. Chaque définition doit fournir :
+
+- `hook` : nom complet de la classe du hook ;
+- `callback` : méthode statique sous forme de tableau `[Classe::class, 'méthode']` ou de chaîne `Classe::méthode` ;
+- `priority` : facultatif, valeur par défaut 100.
+
+Le gestionnaire valide la méthode statique et enregistre le composant d'origine. Comme les thèmes font partie des types de plugins, le mécanisme est applicable à `theme_projectn` sans plugin compagnon. Le même contrat doit néanmoins être revérifié dans les branches 5.x ciblées avant de revendiquer une compatibilité complète.
+
+**État de preuve :** comparaison statique des fichiers source et inspection du gestionnaire de hooks Moodle 4.5. Aucun callback Project N n'a été enregistré, aucun template n'a été injecté et aucun test runtime ou accessibilité n'a été exécuté.
