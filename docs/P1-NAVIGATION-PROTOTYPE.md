@@ -1,6 +1,6 @@
 # Project N — P1 : stratégie du prototype de navigation
 
-**Statut :** spécification de prototype ; aucun composant de navigation personnalisé n'est encore implémenté ni validé.  
+**Statut :** première navigation globale implémentée ; placement final et fonctionnement runtime restent à valider. Voir [P1-NAVIGATION-GLOBALE.md](P1-NAVIGATION-GLOBALE.md).  
 **Branche :** `feature/p1-foundation`  
 **Référence P0 :** [P0-NAVIGATION.md](P0-NAVIGATION.md) et [P0-CARTOGRAPHIE-NAVIGATION.md](P0-CARTOGRAPHIE-NAVIGATION.md).
 
@@ -114,15 +114,15 @@ Mesurer la réussite autonome, le temps, les erreurs, les retours arrière et le
 
 ## 7. Étapes d'implémentation
 
-1. **Audit des points d'extension** : comparer sur Moodle 4.5, 5.0, 5.1, 5.2, 5.3 et les branches Iomad ciblées les possibilités de fournir une navigation de thème sans remplacer la navigation native.
-2. **Contrat de données** : définir une structure interne minimale pour les entrées (libellé, URL, icône facultative, état courant, condition d'exposition) sans y stocker de décision d'autorisation.
-3. **Premier rendu** : réaliser un prototype non intrusif sur une page simple, puis l'étendre aux layouts concernés uniquement après validation.
+1. **Audit des points d'extension** : s'appuyer sur la cartographie P0 et l'audit ciblé P1 déjà consignés ; ne rouvrir une inspection que si un test révèle un point non couvert.
+2. **Contrat de données** : première structure réalisée dans `classes/output/global_navigation.php` (libellé, URL, état courant). Les conditions d'exposition sont contrôlées par le callback ; aucune autorisation n'est stockée dans les données.
+3. **Premier rendu** : réalisé via le hook de sortie, `hook_callbacks.php` et `global_navigation.mustache`, sans surcharge des layouts Boost. Voir le document d'implémentation.
 4. **Responsive et accessibilité** : tester le prototype à 320, 390, 768 et 1440 CSS px, au clavier et avec lecteur d'écran.
 5. **Validation multi-version** : installer et comparer sur les environnements disponibles ; consigner explicitement les versions non testées.
 6. **Décision de forme** : choisir entre barre inférieure, menu compact ou autre présentation après les tests, pas avant.
 
 ## 8. Limites et statut
 
-À ce stade, le document définit un plan de prototype. Il ne prouve ni la disponibilité d'un point d'extension identique sur toutes les versions, ni l'installation du thème, ni le fonctionnement responsive, ni la conformité WCAG/RGAA. Aucun template natif n'est encore surchargé et aucune navigation personnalisée n'est déclarée opérationnelle.
+Le premier composant est présent dans le dépôt, mais cela ne prouve pas encore son chargement, son rendu ni sa compatibilité runtime. Aucun template natif n'est surchargé. Les tests multi-versions, responsive et accessibilité restent à exécuter.
 
-Les décisions encore ouvertes sont : libellés finaux, nombre de destinations, emplacement smartphone, stratégie d'injection technique et liste exacte des raccourcis par espace.
+Les décisions encore ouvertes sont : destination d'accueil respectant les préférences utilisateur, nombre et ordre des destinations, emplacement smartphone et liste exacte des raccourcis par espace.
