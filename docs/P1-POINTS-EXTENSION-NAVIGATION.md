@@ -107,19 +107,21 @@ Les chemins et branches sont ceux des forks personnels :
 - [Moodle 4.5 — vue primaire](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/classes/navigation/views/primary.php)
 - [Moodle 5.3 — core_renderer.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/output/core_renderer.php)
 - [Moodle 5.3 — vue primaire](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/navigation/views/primary.php)
+- [Moodle 5.3 — gestionnaire de hooks](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/classes/hook/manager.php)
 - [Iomad 4.5 — core_renderer.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/classes/output/core_renderer.php)
 - [Iomad 4.5 — hook de sortie](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/classes/hook/output/before_standard_top_of_body_html_generation.php)
 - [Iomad 5.2 — core_renderer.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/output/core_renderer.php)
 - [Iomad 5.2 — hook de sortie](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/hook/output/before_standard_top_of_body_html_generation.php)
+- [Iomad 5.2 — gestionnaire de hooks](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/classes/hook/manager.php)
 
 ## 7. Contrat d'enregistrement des callbacks confirmé dans Moodle 4.5
 
-Le gestionnaire `core\\hook\\manager` construit la liste des fichiers de callbacks à partir de `core_component::get_plugin_types()`, puis associe à chaque composant son chemin `db/hooks.php`. Le fichier est inclus et doit renseigner un tableau local `$callbacks`. Chaque définition doit fournir :
+Le gestionnaire `core\\hook\\manager` construit la liste des fichiers de callbacks à partir de `core_component::get_plugin_types()`, puis associe à chaque composant son chemin `db/hooks.php`. Ce mécanisme a été comparé et retrouvé à l'identique dans Moodle 4.5, Moodle 5.3 et Iomad 5.2. Le fichier est inclus et doit renseigner un tableau local `$callbacks`. Chaque définition doit fournir :
 
 - `hook` : nom complet de la classe du hook ;
 - `callback` : méthode statique sous forme de tableau `[Classe::class, 'méthode']` ou de chaîne `Classe::méthode` ;
 - `priority` : facultatif, valeur par défaut 100.
 
-Le gestionnaire valide la méthode statique et enregistre le composant d'origine. Comme les thèmes font partie des types de plugins, le mécanisme est applicable à `theme_projectn` sans plugin compagnon. Le même contrat doit néanmoins être revérifié dans les branches 5.x ciblées avant de revendiquer une compatibilité complète.
+Le gestionnaire valide la méthode statique et enregistre le composant d'origine. Comme les thèmes font partie des types de plugins, le mécanisme est applicable à `theme_projectn` sans plugin compagnon. Le contrat est donc établi statiquement pour Moodle 4.5, Moodle 5.3 et Iomad 5.2 ; les générations intermédiaires et l'exécution réelle restent à tester.
 
 **État de preuve :** comparaison statique des fichiers source et inspection du gestionnaire de hooks Moodle 4.5. Aucun callback Project N n'a été enregistré, aucun template n'a été injecté et aucun test runtime ou accessibilité n'a été exécuté.
