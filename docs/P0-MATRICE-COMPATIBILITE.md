@@ -43,7 +43,7 @@ Un champ vide n'est pas une preuve d'identité entre versions. Il signifie « no
 | Disponibilité et achèvement | Non vérifié | Cartographie initiale antérieure | Non vérifié | Non vérifié | Non vérifié | États, indicateurs et conditions | À comparer |
 | Fichiers et éditeurs | Non vérifié | Cartographie initiale antérieure | Non vérifié | Non vérifié | Non vérifié | File API, éditeurs, sélecteurs | À comparer |
 | Espace formateur | Points d'entrée + structure Output API comparés | Points d'entrée + structure Output API comparés | Points d'entrée + structure Output API comparés | Points d'entrée + structure Output API comparés | Points d'entrée + structure Output API comparés | Évolutions de `core_courseformat\\base`, renderers, classes de sortie, templates Mustache et AMD ; dépréciation du template grader en 5.3 ; contrôle d'accès Iomad au cours distinct | Statique et partiel ; chaîne de rendu sélectionnée identique Moodle/Iomad sur les quatre couples 4.5–5.2 ; voir cartographie 65.10–65.13 et comparaison 9.4–9.5 |
-| Comptes utilisateurs | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Rapport système, entités et actions conditionnelles ; Company Admin : affectation, rôles, hiérarchie parent/enfant, retrait, licences, suspension/réactivation, suppression et contrôleurs/actions | Statique, partiel ; cartographie 66.10–66.22 et synthèse fonctionnelle [66.22](P0-SYNTHESE-66.22-COMPTES-COHORTES.md), comparaison §9.6–9.9 ; écart potentiel entre capacités d'affichage et contrôles serveur en 4.5/5.0 ; external API et permissions dédiées en 5.1/5.2 ; tests multi-entreprises, rôles, runtime, accessibilité et mobile à réaliser |
+| Comptes utilisateurs | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Rapport système, entités et actions conditionnelles ; Company Admin : affectation, rôles, hiérarchie parent/enfant, retrait, licences, suspension/réactivation, suppression et contrôleurs/actions | Statique, partiel ; cartographie 66.10–66.22 et synthèse fonctionnelle [66.22](P0-SYNTHESE-66.22-COMPTES-COHORTES.md), comparaison §9.6–9.9. L'écart potentiel affichage/contrôle serveur en 4.5/5.0 reste une hypothèse à revalider dans `blocks/iomad_company_admin/editusers.php` et `classes/tables/editusers_table.php` (4.5/5.0), puis leurs chemins `public/` en 5.1/5.2 ; contrôler aussi les endpoints External API concernés. Aucun défaut d'autorisation n'est établi par la seule différence de code ; tests runtime, rôles, isolation, accessibilité et mobile à réaliser |
 | Cohortes | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Points d'entrée + Report Builder comparés | Entités, colonnes et actions contextuelles ; fichiers Report Builder natifs sélectionnés identiques Moodle/Iomad sur les quatre couples 4.5–5.2 | Statique ; synchronisations, cloisonnement Iomad et permissions runtime à tester |
 | Catégories et cours plateforme | Points d'entrée + renderer comparés | Points d'entrée + renderer comparés | Points d'entrée + renderer comparés | Points d'entrée + renderer comparés | Points d'entrée + renderer comparés | Contrôleur stable mais helper/renderer/actionbar/templates évolutifs ; six fichiers cœur identiques Moodle/Iomad sur les couples 5.0 et 5.2 | Statique, partiel ; cartographie 67.9–67.13 (synthèse ergonomique) ; JavaScript, capacités et parcours runtime à tester |
 | Méthodes d'inscription | Points d'entrée + plugin Iomad comparés | Points d'entrée + plugins natifs et Iomad comparés | Points d'entrée + plugins natifs et Iomad comparés | Points d'entrée + plugins natifs et Iomad comparés | Points d'entrée Moodle comparés ; Iomad 5.3 absent | Plugins natifs sélectionnés identiques Moodle/Iomad en 5.0 et 5.2 ; plugin Iomad enrol/license spécifique, absent de Moodle | Statique ; cartographie 68.11–68.18 (synthèse ergonomique) ; cron licence, synchronisations et plugins non sélectionnés à tester |
@@ -122,7 +122,7 @@ Le thème doit rester installable et fonctionnel sur Moodle 4.5, 5.0, 5.1, 5.2 e
 | `admin/user/user_bulk.php` | Non vérifié | Identique | Non vérifié | Non vérifié | Comparaison Moodle/Iomad 5.0 uniquement |
 Ces résultats concernent les points d'entrée listés, pas l'ensemble des dépendances de rendu ni les plugins Iomad.
 
-### 7.2 Rôles et capacités Iomad 5.0
+### 7.2.1 Rôles et capacités Iomad 5.0
 
 Rôles ajoutés par Iomad, distincts du rôle Moodle natif Gestionnaire :
 - `companymanager` et `companydepartmentmanager` : affectables au contexte entreprise ;
@@ -132,7 +132,7 @@ Rôles ajoutés par Iomad, distincts du rôle Moodle natif Gestionnaire :
 
 Le contexte entreprise (`CONTEXT_COMPANY`) et les capacités du bloc `block_iomad_company_admin` déterminent les actions disponibles. L'interface du thème doit tester les capacités effectives dans le contexte pertinent, pas seulement le shortname du rôle.
 
-### 7.2 bis Statut de gestion et statut d'éducateur
+### 7.2.2 Statut de gestion et statut d'éducateur
 
 Le champ Iomad `company_users.managertype` n'est pas un rôle Moodle. Il encode une fonction dans l'entreprise (notamment utilisateur, gestionnaire d'entreprise, gestionnaire de département ou reporter). Le champ `company_users.educator` est distinct et peut être combiné à cette fonction. Les valeurs des sélecteurs de formulaire (0, 1, 10, 11, 20, 21, 40, 41) sont converties avant enregistrement ; elles ne sont pas des identifiants de rôle.
 
@@ -140,9 +140,18 @@ La méthode `company::upsert_company_user()` affecte les rôles effectifs au con
 
 ### 7.3 Personnalisations du fork Iomad 5.0
 
-Le fork conserve six fichiers modifiés dans `blocks/iomad_company_admin`. Ils ajoutent notamment le préfixe `[shortname]` dans les listes/sélecteurs de cours et restreignent le clonage aux cours appartenant à l'entreprise avec la capacité `createcourse`. Les fichiers sont détaillés dans la section 67.10 de la cartographie.
+Un inventaire antérieur du fork Iomad 5.0 recense six fichiers supposément personnalisés dans `blocks/iomad_company_admin` (voir cartographie §67.10). **Cette liste et les effets décrits ci-dessous ne sont pas revalidés dans la présente passe** : ils doivent être confirmés par un diff fichier par fichier avec la branche amont exacte avant toute décision de portage. Ils ne doivent donc pas être présentés comme des constats nouvellement vérifiés.
 
-Points à surveiller avant toute reprise ou refactorisation :
+| Fichier recensé dans l'inventaire antérieur | Effet rapporté — à revalider |
+|---|---|
+| `classes/forms/company_ccu_courses_form.php` | Affichage `[shortname] fullname` dans la liste des cours |
+| `classes/forms/company_groups_form.php` | Préfixe `[shortname]` dans le sélecteur |
+| `classes/forms/company_gu_courses_form.php` | Préfixe `[shortname]` dans le sélecteur associé |
+| `classes/tables/iomad_courses_table.php` | Affichage du shortname et restriction rapportée du clonage |
+| `iomad_courses_form.php` | Contrôle rapporté du cours source et suppression d'une attribution temporaire du rôle Manager |
+| `lib/course_selectors.php` | Préfixe `[shortname]` dans les sélecteurs |
+
+Points à surveiller avant toute reprise ou refactorisation, sous réserve de revalidation :
 - requêtes N+1 pour récupérer les shortnames dans deux formulaires ;
 - condition `deletecourses` dupliquée à l'identique dans un `OR` ;
 - récupération du cours source redondante dans le flux de clonage ;
@@ -150,9 +159,9 @@ Points à surveiller avant toute reprise ou refactorisation :
 
 ### 7.4 État des forks
 
-- Fork Moodle : branches 4.5, 5.0, 5.1, 5.2 et 5.3 identiques aux branches officielles contrôlées.
-- Fork Iomad : branches 4.5, 5.1 et 5.2 alignées sur l'amont ; branche 5.0 synchronisée avec l'amont tout en conservant les 14 commits locaux, plus le commit de fusion.
-- Aucune CI n'a été lancée. Les résultats sont des comparaisons statiques de code ; les tests runtime et de non-régression restent à effectuer.
+- **Fork Moodle :** l'identité avec les branches officielles 4.5 à 5.3 est une affirmation issue d'une vérification antérieure ; elle n'a pas été recontrôlée dans cette passe. Les commits de tête inscrits en §1 identifient les snapshots des forks, mais ne prouvent pas à eux seuls leur identité avec l'amont.
+- **Fork Iomad :** l'alignement des branches 4.5, 5.1 et 5.2 sur l'amont n'a pas été recontrôlé dans cette passe. Le nombre de commits locaux de la branche 5.0 (14 ou 15 selon le périmètre de comptage, fusion comprise ou non) est **à recalculer** ; ne pas réutiliser ce chiffre comme état courant.
+- Aucune CI n'a été lancée dans le cadre de cette vérification documentaire. Les tests runtime et de non-régression restent à effectuer.
 
 
 ### 7.5 Capacités et archétypes Iomad — contrôle statique 5.2
@@ -181,10 +190,10 @@ Sources : [Company Admin access.php](https://github.com/ericfalcon/iomad/blob/IO
 | moodle/role:safeoverride | Cours | editingteacher | Identique | Identique |
 | moodle/role:switchroles | Cours | editingteacher, manager | Identique | Iomad ajoute companycourseeditor |
 
-Les six déclarations ont été lues dans les fichiers core db/access.php des branches listées. Les valeurs décrivent les permissions initiales, pas les permissions effectives d'une installation. Les fichiers Moodle 5.2 et Iomad 5.2 déclarent 319 capacités avec les mêmes noms ; l'ajout d'archétype à moodle/role:switchroles constitue néanmoins un écart de contenu.
+Les six déclarations ont été lues dans les fichiers core `db/access.php` des branches listées. Les valeurs décrivent les permissions initiales, pas les permissions effectives d'une installation. **Comptage corrigé pour Moodle 5.2 et Iomad 5.2 :** le fichier `public/lib/db/access.php` contient 319 lignes comportant une occurrence de `moodle/`, mais seulement 268 clés de capacités distinctes `moodle/*` (comptage des clés de déclaration). Les 268 clés distinctes sont identiques entre les deux fichiers comparés ; l'écart `companycourseeditor` sur l'archétype de `moodle/role:switchroles` porte sur les métadonnées de cette déclaration, pas sur le nombre de clés. Il ne faut donc pas annoncer « 319 capacités ».
 
 
-### 7.7 Calcul des permissions et contrôle entreprise
+### 7.7.1 Calcul des permissions et contrôle entreprise
 
 | Élément | Moodle 5.2 | Iomad 5.2 | Conséquence |
 |---|---|---|---|
@@ -195,23 +204,23 @@ Les six déclarations ont été lues dans les fichiers core db/access.php des br
 | Cache d'accès | Données utilisateur, marquage dirty, cache de définitions | Fonctions examinées identiques | Ne jamais manipuler les caches depuis le thème |
 | Contrôle entreprise | Sans couche entreprise | `local_iomad\\iomad::has_capability()` ajoute le contrôle de membership et les restrictions par entreprise | Appeler l'API Iomad pour les workflows qui en dépendent |
 
-Le contrôle Iomad dépend du périmètre entreprise explicite ou courant ; en l'absence d'entreprise courante, sa méthode peut retourner vrai après validation Moodle. Ne pas supposer qu'elle constitue un contrôle d'appartenance obligatoire dans tous les cas. Contrôle statique uniquement, sans test runtime.
+Le contrôle Iomad dépend du périmètre entreprise explicite ou courant. **Le comportement exact du chemin sans `companyid` explicite et sans entreprise courante n'est pas considéré comme vérifié dans cette matrice** : la branche correspondante de `local_iomad\iomad::has_capability()` doit être relue et testée avant d'affirmer qu'elle autorise ou refuse l'action. Ne pas utiliser cette méthode comme preuve d'appartenance sans vérifier le périmètre transmis. Contrôle statique uniquement, sans test runtime.
 
 
 
-### 7.7 Résolution effective des permissions et extension Iomad
+### 7.7.2 Résolution effective des permissions et extension Iomad
 
 | Élément | Moodle 4.5 / 5.2 / 5.3 | Iomad 5.2 | Conséquence thème |
 |---|---|---|---|
 | Résolution des rôles et des chemins de contexte | Moteur natif | Même moteur global Moodle | Ne pas recalculer les droits |
 | Rôles cumulés dans plusieurs contextes | Oui | Oui | Ne pas retenir un « rôle principal » unique |
-| `CAP_PROHIBIT` | Refus prioritaire | Refus prioritaire dans le calcul repris par Iomad | Ne pas agréger les droits visuellement |
+| `CAP_PROHIBIT` | Refus prioritaire dans le moteur Moodle | Sémantique native documentée ; interaction exacte avec le wrapper Iomad et les restrictions entreprise à revalider | Ne pas agréger les droits visuellement |
 | Changement temporaire de rôle | Pris en compte par le moteur | Mécanisme Moodle conservé | Ne pas confondre avec une attribution réelle |
 | Cache et invalidation accesslib | API native | API native conservée | Ne pas manipuler les caches internes |
 | Restrictions entreprise | Sans objet | Contrôle supplémentaire via `local_iomad_company_role_restrictions` | Utiliser l'API Iomad dans les parcours entreprise |
 | Contexte entreprise | Absent | `CONTEXT_COMPANY`, branche distincte sous le système | Ne pas le simuler dans Moodle |
 
-Iomad 5.2 conserve les fonctions centrales de calcul et de cache d'accesslib comparées à Moodle 5.2. Sa méthode `local_iomad\iomad::has_capability()` applique en plus les contrôles d'appartenance et de restrictions par entreprise. La classe `context_company` est une branche distincte du contexte système et ne devient pas le parent des contextes de cours.
+Iomad 5.2 conserve les fonctions centrales de calcul et de cache d'accesslib comparées à Moodle 5.2. La méthode `local_iomad\iomad::has_capability()` comporte une couche supplémentaire d'appartenance et de restrictions par entreprise ; **le cas sans entreprise courante et l'articulation précise de `CAP_PROHIBIT` avec cette couche restent à revalider**. La classe `context_company` est une branche distincte du contexte système et ne devient pas le parent des contextes de cours.
 
 Les fonctions `has_capability()` et `has_capability_in_accessdata()` ont le même corps dans les branches Moodle 4.5, 5.2, 5.3 et Iomad 5.2 consultées. La classe Iomad et la classe de contexte entreprise ont un SHA identique entre Iomad 5.1 et 5.2 ; les autres générations restent à vérifier.
 
@@ -232,7 +241,7 @@ Les scripts d'installation consultés définissent les sept rôles suivants avec
 
 Les blocs de création des rôles sont identiques entre les paires 4.5/5.0 et 5.1/5.2. Le fichier Company Admin `db/access.php` est identique sur les quatre branches (86 capacités). Les déclarations `local/iomad/db/access.php` ont été confirmées identiques entre 5.1 et 5.2 (7 capacités) ; leur emplacement antérieur reste à vérifier, il ne faut pas inférer leur absence en 4.5/5.0 à partir d'un chemin non trouvé.
 
-La tâche ad hoc de réinitialisation des rôles (Iomad 5.1/5.2, même SHA) réinitialise six rôles et ne comprend pas `clientadministrator`. Les types métier `managertype`, notamment l'option `educator`, ne sont pas à confondre avec les sept rôles installés.
+Une analyse antérieure attribue à la tâche ad hoc `resetrolestask` (Iomad 5.1/5.2) la réinitialisation de six rôles, sans `clientadministrator`. **Cette affirmation et le déclenchement effectif de la tâche sont à revalider** dans le fichier de tâche et son enregistrement/planification avant d'en tirer une conséquence sur les permissions après installation. Les types métier `managertype`, notamment l'option `educator`, ne sont pas à confondre avec les sept rôles installés.
 
 
 
