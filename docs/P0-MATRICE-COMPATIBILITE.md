@@ -234,3 +234,19 @@ Les blocs de création des rôles sont identiques entre les paires 4.5/5.0 et 5.
 
 La tâche ad hoc de réinitialisation des rôles (Iomad 5.1/5.2, même SHA) réinitialise six rôles et ne comprend pas `clientadministrator`. Les types métier `managertype`, notamment l'option `educator`, ne sont pas à confondre avec les sept rôles installés.
 
+
+
+### 7.9 Affectation des gestionnaires et périmètre départemental Iomad
+
+| Élément | Iomad 5.1 | Iomad 5.2 | Conséquence Project N |
+|---|---|---|---|
+| `company.php` | SHA identique | SHA identique | Workflow métier stable sur ces deux branches |
+| `company_user.php` | SHA identique | SHA identique | Création/rattachement utilisateur stable sur ces deux branches |
+| `iomad.php` | SHA identique | SHA identique | Contrôle complémentaire de capacité stable sur ces deux branches |
+| `local/iomad/db/install.xml` | SHA identique | SHA identique | Schéma des rattachements et restrictions stable |
+| `blocks/iomad_company_admin/db/access.php` | SHA identique | SHA identique | Déclarations des capacités Company Admin stables |
+| Périmètre départemental | Rattachements + filtrage Iomad | Rattachements + filtrage Iomad | Ne pas déduire le périmètre du seul rôle |
+
+Le rattachement utilisateur–entreprise–département est porté par `local_iomad_company_users`. Les types métier `managertype` (0 utilisateur, 1 gestionnaire entreprise, 2 gestionnaire département, 3 éducateur, 4 rapporteur entreprise) sont distincts des rôles Moodle. Les gestionnaires sont affectés dans le contexte entreprise ; le périmètre départemental est calculé à partir des associations départementales et des fonctions Iomad de parcours récursif. Les restrictions de capacités sont stockées par entreprise/rôle/capacité et appliquées en complément des capacités natives.
+
+**Limite de comparaison :** les composants correspondants n'ont pas encore été comparés sur Iomad 4.5 et 5.0. Les personnalisations du fork 5.0 doivent être préservées et examinées séparément. Analyse statique, sans validation runtime.
