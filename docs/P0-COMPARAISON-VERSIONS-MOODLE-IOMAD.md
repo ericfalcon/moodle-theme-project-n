@@ -645,3 +645,22 @@ Sources :
 - [Iomad 5.0 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/local/iomad/lib/company.php)
 - [Iomad 5.1 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/classes/company_user.php)
 - [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
+
+
+### 9.9 Contrôleurs, permissions et actions utilisateurs
+
+La comparaison des écrans Company Admin met en évidence une évolution de l'architecture des opérations sensibles entre Iomad 4.5/5.0 et 5.1/5.2.
+
+- L'affectation et le retrait dans l'entreprise restent gérés par `company_users_form.php` et sa classe de formulaire. Le contrôleur impose `company_user` dans le contexte entreprise et le traitement du formulaire vérifie le `sesskey`.
+- En 4.5/5.0, les actions de suppression, suspension et réactivation sont traitées directement dans `editusers.php`, avec `confirm_sesskey()`, une page de confirmation, `company::check_canedit_user()` et des contrôles spécifiques sur les administrateurs du site.
+- En 5.1/5.2, ces actions passent par les méthodes external API `block_iomad_company_admin_suspend_user` et `block_iomad_company_admin_delete_user`, déclenchées par le JavaScript de la table. Les méthodes valident le contexte entreprise, exigent respectivement `suspenduser` ou `deleteuser`, vérifient l'utilisateur et son périmètre, puis appellent les méthodes métier `company_user`.
+
+**Écart statique à surveiller en 4.5/5.0 :** la table masque les actions de suppression et de suspension en fonction des capacités `deleteuser` et `suspenduser`, mais les branches de traitement direct de `editusers.php` vérifient seulement `editusers`. De plus, le menu peut être affiché avec `editallusers` alors que les traitements directs exigent `editusers`. Il existe donc une incohérence possible entre visibilité et autorisation serveur. Les rôles aux capacités dissociées doivent être testés avant de qualifier l'impact.
+
+En 5.1/5.2, les contrôles dédiés sont déplacés dans les classes external API ; ils ne reposent pas sur le seul masquage des actions dans la table. Le contrôle du contexte entreprise et `company::check_canedit_user()` restent essentiels.
+
+**Conséquence pour Project N :** vérifier les capacités côté serveur pour chaque opération, utiliser les permissions effectives du contexte entreprise et ne jamais traiter la visibilité d'un bouton comme une protection. Les opérations asynchrones doivent gérer l'état de chargement, les erreurs et les retours de succès avant de mettre à jour la ligne.
+
+Sources : contrôleurs `editusers.php`, tables `editusers_table.php`, formulaire `company_users_form.php`, classes external API `suspend_user.php` et `delete_user.php`, JavaScript `edit_users.js` dans les branches Iomad 4.5, 5.0, 5.1 et 5.2. Les liens détaillés sont dans la cartographie, section 66.21.
+
+**Limites :** constats statiques. Les cas de rôles aux capacités séparées, les appels AJAX, la portée multi-entreprises, les protections de comptes privilégiés et l'accessibilité doivent être validés en runtime.
