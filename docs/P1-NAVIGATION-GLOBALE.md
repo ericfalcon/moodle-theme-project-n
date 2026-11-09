@@ -1,7 +1,7 @@
 # Project N — P1 : première navigation globale implémentée
 
 **Statut :** code présent sur `feature/p1-foundation` ; tests runtime non exécutés.  
-**Version de développement :** `2026111003`.  
+**Version de développement :** `2026111004`.  
 **Références P0 :** [architecture hybride](P0-NAVIGATION.md), [cartographie technique](P0-CARTOGRAPHIE-NAVIGATION.md), [matrice de compatibilité](P0-MATRICE-COMPATIBILITE.md).
 
 ## 1. Périmètre livré
@@ -77,3 +77,8 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 - Le callback vérifie désormais que `$PAGE->theme->name` vaut `projectn` avant tout rendu, car les hooks déclarés par un plugin peuvent être appelés dans un contexte où un autre thème est actif.
 
 **Prochaine tranche :** exécuter `php -l` sur les fichiers PHP modifiés et les tests PHPUnit, puis installer le thème sur un environnement Moodle de référence. Vérifier la chaîne hook → callback → fournisseur de données → Mustache, en particulier l'absence de rendu avec un autre thème actif et le chevauchement éventuel avec la barre Boost `fixed-top`. Corriger les écarts visuels avant de construire la navigation d'espace.
+
+
+## 6. Extension au tableau de bord apprenant
+
+Une première composition de l'espace apprenant est maintenant ajoutée sur `/my/` et `/my/index.php`. Elle est décrite dans [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le callback rend la navigation globale puis le composant « Mes formations » sur ces seules pages. Les données proviennent de l'API d'inscription Moodle ; aucune logique de rôle ni aucun contrôle d'accès n'est dupliqué. Les tests du fournisseur de données sont ajoutés, mais ne sont pas encore exécutés.
