@@ -9,7 +9,7 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | Phase | Objet | Périmètre cible | État |
 |---|---|---|---|
 | P0 | Cadrage, spécifications et décisions | MVP | En cours |
-| P1 | Socle Boost et design system responsive | MVP | À réaliser |
+| P1 | Socle Boost et design system responsive | MVP | En cours — première structure créée, installation non vérifiée |
 | P2 | Espace apprenant | MVP | À réaliser |
 | P3 | Espace formateur | MVP progressif | À réaliser |
 | P4 | Espace administrateur | Version 1.x, après cadrage de la valeur ajoutée | À réaliser |
