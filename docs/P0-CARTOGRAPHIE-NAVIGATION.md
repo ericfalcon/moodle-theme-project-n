@@ -5230,6 +5230,25 @@ Le moteur construit des données d'accès à partir des attributions de rôles d
 
 Le paramètre `$doanything` et le statut d'administrateur du site font partie du contrôle natif ; ils ne justifient pas que le thème remplace un contrôle par un test global « est administrateur ». Les contrôles d'accès doivent rester exprimés par capacité et contexte.
 
+ 
+#### Précision sur l'algorithme de résolution
+
+Les données d'accès d'un utilisateur sont indexées par chemin de contexte. Pour un utilisateur standard, `get_user_roles_sitewide_accessdata()` charge le rôle par défaut au contexte système, le rôle de la page d'accueil s'il existe et toutes les attributions enregistrées.
+
+Pour la capacité et le contexte évalués, `has_capability_in_accessdata()` :
+
+1. construit le chemin du contexte courant vers ses parents ;
+2. récupère les rôles attribués sur chacun de ces niveaux ;
+3. en cas de changement temporaire de rôle, retient le changement le plus proche et utilise le rôle sélectionné avec le rôle utilisateur par défaut ;
+4. récupère les définitions des rôles concernés ;
+5. résout, pour chaque rôle, la première permission explicite rencontrée en partant du contexte le plus précis ;
+6. refuse immédiatement si une permission `CAP_PROHIBIT` est rencontrée dans l'un des rôles ;
+7. accorde finalement le droit si au moins un rôle conserve une permission effective `CAP_ALLOW`.
+
+`CAP_PREVENT` empêche l'autorisation provenant du même rôle à ce niveau, mais ne neutralise pas à lui seul une autorisation issue d'un autre rôle. Le thème ne doit donc jamais recalculer les permissions effectives en fusionnant les rôles visibles dans l'interface.
+
+Le changement temporaire de rôle ne supprime pas les attributions réelles. Le statut d'administrateur n'est pas conservé dans le contexte où l'administrateur a choisi de changer de rôle : le moteur repasse alors par le calcul normal.
+
 #### Attribution et retrait : origine à préserver
 
 `role_assign()` crée une attribution en enregistrant notamment le rôle, l'utilisateur, le contexte, le composant et l'identifiant d'instance. Il marque ensuite l'utilisateur comme devant recharger ses données d'accès, déclenche l'événement `role_assigned` et le hook post-attribution. Le couple composant / itemid permet d'identifier l'origine d'une attribution (par exemple un plugin d'inscription).
@@ -5246,6 +5265,10 @@ Moodle conserve des données d'accès en mémoire pour l'utilisateur courant et 
 - `mark_user_dirty()`, utilisé après une modification pour provoquer le rechargement des données de session ;
 - `accesslib_clear_role_cache()`, qui invalide les définitions des rôles concernés ;
 - `accesslib_clear_all_caches()`, qui réinitialise les caches internes d'accès et, si demandé, les caches de contextes.
+
+Les données d'accès de l'utilisateur courant sont conservées dans `$USER->access`, tandis que les données d'autres utilisateurs peuvent être conservées dans `$ACCESSLIB_PRIVATE->accessdatabyuser`. Les définitions de rôles utilisent un cache statique par requête et le cache MUC `core/roledefs`. Les contextes disposent de leur propre cache.
+
+Les contextes modifiés sont signalés comme périmés et `has_capability()` appelle `reload_if_dirty()` avant le calcul. `reload_all_capabilities()` réinitialise les caches d'accès et de contextes, recharge les droits de l'utilisateur courant et tente de rétablir les changements temporaires de rôle qui restent autorisés.
 
 Une interface de thème ne doit ni lire ni modifier directement ces structures internes (`$USER->access`, `$ACCESSLIB_PRIVATE`, caches MUC). Elle doit utiliser les API publiques du cœur et laisser les composants déclencher l'invalidation nécessaire.
 
@@ -5267,6 +5290,12 @@ Dans Iomad 5.2, la classe `local_iomad\\iomad` fournit un contrôle complémenta
 
 Ce contrôle interne parcourt le chemin du contexte courant vers ses parents, collecte les rôles pertinents (avec un traitement spécifique du changement de rôle), charge leurs définitions et vérifie les restrictions enregistrées dans `local_iomad_company_role_restrictions` pour le triplet entreprise / rôle / capacité. Une restriction correspondante provoque un refus. La logique de prohibition `CAP_PROHIBIT` est également explicitement bloquante.
 
+#### Contexte entreprise : une branche distincte
+
+La classe `local_iomad\\custom_context\\context_company` définit `CONTEXT_COMPANY = 13`. Lors de la création d'un contexte entreprise, Iomad le rattache directement au contexte système (chemin construit depuis le contexte système, profondeur 2). Les contextes entreprise et les contextes de cours sont donc des branches distinctes de l'arbre des contextes Moodle.
+
+Les restrictions d'entreprise ne sont donc pas héritées automatiquement par un cours via `context.path`. Iomad les applique par son évaluateur spécifique, en utilisant l'identifiant d'entreprise et les restrictions stockées. Il ne faut pas ajouter artificiellement un contexte entreprise comme parent d'un cours.
+
 La méthode `require_capability()` de cette classe appelle ce contrôle et lève une `required_capability_exception` si le droit n'est pas accordé.
 
 **Conséquences pour Project N :**
@@ -5287,117 +5316,15 @@ Sources :
 
 | Vérification | État |
 |---|---|
-| Parcours de calcul natif `has_capability()` | Analyse statique Moodle 5.2 / Iomad 5.2 ; corps identiques dans les versions comparées |
-| Chemins de contextes et récupération des parents | Méthodes de la classe context examinées |
+| Algorithme natif `has_capability()` et résolution `has_capability_in_accessdata()` | Analyse statique effectuée ; corps identiques entre Moodle 4.5, 5.2, 5.3 et Iomad 5.2 dans les branches consultées |
+| Chemins de contextes et récupération des parents | Méthodes de la classe context examinées ; classe context_company Iomad 5.1/5.2 identique |
+| Rôles cumulés et changement temporaire de rôle | Algorithme statique examiné ; scénarios runtime à réaliser |
 | Attribution / retrait et traçabilité composant-itemid | Analyse statique des API natives effectuée |
-| Invalidation des caches et marquage utilisateur | Principales fonctions repérées et analysées |
-| Contrôle complémentaire Iomad par entreprise | Classe `local_iomad\\iomad` 5.2 examinée |
-| Différences de ces mécanismes entre Moodle 4.5 et 5.3 | Comparaison fonction par fonction à poursuivre |
+| Cache des définitions de rôles et invalidation | Principales fonctions examinées ; mécanismes de cache statique, MUC et contexte identifiés |
+| Contrôle complémentaire Iomad par entreprise | Classe local_iomad\\iomad Iomad 5.2 examinée ; SHA identique entre Iomad 5.1 et 5.2 |
+| Différences du moteur Moodle entre 4.5 et 5.3 | Comparaison fonction par fonction effectuée pour les fonctions clés ; autres fonctions accesslib à comparer |
 | Différences Iomad 4.5, 5.0 et 5.1 | À comparer, en tenant compte des six personnalisations du fork Iomad 5.0 |
-| Scénarios de multi-appartenance, changement d'entreprise, accès direct URL et restrictions entreprise | À tester en runtime |
+| Scénarios multi-entreprises, changement d'entreprise, accès direct URL et restrictions entreprise | À tester en runtime |
 | Impact de la navigation mobile et des changements de contexte | À tester en runtime et avec lecteurs d'écran |
 
-**Niveau de preuve :** analyse statique des branches Moodle 5.2 et Iomad 5.2. Aucune simulation d'utilisateur, installation, requête de permission en runtime ou campagne de tests d'accessibilité n'a été exécutée.
-
-
-### 70.13 Calcul effectif des permissions, héritage et rôles multiples
-
-Le moteur Moodle sépare les **attributions de rôles** des **définitions de rôles** :
-
-- `role_assignments` rattache un utilisateur à un rôle dans un contexte donné ;
-- `role_capabilities` stocke les permissions d'un rôle dans un contexte donné ;
-- `context.path` représente la chaîne hiérarchique des contextes ;
-- les définitions de rôles sont chargées par `get_role_definitions()`, puis utilisées par `has_capability_in_accessdata()`.
-
-Les données d'accès d'un utilisateur sont indexées par chemin de contexte. Pour un utilisateur standard, `get_user_roles_sitewide_accessdata()` charge le rôle par défaut au contexte système, le rôle de la page d'accueil s'il existe et toutes les attributions enregistrées. Les rôles sont donc cumulables : la vérification ne se réduit pas à rechercher un rôle principal.
-
-#### Algorithme de résolution
-
-Pour une capacité et un contexte donnés, Moodle :
-
-1. construit la liste du chemin du contexte courant vers ses parents ;
-2. récupère les rôles attribués sur chacun de ces niveaux ;
-3. en cas de changement temporaire de rôle, utilise le rôle sélectionné au contexte le plus proche, avec le rôle utilisateur par défaut ;
-4. récupère les définitions de ces rôles ;
-5. résout, pour chaque rôle, la première permission explicite rencontrée en partant du contexte le plus précis ;
-6. refuse immédiatement si une permission `CAP_PROHIBIT` est rencontrée dans l'un des rôles ;
-7. accorde finalement le droit si au moins un rôle conserve une permission effective `CAP_ALLOW`.
-
-Cette lecture précise la différence entre les états :
-- `CAP_INHERIT` : aucune décision locale ; la recherche continue dans les contextes parents ;
-- `CAP_ALLOW` : autorisation explicite pour ce rôle à ce niveau ;
-- `CAP_PREVENT` : refus pour ce rôle à ce niveau, sans neutraliser à lui seul un `CAP_ALLOW` provenant d'un autre rôle ;
-- `CAP_PROHIBIT` : refus prioritaire, même si un autre rôle accorde la capacité.
-
-Le thème ne doit donc jamais calculer lui-même une permission effective en fusionnant les rôles visibles dans l'interface. Les règles de priorité sont plus fines qu'une simple union des permissions.
-
-#### Rôles multiples et changement temporaire de rôle
-
-Les attributions de rôles à plusieurs niveaux se cumulent : un utilisateur peut avoir un rôle au niveau système, un autre dans une catégorie et un troisième dans un cours. Les permissions sont alors évaluées selon la hiérarchie des contextes et les dérogations propres à chaque rôle.
-
-Le changement temporaire de rôle (`role_switch`) ne supprime pas les attributions réelles. Le moteur repère le changement le plus proche du contexte évalué et calcule les droits à partir du rôle sélectionné, complété par le rôle utilisateur par défaut. Les droits de l'administrateur de site ne sont pas conservés dans le contexte où il a choisi de changer de rôle : le moteur repasse alors par le calcul normal.
-
-**Décision Project N :** afficher le rôle courant ou le mode de consultation comme un état de navigation, mais ne jamais modifier l'identité ou les droits côté thème. Les permissions restent déterminées par Moodle.
-
-### 70.14 Cache des droits et invalidation
-
-Le calcul des permissions s'appuie sur plusieurs niveaux de cache :
-
-| Niveau | Données | Mécanisme observé |
-|---|---|---|
-| Session utilisateur courant | `$USER->access` | Données d'accès conservées pendant la session |
-| Requête courante, autres utilisateurs | `$ACCESSLIB_PRIVATE->accessdatabyuser` | Cache statique par identifiant utilisateur |
-| Définitions des rôles | `$ACCESSLIB_PRIVATE->cacheroledefs` et cache MUC `core/roledefs` | Cache statique et cache applicatif |
-| Contextes | `context_helper` | Cache des instances de contextes |
-
-Les mécanismes d'invalidation sont importants pour éviter qu'une interface continue d'afficher des actions qui ne sont plus autorisées :
-
-- `mark_user_dirty()` marque les données d'accès d'un utilisateur comme périmées et invalide le cache local correspondant ;
-- les contextes modifiés sont signalés comme périmés ; `has_capability()` appelle `reload_if_dirty()` avant le calcul ;
-- `accesslib_clear_role_cache()` invalide les définitions des rôles concernés ;
-- `accesslib_clear_all_caches()` vide les données d'accès de la requête et peut réinitialiser les caches de contextes ;
-- `reload_all_capabilities()` recharge les droits de l'utilisateur courant en préservant les changements temporaires de rôle qui restent autorisés.
-
-Le thème ne doit ni manipuler directement `$USER->access`, ni lire les caches internes, ni inventer son propre cache de permissions. Il doit demander les droits au moteur au moment utile et laisser Moodle gérer l'invalidation.
-
-### 70.15 Extension Iomad : contexte entreprise et restrictions de capacités
-
-Iomad 5.2 conserve le moteur Moodle dans `public/lib/accesslib.php`. Les fonctions `has_capability()`, `has_capability_in_accessdata()`, `get_user_accessdata()`, `get_user_roles_sitewide_accessdata()`, `accesslib_clear_all_caches()`, `accesslib_clear_role_cache()` et `reload_all_capabilities()` ont le même corps que dans Moodle 5.2. L'extension Iomad intervient dans une API supplémentaire de `local_iomad\iomad`, pas dans le remplacement de la fonction globale Moodle.
-
-La méthode `local_iomad\iomad::has_capability()` suit ce parcours :
-
-1. appelle d'abord `has_capability()` Moodle ; si Moodle refuse, Iomad refuse également ;
-2. reconnaît l'administrateur de site ;
-3. si un identifiant d'entreprise est fourni, vérifie l'appartenance de l'utilisateur à cette entreprise dans `local_iomad_company_users` ;
-4. sinon, récupère l'entreprise courante de l'utilisateur ; en l'absence d'entreprise courante, la méthode retourne vrai après le contrôle Moodle ;
-5. charge les données d'accès si nécessaire ;
-6. appelle son propre évaluateur, qui reprend la résolution Moodle des rôles et des chemins, puis vérifie les restrictions de capacités de l'entreprise dans `local_iomad_company_role_restrictions`.
-
-Une restriction trouvée pour le triplet entreprise / rôle / capacité entraîne un refus. Cette couche permet à Iomad de restreindre, pour une entreprise donnée, une capacité qui serait autorisée par les permissions Moodle du rôle. La méthode `local_iomad\iomad::require_capability()` s'appuie sur ce contrôle et lève une exception en cas de refus.
-
-#### Le contexte entreprise n'est pas un parent des contextes de cours
-
-La classe `local_iomad\custom_context\context_company` définit `CONTEXT_COMPANY = 13`. Lors de la création d'un contexte entreprise, Iomad le rattache directement au contexte système (chemin construit depuis le contexte système, profondeur 2). Les contextes entreprise et les contextes de cours sont donc des branches distinctes de l'arbre des contextes Moodle.
-
-Conséquence : les restrictions d'entreprise ne sont pas héritées automatiquement par un cours via `context.path`. Iomad les applique par son évaluateur spécifique, en utilisant l'identifiant d'entreprise et les restrictions stockées. Il ne faut pas chercher à représenter l'appartenance entreprise en ajoutant artificiellement un contexte entreprise comme parent d'un cours.
-
-#### Conséquences pour Project N
-
-- Utiliser `has_capability()` Moodle pour les droits Moodle standards.
-- Utiliser `local_iomad\iomad::has_capability()` dans les parcours qui dépendent réellement du périmètre entreprise et transmettre l'entreprise concernée lorsque le contrôleur métier le prévoit.
-- Ne pas substituer l'une à l'autre dans un helper générique du thème : le contrôle Iomad exige un contexte d'entreprise explicite ou une entreprise courante correctement résolue.
-- Ne pas déduire l'appartenance d'entreprise d'un rôle Moodle, d'un département affiché ou du nom d'un cours.
-- Ne pas interpréter le contexte entreprise comme un parent hiérarchique des cours.
-- Laisser les contrôleurs Iomad vérifier aussi les droits sur les objets et les départements concernés ; la seule capacité globale ne décrit pas toute la portée métier.
-
-#### Comparaison interversions et limites
-
-| Élément | Résultat statique vérifié | Périmètre |
-|---|---|---|
-| Fonctions centrales Moodle d'accès et de cache | Corps identiques entre Moodle 4.5 et 5.2 pour les fonctions comparées | Comparaison fonction par fonction |
-| `has_capability()` et résolution `has_capability_in_accessdata()` | Corps identiques entre Moodle 4.5, Moodle 5.2, Moodle 5.3 et Iomad 5.2 | Les fichiers complets ne sont pas identiques |
-| Classe `local_iomad\iomad` | SHA identique entre Iomad 5.1 et 5.2 dans le fork consulté | N'autorise pas à extrapoler à Iomad 4.5 ou 5.0 |
-| Classe `context_company` | SHA identique entre Iomad 5.1 et 5.2 dans le fork consulté | N'autorise pas à extrapoler à Iomad 4.5 ou 5.0 |
-| Restriction par entreprise | Code de l'évaluateur et de la table de restrictions lu dans Iomad 5.2 | Scénarios multi-entreprises à tester en runtime |
-
-**Niveau de preuve :** lecture statique des sources des forks. Aucun test d'utilisateur multi-entreprises, de rôles cumulés, de restrictions par entreprise, de changement de rôle ou d'invalidation de cache n'a été exécuté en environnement Moodle/Iomad.
+**Niveau de preuve :** analyse statique des branches consultées. Aucune simulation d'utilisateur, installation, requête de permission en runtime ou campagne de tests d'accessibilité n'a été exécutée.
