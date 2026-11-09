@@ -5328,3 +5328,65 @@ Sources :
 | Impact de la navigation mobile et des changements de contexte | À tester en runtime et avec lecteurs d'écran |
 
 **Niveau de preuve :** analyse statique des branches consultées. Aucune simulation d'utilisateur, installation, requête de permission en runtime ou campagne de tests d'accessibilité n'a été exécutée.
+ 
+
+### 70.16 Rôles Iomad installés : archétypes, contextes autorisés et types de gestion
+
+L'analyse de `local/iomad/db/install.php` (Iomad 4.5 et 5.0) et `public/local/iomad/db/install.php` (Iomad 5.1 et 5.2) identifie sept rôles Iomad créés explicitement par l'installation. Les blocs de création et de déclaration des contextes autorisés sont identiques sur les quatre branches consultées.
+
+| Shortname | Libellé | Archétype créé | Contextes autorisés par `set_role_contextlevels()` | Lecture fonctionnelle |
+|---|---|---|---|---|
+| `companymanager` | Company Manager | `companymanager` | `CONTEXT_COMPANY` | Gestion d'une entreprise |
+| `companydepartmentmanager` | Company Department Manager | `companydepartmentmanager` | `CONTEXT_COMPANY` | Gestion dans le périmètre d'une entreprise, avec portée départementale gérée par les mécanismes métier Iomad |
+| `companycourseeditor` | Company Course Editor | `companycourseeditor` | `CONTEXT_COURSE` | Rôle enseignant éditeur pour les cours concernés |
+| `companycoursenoneditor` | Company Course Non Editor | `companycoursenoneditor` | `CONTEXT_COURSE` | Rôle enseignant non éditeur pour les cours concernés |
+| `companyreporter` | Company Report Only | `companyreporter` | `CONTEXT_COMPANY` | Accès aux rapports d'entreprise |
+| `clientadministrator` | Client Administrator | `clientadministrator` | `CONTEXT_SYSTEM` | Administration du périmètre client / multi-entreprises |
+| `clientreporter` | Client Report Only | `clientreporter` | `CONTEXT_SYSTEM` | Accès aux rapports du périmètre client |
+
+Attention : `set_role_contextlevels()` définit les contextes dans lesquels le rôle peut être attribué ; cela ne prouve pas qu'un utilisateur donné possède ce rôle dans chacun de ces contextes. L'attribution effective doit être lue dans les données de rôles et contrôlée par les API.
+
+#### Rôle technique, archétype et type métier : trois notions distinctes
+
+- Le **rôle** est une définition Moodle persistée, qui peut être attribuée à un utilisateur dans un contexte.
+- L'**archétype** est la référence de modèle utilisée pour initialiser les permissions et certaines compatibilités de gestion.
+- Le **type de gestion Iomad** (`managertype`) est une donnée métier associée à l'utilisateur dans une entreprise. Il ne doit pas être assimilé automatiquement à un rôle Moodle.
+
+Le libellé `educator` apparaît dans les options métier Iomad, mais il ne figure pas parmi les sept rôles créés dans `local/iomad/db/install.php`. Il ne faut donc pas présenter « éducateur » comme un huitième archétype de rôle sur la seule base de cette valeur. Les rôles réellement attribués aux éducateurs doivent être déterminés à partir des workflows de gestion des utilisateurs et des inscriptions aux cours.
+
+#### Permissions initiales : répartition par composants
+
+Le fichier `blocks/iomad_company_admin/db/access.php` est strictement identique (même SHA) dans les branches Iomad 4.5, 5.0, 5.1 et 5.2 examinées. Il déclare 86 capacités : 84 au contexte entreprise et 2 au contexte bloc. Les archétypes utilisés dans ces déclarations sont :
+- `companymanager` : 41 déclarations ;
+- `companydepartmentmanager` : 20 ;
+- `clientadministrator` : 83 ;
+- `clientreporter` : 1 ;
+- `user` : 1.
+
+Ces nombres correspondent au nombre de déclarations dans lesquelles l'archétype figure, pas à un décompte de permissions effectives. Le fichier ne déclare pas d'archétype `companyreporter`, `companycourseeditor` ou `companycoursenoneditor` pour ces capacités Company Admin. Leurs permissions peuvent provenir d'autres composants et de leurs propres déclarations ; il serait erroné d'en déduire qu'ils n'ont aucune capacité.
+
+Le fichier `local/iomad/db/access.php` examiné en Iomad 5.1 et 5.2 est également identique (7 capacités : 6 au contexte entreprise, 1 au contexte bloc). Il donne notamment des capacités de gestion des modèles d'e-mails à `companymanager` et `clientadministrator`, et d'autres capacités de gestion des e-mails à `clientadministrator`.
+
+#### Réinitialisation asynchrone des rôles
+
+L'installation programme une tâche ad hoc `local_iomad\task\resetrolestask`. En Iomad 5.1 et 5.2, son code est identique. Elle appelle `reset_role_capabilities()` pour six rôles : `companymanager`, `companydepartmentmanager`, `companycourseeditor`, `companycoursenoneditor`, `companyreporter` et `clientreporter`. `clientadministrator` n'est pas dans cette liste.
+
+Cette tâche doit être prise en compte lorsqu'on analyse les permissions après installation : l'état des capacités peut être réinitialisé de façon asynchrone. Les administrateurs peuvent ensuite personnaliser les rôles ; le thème ne doit pas supposer que les permissions d'une installation restent identiques aux valeurs initiales.
+
+#### Évolution des versions et migration des attributions
+
+- Les blocs de création des sept rôles et de définition des contextes autorisés sont identiques entre Iomad 4.5 et 5.0, puis entre Iomad 5.1 et 5.2 ; le bloc comparé est également identique entre ces deux paires.
+- Le fichier Company Admin `db/access.php` a le même SHA sur les quatre branches 4.5, 5.0, 5.1 et 5.2.
+- Les chemins de fichiers évoluent avec l'organisation du dépôt : `local/iomad/...` sur les branches 4.5/5.0 et `public/local/iomad/...` sur 5.1/5.2.
+- Le script de mise à niveau contient une migration des attributions historiques de gestionnaires : les rôles `companymanager`, `companydepartmentmanager` et `companyreporter` sont réattribués du contexte système au contexte entreprise pour les catégories de `managertype` correspondantes. La vérification runtime de cette migration sur une base issue d'une ancienne version reste à faire.
+
+**Décision Project N :** afficher les rôles Iomad uniquement dans les parcours où ils ont un sens et où l'adaptateur Iomad est actif. Conserver distincts le rôle de cours, le rôle de gestion d'entreprise, le statut métier de gestionnaire/éducateur et le périmètre départemental. Ne jamais coder ces sept shortnames comme une matrice universelle de permissions : les capacités effectives sont administrables et dépendent du contexte.
+
+Sources :
+- [Iomad 4.5 — création des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/local/iomad/db/install.php)
+- [Iomad 5.0 — création des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_500_STABLE/local/iomad/db/install.php)
+- [Iomad 5.1 — création des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_501_STABLE/public/local/iomad/db/install.php)
+- [Iomad 5.2 — création des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/install.php)
+- [Iomad 5.2 — réinitialisation des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/task/resetrolestask.php)
+- [Iomad 5.2 — capacités Company Admin](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php)
+- [Iomad 5.2 — capacités local_iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/access.php)
