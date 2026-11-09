@@ -5173,3 +5173,33 @@ Sources :
 | Accès multi-entreprises, utilisateurs multi-rôles et accès direct URL | À tester en runtime |
 
 **Niveau de preuve :** analyse statique des fichiers Iomad 5.2 et comparaison ciblée de fonctions entre Moodle 5.2 et Iomad 5.2. Les décomptes ne constituent pas une matrice exhaustive des permissions effectives. Aucun scénario runtime n'a été exécuté.
+ 
+
+### 70.12 Capacités natives de gestion des rôles : niveaux et archétypes par défaut
+
+Les déclarations de Moodle core dans public/lib/db/access.php confirment que les capacités de gestion des rôles n'ont pas toutes le même périmètre :
+
+| Capacité | Contexte déclaré | Archétypes autorisés par défaut dans la déclaration | Risque déclaré |
+|---|---|---|---|
+| moodle/role:manage | CONTEXT_SYSTEM | manager | SPAM, PERSONAL, XSS |
+| moodle/role:assign | CONTEXT_COURSE | editingteacher, manager | SPAM, PERSONAL, XSS |
+| moodle/role:review | CONTEXT_COURSE | teacher, editingteacher, manager | PERSONAL |
+| moodle/role:override | CONTEXT_COURSE | manager | SPAM, PERSONAL, XSS |
+| moodle/role:safeoverride | CONTEXT_COURSE | editingteacher | SPAM |
+| moodle/role:switchroles | CONTEXT_COURSE | editingteacher, manager | XSS, PERSONAL |
+
+Ces valeurs sont les permissions initiales déclarées par le cœur, pas une photographie des droits d'une installation : les rôles peuvent avoir été modifiés et les permissions effectives dépendent du contexte et des dérogations.
+
+Comparaison des déclarations Moodle 4.5, Moodle 5.2 et Moodle 5.3 : les six définitions ci-dessus sont identiques sur les branches consultées. Iomad 4.5 et Iomad 5.2 conservent ces définitions, à une différence ciblée près : Iomad ajoute l'archétype companycourseeditor à la déclaration de moodle/role:switchroles. Cela autorise par défaut cet archétype à utiliser le mécanisme de changement de rôle dans un cours, sans lui donner pour autant les capacités de gestion, d'attribution ou de dérogation.
+
+Les noms de capacités déclarés dans lib/db/access.php sont les mêmes entre Moodle 5.2 et Iomad 5.2 (319 entrées relevées dans chaque fichier). Cette égalité de noms ne signifie pas que tous les blocs de déclaration sont identiques : l'ajout companycourseeditor à switchroles constitue un écart concret. Les fichiers complets ont également des empreintes distinctes.
+
+**Conséquence Project N :** les commandes « gérer les définitions », « attribuer un rôle », « examiner les permissions », « modifier une dérogation » et « changer de rôle » doivent être associées à leurs capacités et contextes respectifs. Il serait incorrect de considérer qu'un utilisateur autorisé à changer de rôle dispose aussi des droits d'attribution ou de gestion. De même, le thème ne doit pas afficher « changer de rôle » à partir du seul nom de rôle : il doit laisser Moodle vérifier la capacité effective dans le cours.
+
+Sources :
+- [Moodle 4.5 — lib/db/access.php](https://github.com/ericfalcon/moodle/blob/MOODLE_405_STABLE/lib/db/access.php)
+- [Moodle 5.2 — lib/db/access.php](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/lib/db/access.php)
+- [Moodle 5.3 — lib/db/access.php](https://github.com/ericfalcon/moodle/blob/MOODLE_503_STABLE/public/lib/db/access.php)
+- [Iomad 4.5 — lib/db/access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/db/access.php)
+- [Iomad 5.2 — lib/db/access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/db/access.php)
+
