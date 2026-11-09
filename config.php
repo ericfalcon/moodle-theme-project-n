@@ -11,10 +11,9 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Project N theme configuration.
  *
- * Keep Boost layouts and templates as the default. Project N only adds
- * its own design tokens at this stage; navigation and page layouts will
- * be changed only after their responsive and accessibility contracts
- * have been prototyped and documented.
+ * Keep Boost layouts and templates as the default. Project N adds its own
+ * design tokens and a global navigation through the output hook. Native
+ * contextual navigation and page layouts remain owned by Moodle.
  */
 
 $THEME->name = 'projectn';
