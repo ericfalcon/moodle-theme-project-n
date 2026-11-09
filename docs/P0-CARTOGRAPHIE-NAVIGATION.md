@@ -5390,3 +5390,88 @@ Sources :
 - [Iomad 5.2 — réinitialisation des rôles](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/task/resetrolestask.php)
 - [Iomad 5.2 — capacités Company Admin](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php)
 - [Iomad 5.2 — capacités local_iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/access.php)
+
+
+### 70.17 Affectation des gestionnaires, départements et permissions effectives
+
+Analyse statique du fork personnel `ericfalcon/iomad`, branche `IOMAD_502_STABLE`. Les fichiers `company.php`, `company_user.php`, `iomad.php`, `user_edit_form.php`, `company_user_create_form.php`, `db/install.xml` et `blocks/iomad_company_admin/db/access.php` ont été consultés. Les fichiers `company.php`, `company_user.php`, `iomad.php`, `db/install.xml` et `db/access.php` comparés ont un SHA identique entre Iomad 5.1 et 5.2. Les générations antérieures restent à contrôler sur ces mêmes composants ; la présence des chemins sous `public/` ne doit pas être supposée en 4.5/5.0.
+
+#### Modèle de rattachement
+
+La table `local_iomad_company_users` matérialise un rattachement utilisateur–entreprise–département. Elle contient notamment `companyid`, `userid`, `departmentid`, `managertype`, `educator`, `suspended` et `lastused`. L'index unique porte sur `companyid, userid, departmentid` : un même utilisateur peut donc être rattaché à plusieurs départements d'une entreprise et à plusieurs entreprises. L'entreprise et le département ne sont pas des propriétés exclusives du compte Moodle.
+
+La table `local_iomad_company_departments` définit une arborescence par `parentid`, avec un nœud racine d'entreprise. Les départements appartiennent à une entreprise ; les fonctions de parcours récursif peuvent aussi prendre en compte des entreprises filles selon le paramètre demandé.
+
+#### Types métier et rôles attribués
+
+Le formulaire de gestion des utilisateurs expose des fonctions conditionnées par les capacités Iomad disponibles dans le contexte entreprise :
+
+| Valeur métier | Libellé | Rôle Iomad associé |
+|---:|---|---|
+| 0 | Utilisateur | Aucun rôle de gestionnaire |
+| 1 | Gestionnaire d'entreprise | `companymanager` |
+| 2 | Gestionnaire de département | `companydepartmentmanager` |
+| 3 | Éducateur | Pas de rôle de gestionnaire d'entreprise dédié |
+| 4 | Rapporteur d'entreprise | `companyreporter` |
+
+Le formulaire ajoute des variantes « + éducateur » lorsque l'option d'auto-attribution des rôles de cours ne les rend pas inutiles. Les valeurs de formulaire (notamment 10/11, 20/21, 40/41) sont converties en `managertype` et `educator` avant l'appel à `company::upsert_company_user()`. Ces codes d'interface ne sont pas des shortnames de rôle Moodle.
+
+#### Workflow d'affectation
+
+`company::upsert_company_user()` est le point central observé pour l'insertion et la modification du rattachement :
+
+- vérifie l'existence du compte ;
+- crée ou met à jour l'association entreprise/département ;
+- attribue le rôle de gestion correspondant dans le contexte `CONTEXT_COMPANY` ;
+- retire les rôles de gestion incompatibles lors d'une promotion, d'un changement de fonction ou d'une rétrogradation ;
+- peut répercuter le gestionnaire d'entreprise sur les entreprises filles ;
+- peut programmer une tâche `enroleducatortask` lorsque l'option `autoenrol_managers` est active ;
+- maintient la cohérence des valeurs `managertype` entre les rattachements d'un utilisateur dans l'entreprise dans les cas de promotion/démotion observés.
+
+Un gestionnaire d'entreprise est forcé sur le département racine lors de la création via le formulaire étudié. Un gestionnaire de département conserve le département choisi. Le rôle de gestion est toutefois attribué au contexte entreprise, et non au contexte du département.
+
+#### Portée départementale : mécanisme distinct du rôle
+
+`company::get_userlevel()` renvoie le département racine lorsque l'utilisateur est administrateur de site ou possède certaines capacités d'administration globale de l'entreprise (notamment `edit_all_departments`, `company_add`, `company_add_child`). Dans les autres cas, la fonction renvoie les départements auxquels l'utilisateur est associé dans `local_iomad_company_users`.
+
+`company::get_recursive_department_users()` étend la recherche aux sous-départements. `company::get_my_users()` s'appuie sur ces fonctions pour obtenir les utilisateurs relevant du périmètre départemental de l'utilisateur courant. Le périmètre n'est donc pas encodé dans un rôle Moodle spécifique par département : il dépend des rattachements et des fonctions de filtrage Iomad utilisées par les écrans et services.
+
+**Point de vigilance :** l'attribution du rôle `companydepartmentmanager` au contexte entreprise ne suffit pas, à elle seule, à déterminer les départements visibles ou administrables. Une interface Project N ne doit pas présenter ce rôle comme une autorisation universelle sur tous les départements.
+
+#### Restrictions de capacités par entreprise
+
+La table `local_iomad_company_role_restrictions` stocke des interdictions par triplet entreprise, rôle et capacité (`companyid`, `roleid`, `capability`). Elle n'est pas une table d'attributions de rôle ni une table de permissions départementales.
+
+La méthode `local_iomad\\iomad::has_capability()` :
+1. exige d'abord que le contrôle natif Moodle accorde la capacité ;
+2. traite le compte administrateur de site selon la règle Iomad ;
+3. vérifie l'appartenance à l'entreprise lorsque le paramètre `companyid` est fourni ;
+4. sinon résout l'entreprise courante ;
+5. délègue ensuite à un calcul Iomad qui conserve la résolution des rôles/contextes et refuse si une restriction existe pour l'un des rôles pris en compte.
+
+La restriction est donc un refus complémentaire à la permission Moodle. Elle ne remplace pas les capacités Moodle et ne crée pas un nouveau contexte département. L'absence d'entreprise courante peut conduire la méthode à retourner le résultat Moodle natif après son contrôle initial : les appels sensibles doivent donc fournir le périmètre attendu et suivre les conventions/API Iomad, plutôt que supposer que tout appel vérifie automatiquement une appartenance.
+
+#### Conséquences ergonomiques et techniques pour Project N
+
+- Présenter le compte Moodle, les rattachements à chaque entreprise, les départements, la fonction métier, la fonction d'éducateur et les inscriptions aux cours comme des dimensions séparées.
+- Permettre de visualiser plusieurs rattachements départementaux et plusieurs entreprises sans imposer un « département principal » artificiel.
+- Distinguer le gestionnaire d'entreprise, le gestionnaire de département, l'éducateur et le rapporteur ; les options disponibles doivent être obtenues par les capacités/API Iomad et non par une liste statique.
+- Pour un gestionnaire de département, afficher le périmètre réellement renvoyé par les mécanismes Iomad ; ne pas déduire le périmètre du seul shortname du rôle.
+- Afficher clairement l'entreprise et le département actifs lors d'une action d'administration.
+- Ne jamais calculer localement les permissions, modifier les rôles ou contourner les contrôles natifs/Iomad.
+- Toute action de gestion doit continuer à être vérifiée côté serveur sur le contexte et l'entreprise visés.
+
+#### Comparaison interversions et limites
+
+Les SHA de `company.php`, `company_user.php`, `iomad.php`, `local/iomad/db/install.xml` et `blocks/iomad_company_admin/db/access.php` consultés sont identiques entre Iomad 5.1 et 5.2. Cette identité établit la stabilité de ces composants précis sur ces deux branches, pas celle de l'ensemble d'Iomad. Les chemins 4.5/5.0 et les personnalisations propres au fork 5.0 restent à comparer avant toute conclusion sur ces générations.
+
+Les tests runtime ne sont pas exécutés : il reste à valider sur bases multi-entreprises les promotions/rétrogradations, les départements multiples, les entreprises filles, les restrictions de capacités, les rôles personnalisés, les accès directs URL et les tâches asynchrones d'auto-inscription. Il faut également tester les effets de l'option `autoenrol_managers` sur les rôles de cours.
+
+Sources du fork :
+- [Iomad 5.2 — company.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company.php)
+- [Iomad 5.2 — company_user.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/company_user.php)
+- [Iomad 5.2 — iomad.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/iomad.php)
+- [Iomad 5.2 — schéma des rattachements et restrictions](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/install.xml)
+- [Iomad 5.2 — formulaire utilisateur](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/classes/forms/user_edit_form.php)
+- [Iomad 5.2 — workflow de création utilisateur](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/company_user_create_form.php)
+- [Iomad 5.2 — capacités Company Admin](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php)
