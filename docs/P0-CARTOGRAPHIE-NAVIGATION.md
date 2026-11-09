@@ -5084,3 +5084,92 @@ Les branches examinées sont celles des forks personnels. Les couples Iomad/Mood
 | Navigation clavier, matrice de permissions, sélecteurs, lecteur d'écran et smartphone | À tester |
 
 **Niveau de preuve :** lecture statique des contrôleurs et comparaison des empreintes de fichiers. Aucun rôle n'a été créé/modifié, aucune capacité n'a été attribuée en environnement installé, et aucun scénario d'accès n'a été exécuté. Cette section est une spécification fonctionnelle et technique, pas une validation de sécurité ou de compatibilité runtime.
+
+
+### 70.9 Déclarations de capacités : métadonnées et périmètre Iomad
+
+Une capacité est déclarée par un composant dans son fichier db/access.php. Cette déclaration est une métadonnée du moteur de rôles ; elle ne constitue pas, à elle seule, une autorisation effective pour un utilisateur. Les éléments à distinguer sont notamment :
+
+- le nom qualifié de la capacité (composant:capacité) ;
+- contextlevel, qui indique le type de contexte dans lequel la capacité peut être évaluée ;
+- captype (read ou write), classification historique qui ne remplace pas les permissions calculées ;
+- archetypes, qui fournit des permissions initiales aux rôles correspondant à ces archétypes ;
+- riskbitmask, qui signale certains risques associés à l'opération (par exemple XSS ou spam) ;
+- éventuellement clonepermissionsfrom et d'autres métadonnées.
+
+Le thème ne doit pas interpréter captype comme une règle d'affichage (« read = lecture seule », « write = bouton d'édition »), ni transformer archetypes en matrice définitive des droits. Les permissions peuvent être modifiées dans l'administration et héritées ou surchargées selon le contexte. Les contrôles effectifs restent ceux du moteur Moodle/Iomad.
+
+#### Capacités Iomad 5.2 examinées
+
+Dans le fork ericfalcon/iomad, branche IOMAD_502_STABLE, les deux fichiers suivants ont été lus :
+
+| Composant | Nombre de capacités déclarées | Répartition des contextes observée | Remarque |
+|---|---:|---|---|
+| block_iomad_company_admin | 86 | 84 CONTEXT_COMPANY, 2 CONTEXT_BLOCK | Administration entreprise, utilisateurs, cours, départements, licences, salles de classe, compétences et configuration |
+| local_iomad | 7 | 6 CONTEXT_COMPANY, 1 CONTEXT_BLOCK | Fonctions transversales Iomad, dont gestion d'e-mails et import de suivi |
+
+Dans les déclarations du bloc Company Admin, les archétypes sont distribués de manière différenciée : companymanager apparaît dans 41 déclarations, companydepartmentmanager dans 20, clientadministrator dans 83, et clientreporter dans une. Le décompte porte sur les déclarations de capacités, pas sur le nombre de droits effectifs accordés à un utilisateur.
+
+Dans local_iomad/db/access.php, la capacité local/iomad:importtrackfrommoodle déclare explicitement RISK_SPAM | RISK_XSS. Les autres capacités du fichier sont rattachées au contexte entreprise. Il faut donc examiner les déclarations de chaque composant, et non supposer que toutes les fonctions Iomad relèvent du seul bloc Company Admin.
+
+**Point structurant :** CONTEXT_COMPANY est une extension du modèle de contextes Moodle apportée par Iomad. Project N doit détecter et traiter ce contexte uniquement dans l'adaptateur Iomad. Il ne faut ni le simuler dans Moodle standard, ni coder en dur des identifiants de contexte ou des requêtes sur les tables d'entreprise.
+
+#### Conséquences UX et techniques
+
+- Construire les menus d'administration entreprise à partir des capacités pertinentes et du contexte entreprise courant, pas d'un test isolé du shortname.
+- Séparer l'affichage d'une rubrique (capacité de consultation) des actions qu'elle contient (création, modification, suppression, délégation, etc.).
+- Ne pas déduire qu'un accès à la page de gestion implique tous les droits sur les objets qu'elle présente.
+- Ne pas exposer dans Moodle standard des rubriques dépendant de CONTEXT_COMPANY.
+- Ne pas répliquer les déclarations db/access.php dans le thème : elles appartiennent aux composants qui les définissent.
+- Conserver les contrôles de capacité côté serveur sur chaque page et chaque action ; le masquage d'un lien n'est jamais une mesure de sécurité.
+
+Sources :
+- [Iomad 5.2 — capacités du bloc Company Admin](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php)
+- [Iomad 5.2 — capacités local_iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/access.php)
+
+### 70.10 Archétypes Iomad et moteur de permissions : séparation des responsabilités
+
+Les archétypes Moodle standards (manager, coursecreator, editingteacher, teacher, student, guest, user, frontpage) servent de modèles initiaux et de repères pour certaines opérations sur les rôles. Ils ne sont pas des profils métier exclusifs : un rôle personnalisé peut reprendre un archétype, et les permissions peuvent ensuite être adaptées.
+
+Dans public/lib/accesslib.php, la fonction get_default_role_archetype_allows() définit des compatibilités par opération (attribution, dérogation, changement de rôle et consultation). Iomad 5.2 ajoute explicitement à cette table les archétypes companymanager, companydepartmentmanager, companycourseeditor, companycoursenoneditor, clientadministrator, clientreporter et companyreporter. Les listes par défaut de rôles cibles associées à ces archétypes sont vides dans les entrées examinées. Cela signifie que le mécanisme générique de compatibilité par archétype ne leur ouvre pas automatiquement les mêmes possibilités d'attribution/dérogation que le rôle Moodle manager. Cela n'interdit pas aux flux métier Iomad d'effectuer des attributions explicites via leurs propres contrôleurs et API.
+
+Comparaison fonctionnelle ciblée entre Moodle 5.2 et Iomad 5.2, sur les corps de fonctions de accesslib.php :
+
+| Fonction | Résultat de la comparaison | Portée |
+|---|---|---|
+| has_capability() | Identique | Le calcul Moodle de base reste commun dans cette fonction |
+| get_assignable_roles() | Identique | La sélection standard des rôles attribuables reste commune |
+| role_assign() | Identique | L'API standard d'attribution reste commune |
+| role_unassign() | Identique | L'API standard de retrait reste commune |
+| accesslib_clear_role_cache() | Identique | Invalidation ciblée du cache de rôles commune |
+| get_role_access() | Identique | Construction de l'accès initial au rôle commune |
+| get_default_role_archetype_allows() | Différente | Iomad ajoute les archétypes d'entreprise à la table de compatibilité |
+
+Les fichiers accesslib.php complets ont des empreintes différentes ; les égalités ci-dessus ne portent que sur les fonctions comparées et ne prouvent pas l'identité de l'ensemble du moteur. En particulier, Iomad complète ce modèle par les contrôles de local_iomad\iomad::has_capability() et require_capability(), qui ajoutent les restrictions liées à l'entreprise.
+
+**Décision Project N :**
+1. Utiliser les API Moodle de capacité et de rôle pour les fonctions standard.
+2. Dans Iomad, appeler les API Iomad lorsqu'une action dépend du périmètre entreprise ; ne pas remplacer leur résultat par un simple has_capability() Moodle si le contrôle Iomad est requis.
+3. Ne pas traiter les archétypes comme une autorisation. Ils décrivent des valeurs par défaut et des compatibilités d'opérations, pas le droit effectif sur une ressource.
+4. Distinguer les rôles Moodle, les archétypes Iomad, le statut de gestion (managertype) et le statut d'éducateur (educator).
+5. Laisser les workflows Iomad gérer les affectations d'entreprise et les inscriptions qui en découlent ; le thème ne doit pas inventer un mécanisme d'affectation générique.
+
+Sources :
+- [Moodle 5.2 — accesslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/lib/accesslib.php)
+- [Iomad 5.2 — accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/accesslib.php)
+- [Iomad 5.2 — API local_iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/lib/iomad.php)
+
+### 70.11 Limites et vérifications à poursuivre
+
+| Vérification | État |
+|---|---|
+| Déclarations Company Admin et local_iomad Iomad 5.2 | Sources lues ; inventaire quantitatif effectué |
+| Déclarations de capacités Moodle core moodle/role:* | À inventorier par contexte et version |
+| Comparaison des fichiers db/access.php Iomad 4.5, 5.0, 5.1 et 5.2 | À effectuer |
+| Déclarations et installation des rôles Iomad par version | À relier aux scripts d'installation/mise à niveau et aux workflows d'affectation |
+| Compatibilités d'archétypes Iomad sur toutes les versions | Iomad 5.2 inspecté ; autres versions à comparer |
+| API local_iomad\iomad::has_capability() et restrictions entreprise | Signature et principe déjà repérés ; analyse exhaustive des branches à poursuivre |
+| Capacités réelles d'un gestionnaire de département selon les départements accessibles | À tester en runtime |
+| Accès multi-entreprises, utilisateurs multi-rôles et accès direct URL | À tester en runtime |
+
+**Niveau de preuve :** analyse statique des fichiers Iomad 5.2 et comparaison ciblée de fonctions entre Moodle 5.2 et Iomad 5.2. Les décomptes ne constituent pas une matrice exhaustive des permissions effectives. Aucun scénario runtime n'a été exécuté.
