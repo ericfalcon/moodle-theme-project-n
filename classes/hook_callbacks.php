@@ -29,6 +29,11 @@ class hook_callbacks {
     ): void {
         global $PAGE;
 
+        // A theme hook can be dispatched while another theme is active.
+        if ($PAGE->theme->name !== 'projectn') {
+            return;
+        }
+
         // The global navigation is intended for authenticated, non-guest users.
         if (!isloggedin() || isguestuser()) {
             return;
@@ -40,7 +45,7 @@ class hook_callbacks {
             return;
         }
 
-        $context = \\theme_projectn\\output\\global_navigation::get_template_context();
+        $context = \theme_projectn\output\global_navigation::get_template_context();
         $html = $hook->renderer->render_from_template('theme_projectn/global_navigation', $context);
         $hook->add_html($html);
     }
