@@ -170,3 +170,132 @@
         transition-duration: 0.01ms !important;
     }
 }
+
+
+/* Learner workspace: course cards remain links to native Moodle course pages. */
+.projectn-learner-dashboard {
+    width: 100%;
+    max-width: 90rem;
+    margin: 1.5rem auto 2rem;
+    padding-inline: var(--projectn-content-gutter);
+    color: var(--projectn-color-text);
+}
+
+.projectn-learner-dashboard__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.projectn-learner-dashboard__header h2 {
+    margin: 0;
+    font-size: clamp(1.35rem, 1.1rem + 1vw, 1.8rem);
+    line-height: 1.25;
+}
+
+.projectn-learner-dashboard__description {
+    max-width: 48rem;
+    margin: 0.375rem 0 0;
+    color: var(--projectn-color-text-muted);
+}
+
+.projectn-learner-dashboard__more,
+.projectn-course-card__action {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    color: var(--projectn-color-link);
+    font-weight: 600;
+    text-underline-offset: 0.2em;
+}
+
+.projectn-course-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.projectn-course-card {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--projectn-color-text);
+    background: var(--projectn-color-surface-raised);
+    border: 1px solid var(--projectn-color-border);
+    border-radius: var(--projectn-radius-md);
+    box-shadow: var(--projectn-shadow-card);
+}
+
+.projectn-course-card__body {
+    display: flex;
+    min-height: 10rem;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.125rem;
+}
+
+.projectn-course-card__eyebrow {
+    margin: 0 0 0.5rem;
+    color: var(--projectn-color-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.035em;
+    overflow-wrap: anywhere;
+}
+
+.projectn-course-card__title {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.projectn-course-card__title a {
+    color: var(--projectn-color-text);
+    text-decoration: none;
+}
+
+.projectn-course-card__title a:hover {
+    color: var(--projectn-color-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.projectn-course-card__action {
+    margin-top: auto;
+}
+
+.projectn-learner-dashboard__empty {
+    padding: 1.5rem;
+    color: var(--projectn-color-text);
+    background: var(--projectn-color-surface);
+    border: 1px dashed var(--projectn-color-border);
+    border-radius: var(--projectn-radius-md);
+}
+
+.projectn-learner-dashboard__empty h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+}
+
+.projectn-learner-dashboard__empty p {
+    margin: 0;
+    color: var(--projectn-color-text-muted);
+}
+
+@media (min-width: 576px) {
+    .projectn-course-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 992px) {
+    .projectn-course-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
