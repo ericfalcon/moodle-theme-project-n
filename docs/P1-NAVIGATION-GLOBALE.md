@@ -1,7 +1,7 @@
 # Project N — P1 : première navigation globale implémentée
 
 **Statut :** code présent sur `feature/p1-foundation` ; tests runtime non exécutés.  
-**Version de développement :** `2026111002`.  
+**Version de développement :** `2026111003`.  
 **Références P0 :** [architecture hybride](P0-NAVIGATION.md), [cartographie technique](P0-CARTOGRAPHIE-NAVIGATION.md), [matrice de compatibilité](P0-MATRICE-COMPATIBILITE.md).
 
 ## 1. Périmètre livré
