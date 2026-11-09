@@ -215,3 +215,22 @@ Iomad 5.2 conserve les fonctions centrales de calcul et de cache d'accesslib com
 
 Les fonctions `has_capability()` et `has_capability_in_accessdata()` ont le même corps dans les branches Moodle 4.5, 5.2, 5.3 et Iomad 5.2 consultées. La classe Iomad et la classe de contexte entreprise ont un SHA identique entre Iomad 5.1 et 5.2 ; les autres générations restent à vérifier.
 
+
+### 7.8 Rôles Iomad : stabilité interversions 4.5 à 5.2
+
+Les scripts d'installation consultés définissent les sept rôles suivants avec les mêmes shortnames, archétypes et contextes autorisés sur Iomad 4.5, 5.0, 5.1 et 5.2 :
+
+| Rôle | Archétype | Contexte d'attribution autorisé |
+|---|---|---|
+| companymanager | companymanager | Entreprise |
+| companydepartmentmanager | companydepartmentmanager | Entreprise |
+| companycourseeditor | companycourseeditor | Cours |
+| companycoursenoneditor | companycoursenoneditor | Cours |
+| companyreporter | companyreporter | Entreprise |
+| clientadministrator | clientadministrator | Système |
+| clientreporter | clientreporter | Système |
+
+Les blocs de création des rôles sont identiques entre les paires 4.5/5.0 et 5.1/5.2. Le fichier Company Admin `db/access.php` est identique sur les quatre branches (86 capacités). Les déclarations `local/iomad/db/access.php` ont été confirmées identiques entre 5.1 et 5.2 (7 capacités) ; leur emplacement antérieur reste à vérifier, il ne faut pas inférer leur absence en 4.5/5.0 à partir d'un chemin non trouvé.
+
+La tâche ad hoc de réinitialisation des rôles (Iomad 5.1/5.2, même SHA) réinitialise six rôles et ne comprend pas `clientadministrator`. Les types métier `managertype`, notamment l'option `educator`, ne sont pas à confondre avec les sept rôles installés.
+
