@@ -1,31 +1,91 @@
 /**
- * Project N — Initial design tokens.
+ * Project N — Design system foundation.
  *
- * This file is appended to Boost's compiled SCSS. It deliberately does not
- * redefine the brand palette yet: the visual identity will be validated
- * through mobile-first prototypes and contrast checks before being fixed.
+ * Semantic tokens are deliberately neutral. The brand palette is not fixed
+ * until the project owner validates a visual direction. Boost remains the
+ * source of truth for its native components and controls.
  */
 
 :root {
-    --projectn-radius-sm: 0.5rem;
+    color-scheme: light;
+
+    /* Surfaces and text. */
+    --projectn-color-canvas: #ffffff;
+    --projectn-color-surface: #f6f7f9;
+    --projectn-color-surface-raised: #ffffff;
+    --projectn-color-text: #212529;
+    --projectn-color-text-muted: #5c6670;
+    --projectn-color-border: #c8d0d8;
+
+    /* Interaction. */
+    --projectn-color-focus: #174ea6;
+    --projectn-color-link: var(--bs-link-color, #174ea6);
+    --projectn-color-action: var(--bs-primary, #0d6efd);
+    --projectn-focus-outline-width: 0.1875rem;
+
+    /* Shape, spacing and elevation. */
+    --projectn-radius-sm: 0.375rem;
     --projectn-radius-md: 0.75rem;
     --projectn-radius-lg: 1rem;
     --projectn-content-gutter: 1rem;
-    --projectn-focus-outline-width: 0.1875rem;
+    --projectn-space-1: 0.25rem;
+    --projectn-space-2: 0.5rem;
+    --projectn-space-3: 0.75rem;
+    --projectn-space-4: 1rem;
+    --projectn-space-6: 1.5rem;
+    --projectn-space-8: 2rem;
+    --projectn-shadow-card: 0 0.125rem 0.5rem rgb(20 32 48 / 7%);
 }
 
-/* Consistent, visible keyboard focus without removing native focus cues. */
+/*
+ * Moodle 5.3+ exposes the active colour mode through data-bs-theme.
+ * Older Moodle versions keep their native Boost colour behaviour; this
+ * selector does not create a parallel mode switch.
+ */
+:root[data-bs-theme="dark"] {
+    color-scheme: dark;
+    --projectn-color-canvas: #171a1f;
+    --projectn-color-surface: #20252c;
+    --projectn-color-surface-raised: #272e37;
+    --projectn-color-text: #f1f3f5;
+    --projectn-color-text-muted: #c0c7d0;
+    --projectn-color-border: #515b67;
+    --projectn-color-focus: #9fc1ff;
+    --projectn-shadow-card: 0 0.125rem 0.5rem rgb(0 0 0 / 24%);
+}
+
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: var(--projectn-focus-outline-width) solid var(--bs-primary, currentColor);
+    outline: var(--projectn-focus-outline-width) solid var(--projectn-color-focus);
     outline-offset: 0.1875rem;
 }
 
-/* Prevent long labels and URLs from forcing a wider mobile viewport. */
-#page,
-#page-content,
-#region-main {
+/* Explicit primitives for future Project N templates; native Moodle
+ * components are not globally restyled by this foundation. */
+.projectn-surface {
+    color: var(--projectn-color-text);
+    background-color: var(--projectn-color-surface);
+    border-radius: var(--projectn-radius-md);
+}
+
+.projectn-card {
     min-width: 0;
-    overflow-wrap: anywhere;
+    color: var(--projectn-color-text);
+    background-color: var(--projectn-color-surface-raised);
+    border: 1px solid var(--projectn-color-border);
+    border-radius: var(--projectn-radius-md);
+    box-shadow: var(--projectn-shadow-card);
+}
+
+.projectn-card__body {
+    padding: var(--projectn-space-4);
+}
+
+.projectn-text-muted {
+    color: var(--projectn-color-text-muted);
+}
+
+.projectn-content-gutter {
+    padding-inline: var(--projectn-content-gutter);
 }
 
 @media (min-width: 768px) {
