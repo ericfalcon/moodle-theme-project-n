@@ -94,7 +94,7 @@ Critères d'acceptation :
 
 ## P1 — Socle Boost et design system responsive
 
-**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées.
+**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La stratégie du premier prototype de navigation est maintenant décrite dans [docs/P1-NAVIGATION-PROTOTYPE.md](docs/P1-NAVIGATION-PROTOTYPE.md) ; elle fixe les scénarios et les garde-fous, mais ne constitue pas encore une implémentation.
 
 **Objectif :** créer une base installable, maintenable et cohérente, conçue mobile-first.
 
