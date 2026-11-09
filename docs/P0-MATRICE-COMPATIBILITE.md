@@ -154,3 +154,18 @@ Points à surveiller avant toute reprise ou refactorisation :
 - Fork Iomad : branches 4.5, 5.1 et 5.2 alignées sur l'amont ; branche 5.0 synchronisée avec l'amont tout en conservant les 14 commits locaux, plus le commit de fusion.
 - Aucune CI n'a été lancée. Les résultats sont des comparaisons statiques de code ; les tests runtime et de non-régression restent à effectuer.
 
+
+### 7.5 Capacités et archétypes Iomad — contrôle statique 5.2
+
+| Élément | Résultat contrôlé | Limite |
+|---|---|---|
+| block_iomad_company_admin/db/access.php | 86 capacités : 84 au contexte entreprise, 2 au contexte bloc | Branche Iomad 5.2 uniquement |
+| local/iomad/db/access.php | 7 capacités : 6 au contexte entreprise, 1 au contexte bloc | Branche Iomad 5.2 uniquement |
+| Archétypes Company Admin | companymanager dans 41 déclarations, companydepartmentmanager dans 20, clientadministrator dans 83, clientreporter dans 1 | Décompte de métadonnées, pas de permissions effectives |
+| local/iomad:importtrackfrommoodle | RISK_SPAM | RISK_XSS | Risque déclaré dans le composant |
+| accesslib.php Moodle/Iomad 5.2 | has_capability(), get_assignable_roles(), role_assign(), role_unassign(), accesslib_clear_role_cache() et get_role_access() identiques ; get_default_role_archetype_allows() étendue par Iomad | Comparaison fonction par fonction, pas identité des fichiers complets |
+
+Le contexte CONTEXT_COMPANY et les contrôles de local_iomad\iomad constituent une couche Iomad distincte. Project N doit conserver les API Moodle pour les droits standards et utiliser les API Iomad pour les actions dépendant du périmètre entreprise. Les déclarations et archétypes ne remplacent jamais les permissions effectives calculées.
+
+Sources : [Company Admin access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/blocks/iomad_company_admin/db/access.php), [local_iomad access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/db/access.php), [Iomad accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/accesslib.php).
+
