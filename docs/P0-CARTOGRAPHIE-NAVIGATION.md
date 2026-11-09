@@ -5203,3 +5203,98 @@ Sources :
 - [Iomad 4.5 — lib/db/access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_405_STABLE/lib/db/access.php)
 - [Iomad 5.2 — lib/db/access.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/db/access.php)
 
+ 
+
+### 70.13 Calcul des permissions Moodle : contexte, cumul des rôles et invalidation des caches
+
+Le contrôle natif `has_capability($capability, $context, $user, $doanything)` ne se limite pas à lire le rôle principal de l'utilisateur. Dans Moodle 5.2, il vérifie notamment l'existence de la capacité, l'identité et l'état du compte, les restrictions éventuelles liées à l'utilisateur invité ou anonyme, le verrouillage du contexte et la validité du chemin de contexte. Il tient aussi compte de situations spécifiques comme la connexion « se connecter en tant que » (`loginas`) et le mode administrateur du site. La fonction résout ensuite les données d'accès de l'utilisateur et calcule le droit dans le contexte demandé.
+
+#### Hiérarchie des contextes
+
+Chaque contexte porte un chemin hiérarchique (`path`) et une profondeur (`depth`). La méthode `get_parent_context_ids()` extrait les identifiants des contextes parents ; `get_parent_contexts()` les matérialise en objets. L'ordre retourné par `get_parent_context_ids()` est du parent le plus proche vers les niveaux supérieurs. Les contrôles de capacités peuvent donc prendre en compte les attributions et définitions applicables au contexte courant et à ses ancêtres.
+
+Exemple conceptuel, sans présumer des rôles réellement attribués :
+
+```
+Système
+└── Catégorie
+    └── Cours
+        └── Activité
+```
+
+Une attribution faite au niveau catégorie peut influer sur les cours descendants ; une attribution faite dans un cours ne remonte pas vers la catégorie ni vers les autres cours. Les contextes utilisateur et bloc ont également leur propre place dans le modèle. Il faut donc toujours connaître le contexte réel de l'action, et ne pas assimiler « rôle dans le cours » à « rôle global ».
+
+#### Cumul, prohibition et changement de rôle
+
+Le moteur construit des données d'accès à partir des attributions de rôles dans les contextes concernés. Plusieurs rôles peuvent contribuer à l'accès d'un utilisateur dans un même contexte. Une capacité peut être autorisée par un rôle et interdite par un autre ; `CAP_PROHIBIT` est prioritaire et bloque le droit, même si une autre attribution accorde la capacité. Le détail de résolution est une responsabilité du cœur : le thème ne doit pas tenter de refaire cette fusion en PHP ou en JavaScript.
+
+Le paramètre `$doanything` et le statut d'administrateur du site font partie du contrôle natif ; ils ne justifient pas que le thème remplace un contrôle par un test global « est administrateur ». Les contrôles d'accès doivent rester exprimés par capacité et contexte.
+
+#### Attribution et retrait : origine à préserver
+
+`role_assign()` crée une attribution en enregistrant notamment le rôle, l'utilisateur, le contexte, le composant et l'identifiant d'instance. Il marque ensuite l'utilisateur comme devant recharger ses données d'accès, déclenche l'événement `role_assigned` et le hook post-attribution. Le couple composant / itemid permet d'identifier l'origine d'une attribution (par exemple un plugin d'inscription).
+
+`role_unassign()` délègue à `role_unassign_all()`. Par défaut, le retrait est ciblé sur le composant et l'itemid fournis. Le paramètre `includemanual` permet explicitement d'inclure les attributions manuelles ; il ne doit pas être activé par défaut. Le retrait peut aussi être étendu aux sous-contextes si cette option est demandée. Les événements et hooks de retrait sont déclenchés, et les utilisateurs concernés sont marqués pour rechargement.
+
+**Décision Project N :** dans les interfaces d'affectation, afficher l'origine d'une attribution et distinguer au minimum « manuelle » et « fournie par un composant ». Ne pas proposer un bouton de suppression qui effacerait indistinctement les attributions de plugins d'inscription, de synchronisation ou d'autres mécanismes.
+
+#### Cache d'accès
+
+Moodle conserve des données d'accès en mémoire pour l'utilisateur courant et dans les mécanismes de cache de définitions de rôles. Les fonctions observées comprennent notamment :
+
+- `get_user_accessdata()`, qui prépare ou récupère les données d'accès d'un utilisateur ;
+- `mark_user_dirty()`, utilisé après une modification pour provoquer le rechargement des données de session ;
+- `accesslib_clear_role_cache()`, qui invalide les définitions des rôles concernés ;
+- `accesslib_clear_all_caches()`, qui réinitialise les caches internes d'accès et, si demandé, les caches de contextes.
+
+Une interface de thème ne doit ni lire ni modifier directement ces structures internes (`$USER->access`, `$ACCESSLIB_PRIVATE`, caches MUC). Elle doit utiliser les API publiques du cœur et laisser les composants déclencher l'invalidation nécessaire.
+
+#### Comparaison Moodle / Iomad 5.2
+
+Les corps de `has_capability()`, `get_user_roles()`, `get_assignable_roles()`, `role_assign()`, `role_unassign_all()`, `get_user_accessdata()` et des fonctions d'invalidation de cache examinées sont identiques dans les deux forks sur les branches 5.2 comparées. Cela confirme que le socle de calcul Moodle reste partagé dans ces fonctions.
+
+Cette égalité ne couvre pas les extensions de la classe Iomad ni les traitements spécifiques à l'entreprise. Ils sont analysés ci-dessous.
+
+### 70.14 Contrôle Iomad supplémentaire : périmètre entreprise et restrictions de capacités
+
+Dans Iomad 5.2, la classe `local_iomad\\iomad` fournit un contrôle complémentaire :
+
+- `has_capability($capability, $context, $companyid)` commence par appeler le `has_capability()` natif de Moodle. Si Moodle refuse, Iomad refuse également.
+- Un administrateur du site est ensuite accepté par ce contrôle Iomad.
+- Si un `companyid` explicite est fourni, Iomad vérifie que l'utilisateur courant est membre de cette entreprise dans `local_iomad_company_users`.
+- Sans identifiant explicite, Iomad détermine l'entreprise courante de l'utilisateur. Si aucune entreprise courante n'est trouvée, cette méthode retourne vrai après le contrôle Moodle ; il ne faut donc pas la traiter comme un contrôle d'appartenance entreprise universel.
+- Lorsque le périmètre entreprise est déterminé, Iomad appelle son contrôle interne `has_capability_in_accessdata()`.
+
+Ce contrôle interne parcourt le chemin du contexte courant vers ses parents, collecte les rôles pertinents (avec un traitement spécifique du changement de rôle), charge leurs définitions et vérifie les restrictions enregistrées dans `local_iomad_company_role_restrictions` pour le triplet entreprise / rôle / capacité. Une restriction correspondante provoque un refus. La logique de prohibition `CAP_PROHIBIT` est également explicitement bloquante.
+
+La méthode `require_capability()` de cette classe appelle ce contrôle et lève une `required_capability_exception` si le droit n'est pas accordé.
+
+**Conséquences pour Project N :**
+
+1. Le contrôle Moodle standard reste la référence pour les pages et actions Moodle classiques.
+2. Lorsqu'un workflow Iomad s'appuie sur la couche entreprise, il faut respecter l'API Iomad et le périmètre entreprise attendu ; ne pas remplacer ce contrôle par un simple test de rôle.
+3. Ne pas interpréter `local_iomad\\iomad::has_capability()` comme un substitut global à toutes les vérifications Moodle : il s'agit d'une extension tenant-aware dont le comportement dépend notamment du `companyid` fourni ou de l'entreprise courante.
+4. Ne pas déduire l'entreprise active d'une préférence visuelle ou d'un choix stocké côté navigateur. Le serveur doit résoudre et valider le périmètre.
+5. Les listes d'actions et les menus doivent être cohérents avec le contexte et le périmètre entreprise courant ; les contrôles serveur restent obligatoires à l'exécution.
+
+Sources :
+- [Moodle 5.2 — accesslib.php](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/lib/accesslib.php)
+- [Moodle 5.2 — classe context](https://github.com/ericfalcon/moodle/blob/MOODLE_502_STABLE/public/lib/classes/context.php)
+- [Iomad 5.2 — accesslib.php](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/lib/accesslib.php)
+- [Iomad 5.2 — classe local_iomad\\iomad](https://github.com/ericfalcon/iomad/blob/IOMAD_502_STABLE/public/local/iomad/classes/iomad.php)
+
+### 70.15 Vérifications restantes
+
+| Vérification | État |
+|---|---|
+| Parcours de calcul natif `has_capability()` | Analyse statique Moodle 5.2 / Iomad 5.2 ; corps identiques dans les versions comparées |
+| Chemins de contextes et récupération des parents | Méthodes de la classe context examinées |
+| Attribution / retrait et traçabilité composant-itemid | Analyse statique des API natives effectuée |
+| Invalidation des caches et marquage utilisateur | Principales fonctions repérées et analysées |
+| Contrôle complémentaire Iomad par entreprise | Classe `local_iomad\\iomad` 5.2 examinée |
+| Différences de ces mécanismes entre Moodle 4.5 et 5.3 | Comparaison fonction par fonction à poursuivre |
+| Différences Iomad 4.5, 5.0 et 5.1 | À comparer, en tenant compte des six personnalisations du fork Iomad 5.0 |
+| Scénarios de multi-appartenance, changement d'entreprise, accès direct URL et restrictions entreprise | À tester en runtime |
+| Impact de la navigation mobile et des changements de contexte | À tester en runtime et avec lecteurs d'écran |
+
+**Niveau de preuve :** analyse statique des branches Moodle 5.2 et Iomad 5.2. Aucune simulation d'utilisateur, installation, requête de permission en runtime ou campagne de tests d'accessibilité n'a été exécutée.
