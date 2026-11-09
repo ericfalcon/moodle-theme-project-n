@@ -162,7 +162,7 @@ Points à surveiller avant toute reprise ou refactorisation :
 | block_iomad_company_admin/db/access.php | 86 capacités : 84 au contexte entreprise, 2 au contexte bloc | Branche Iomad 5.2 uniquement |
 | local/iomad/db/access.php | 7 capacités : 6 au contexte entreprise, 1 au contexte bloc | Branche Iomad 5.2 uniquement |
 | Archétypes Company Admin | companymanager dans 41 déclarations, companydepartmentmanager dans 20, clientadministrator dans 83, clientreporter dans 1 | Décompte de métadonnées, pas de permissions effectives |
-| local/iomad:importtrackfrommoodle | RISK_SPAM | RISK_XSS | Risque déclaré dans le composant |
+| local/iomad:importtrackfrommoodle | RISK_SPAM / RISK_XSS | Risque déclaré dans le composant |
 | accesslib.php Moodle/Iomad 5.2 | has_capability(), get_assignable_roles(), role_assign(), role_unassign(), accesslib_clear_role_cache() et get_role_access() identiques ; get_default_role_archetype_allows() étendue par Iomad | Comparaison fonction par fonction, pas identité des fichiers complets |
 
 Le contexte CONTEXT_COMPANY et les contrôles de local_iomad\iomad constituent une couche Iomad distincte. Project N doit conserver les API Moodle pour les droits standards et utiliser les API Iomad pour les actions dépendant du périmètre entreprise. Les déclarations et archétypes ne remplacent jamais les permissions effectives calculées.
