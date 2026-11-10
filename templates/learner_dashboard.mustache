@@ -3,6 +3,34 @@
     Course pages retain Moodle's native access checks and functionality.
 }}
 <div class="projectn-course-dashboard">
+    {{#hasupcomingactions}}
+        <section class="projectn-upcoming-actions" aria-labelledby="projectn-upcoming-actions-title">
+            <div class="projectn-learner-dashboard__header">
+                <div>
+                    <h2 id="projectn-upcoming-actions-title">{{upcomingactionsheading}}</h2>
+                    <p class="projectn-learner-dashboard__description">{{upcomingactionsdescription}}</p>
+                </div>
+            </div>
+            <ul class="projectn-upcoming-actions__list">
+                {{#upcomingactions}}
+                    <li class="projectn-upcoming-actions__item">
+                        <div class="projectn-upcoming-actions__details">
+                            <p class="projectn-course-card__eyebrow">{{coursename}}</p>
+                            <strong>{{name}}</strong>
+                            <time>{{date}}</time>
+                        </div>
+                        {{#hasurl}}
+                            <a class="projectn-course-card__action" href="{{url}}">{{actionlabel}}</a>
+                        {{/hasurl}}
+                        {{^hasurl}}
+                            <span class="projectn-upcoming-actions__unavailable">{{actionlabel}}</span>
+                        {{/hasurl}}
+                    </li>
+                {{/upcomingactions}}
+            </ul>
+        </section>
+    {{/hasupcomingactions}}
+
     {{#haslearnercourses}}
         <section class="projectn-learner-dashboard" aria-labelledby="projectn-learner-dashboard-title">
             <div class="projectn-learner-dashboard__header">
