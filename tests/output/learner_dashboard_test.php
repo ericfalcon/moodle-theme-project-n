@@ -186,12 +186,19 @@ final class learner_dashboard_test extends \advanced_testcase {
         $studentrole = reset($studentroles);
         enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
 
-        $iomadroleid = create_role(
-            'Iomad company course editor',
-            'companycourseeditor',
-            'Iomad course editor test role',
-            ''
-        );
+        // Iomad already defines this role; create a compatible fixture only
+        // when the test runs on standard Moodle.
+        $iomadrole = $DB->get_record('role', ['shortname' => 'companycourseeditor']);
+        if (!$iomadrole) {
+            $iomadroleid = create_role(
+                'Iomad company course editor',
+                'companycourseeditor',
+                'Iomad course editor test role',
+                ''
+            );
+        } else {
+            $iomadroleid = $iomadrole->id;
+        }
         role_assign($iomadroleid, $user->id, \context_course::instance($course->id)->id);
 
         $context = learner_dashboard::get_template_context();
