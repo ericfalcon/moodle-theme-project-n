@@ -36,8 +36,7 @@ class learner_dashboard {
         $enrolledcourses = enrol_get_my_courses(
             'id, fullname, shortname, visible, enablecompletion',
             'visible DESC, sortorder ASC',
-            0,
-            true
+            0
         );
 
         // Load role archetypes once. Custom roles without an archetype are
