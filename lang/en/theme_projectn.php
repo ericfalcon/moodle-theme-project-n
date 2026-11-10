@@ -3,7 +3,6 @@
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 $string['pluginname'] = 'Project N';
@@ -13,8 +12,12 @@ $string['globalnavigation'] = 'Main navigation';
 $string['home'] = 'Home';
 $string['courses'] = 'Courses';
 
-$string['learnerdashboardheading'] = 'My learning';
-$string['learnerdashboarddescription'] = 'Find your enrolled courses and open their content directly.';
+$string['learnerdashboardheading'] = 'My courses as a learner';
+$string['learnerdashboarddescription'] = 'Find the courses you attend as a learner.';
 $string['learnerdashboardmore'] = 'Open course';
-$string['learnerdashboardemptytitle'] = 'No courses to display';
-$string['learnerdashboardemptydescription'] = 'Courses you are enrolled in will appear here.';
+$string['learnerdashboardemptytitle'] = 'No courses as a learner';
+$string['learnerdashboardemptydescription'] = 'Courses where you are enrolled as a learner will appear here.';
+$string['teacherdashboardheading'] = 'My courses as a teacher';
+$string['teacherdashboarddescription'] = 'Find the courses where you teach or provide training.';
+$string['teacherdashboardemptytitle'] = 'No courses as a teacher';
+$string['teacherdashboardemptydescription'] = 'Courses where you have a teaching role will appear here.';
