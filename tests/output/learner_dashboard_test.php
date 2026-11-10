@@ -11,14 +11,14 @@ namespace theme_projectn;
 use theme_projectn\output\learner_dashboard;
 
 /**
- * Tests for the learner dashboard data provider.
+ * Tests for the learner/teacher course dashboard data provider.
  *
  * @package theme_projectn
  * @coversDefaultClass \theme_projectn\output\learner_dashboard
  */
 final class learner_dashboard_test extends \advanced_testcase {
     /**
-     * A learner with no active course enrolments receives the empty state.
+     * A user without active course enrolments receives both empty states.
      *
      * @covers ::get_template_context
      */
@@ -29,24 +29,26 @@ final class learner_dashboard_test extends \advanced_testcase {
 
         $context = learner_dashboard::get_template_context();
 
-        $this->assertFalse($context['hascourses']);
-        $this->assertSame([], $context['courses']);
+        $this->assertFalse($context['haslearnercourses']);
+        $this->assertSame([], $context['learnercourses']);
+        $this->assertFalse($context['hasteachercourses']);
+        $this->assertSame([], $context['teachercourses']);
         $this->assertNotEmpty($context['emptytitle']);
-        $this->assertNotEmpty($context['emptydescription']);
+        $this->assertNotEmpty($context['teacheremptytitle']);
     }
 
     /**
-     * Course cards use enrolled course records and native course URLs.
+     * A student enrolment appears in the learner section with a native URL.
      *
      * @covers ::get_template_context
      */
-    public function test_enrolled_course_is_exposed_as_native_course_link(): void {
+    public function test_student_course_is_classified_as_learner(): void {
         global $DB;
 
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
-            'fullname' => 'Formation de test',
-            'shortname' => 'TEST-01',
+            'fullname' => 'Formation apprenant',
+            'shortname' => 'LEARN-01',
         ]);
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
@@ -55,17 +57,100 @@ final class learner_dashboard_test extends \advanced_testcase {
             'courseid' => $course->id,
             'enrol' => 'manual',
         ], '*', MUST_EXIST);
-        $roles = get_archetype_roles('student');
-        $manual = enrol_get_plugin('manual');
-        $studentrole = reset($roles);
-        $manual->enrol_user($instance, $user->id, $studentrole->id);
+        $studentroles = get_archetype_roles('student');
+        $studentrole = reset($studentroles);
+        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
 
         $context = learner_dashboard::get_template_context();
 
-        $this->assertTrue($context['hascourses']);
-        $this->assertCount(1, $context['courses']);
-        $this->assertSame('Formation de test', $context['courses'][0]['fullname']);
-        $this->assertSame('TEST-01', $context['courses'][0]['shortname']);
-        $this->assertStringContainsString('/course/view.php?id=' . $course->id, $context['courses'][0]['url']);
+        $this->assertTrue($context['haslearnercourses']);
+        $this->assertCount(1, $context['learnercourses']);
+        $this->assertSame('Formation apprenant', $context['learnercourses'][0]['fullname']);
+        $this->assertStringContainsString(
+            '/course/view.php?id=' . $course->id,
+            $context['learnercourses'][0]['url']
+        );
+        $this->assertFalse($context['hasteachercourses']);
+    }
+
+    /**
+     * A non-editing teacher archetype is classified in the teacher section.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_teacher_course_is_classified_as_teacher(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation enseignée',
+            'shortname' => 'TEACH-01',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $instance = $DB->get_record('enrol', [
+            'courseid' => $course->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $teacherroles = get_archetype_roles('teacher');
+        $teacherrole = reset($teacherroles);
+        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $teacherrole->id);
+
+        $context = learner_dashboard::get_template_context();
+
+        $this->assertFalse($context['haslearnercourses']);
+        $this->assertTrue($context['hasteachercourses']);
+        $this->assertCount(1, $context['teachercourses']);
+        $this->assertSame('Formation enseignée', $context['teachercourses'][0]['fullname']);
+        $this->assertStringContainsString(
+            '/course/view.php?id=' . $course->id,
+            $context['teachercourses'][0]['url']
+        );
+    }
+
+    /**
+     * One account can be a learner in one course and a teacher in another.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_user_can_appear_in_both_sections(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $learnercourse = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation suivie',
+            'shortname' => 'LEARN-02',
+        ]);
+        $teachercourse = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation animée',
+            'shortname' => 'TEACH-02',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        $manual = enrol_get_plugin('manual');
+
+        $learnerinstance = $DB->get_record('enrol', [
+            'courseid' => $learnercourse->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $studentroles = get_archetype_roles('student');
+        $studentrole = reset($studentroles);
+        $manual->enrol_user($learnerinstance, $user->id, $studentrole->id);
+
+        $teacherinstance = $DB->get_record('enrol', [
+            'courseid' => $teachercourse->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $teacherroles = get_archetype_roles('teacher');
+        $teacherrole = reset($teacherroles);
+        $manual->enrol_user($teacherinstance, $user->id, $teacherrole->id);
+
+        $context = learner_dashboard::get_template_context();
+
+        $this->assertCount(1, $context['learnercourses']);
+        $this->assertSame('Formation suivie', $context['learnercourses'][0]['fullname']);
+        $this->assertCount(1, $context['teachercourses']);
+        $this->assertSame('Formation animée', $context['teachercourses'][0]['fullname']);
     }
 }
