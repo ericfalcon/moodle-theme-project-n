@@ -1,39 +1,64 @@
 {{!
-    Project N learner dashboard.
-    Course data is supplied by Moodle's enrolment API; course pages retain
-    their native access checks and functionality.
+    Project N course dashboard, separated by the user's role in each course.
+    Course pages retain Moodle's native access checks and functionality.
 }}
-<section class="projectn-learner-dashboard" aria-labelledby="projectn-learner-dashboard-title">
-    <div class="projectn-learner-dashboard__header">
-        <div>
-            <h2 id="projectn-learner-dashboard-title">{{heading}}</h2>
-            <p class="projectn-learner-dashboard__description">{{description}}</p>
+<div class="projectn-course-dashboard">
+    <section class="projectn-learner-dashboard" aria-labelledby="projectn-learner-dashboard-title">
+        <div class="projectn-learner-dashboard__header">
+            <div>
+                <h2 id="projectn-learner-dashboard-title">{{learnerheading}}</h2>
+                <p class="projectn-learner-dashboard__description">{{learnerdescription}}</p>
+            </div>
+            {{#haslearnercourses}}
+                <a class="projectn-learner-dashboard__more" href="{{moreurl}}">{{morelabel}}</a>
+            {{/haslearnercourses}}
         </div>
-        {{#hascourses}}
-            <a class="projectn-learner-dashboard__more" href="{{moreurl}}">{{morelabel}}</a>
-        {{/hascourses}}
-    </div>
+        {{#haslearnercourses}}
+            <ul class="projectn-course-grid">
+                {{#learnercourses}}
+                    <li class="projectn-course-card">
+                        <div class="projectn-course-card__body">
+                            <p class="projectn-course-card__eyebrow">{{shortname}}</p>
+                            <h3 class="projectn-course-card__title"><a href="{{url}}">{{fullname}}</a></h3>
+                            <a class="projectn-course-card__action" href="{{url}}">{{morelabel}}</a>
+                        </div>
+                    </li>
+                {{/learnercourses}}
+            </ul>
+        {{/haslearnercourses}}
+        {{^haslearnercourses}}
+            <div class="projectn-learner-dashboard__empty">
+                <h3>{{emptytitle}}</h3>
+                <p>{{emptydescription}}</p>
+            </div>
+        {{/haslearnercourses}}
+    </section>
 
-    {{#hascourses}}
-        <ul class="projectn-course-grid">
-            {{#courses}}
-                <li class="projectn-course-card">
-                    <div class="projectn-course-card__body">
-                        <p class="projectn-course-card__eyebrow">{{shortname}}</p>
-                        <h3 class="projectn-course-card__title">
-                            <a href="{{url}}">{{fullname}}</a>
-                        </h3>
-                        <a class="projectn-course-card__action" href="{{url}}">{{morelabel}}</a>
-                    </div>
-                </li>
-            {{/courses}}
-        </ul>
-    {{/hascourses}}
-
-    {{^hascourses}}
-        <div class="projectn-learner-dashboard__empty">
-            <h3>{{emptytitle}}</h3>
-            <p>{{emptydescription}}</p>
+    <section class="projectn-learner-dashboard projectn-teacher-dashboard" aria-labelledby="projectn-teacher-dashboard-title">
+        <div class="projectn-learner-dashboard__header">
+            <div>
+                <h2 id="projectn-teacher-dashboard-title">{{teacherheading}}</h2>
+                <p class="projectn-learner-dashboard__description">{{teacherdescription}}</p>
+            </div>
         </div>
-    {{/hascourses}}
-</section>
+        {{#hasteachercourses}}
+            <ul class="projectn-course-grid">
+                {{#teachercourses}}
+                    <li class="projectn-course-card">
+                        <div class="projectn-course-card__body">
+                            <p class="projectn-course-card__eyebrow">{{shortname}}</p>
+                            <h3 class="projectn-course-card__title"><a href="{{url}}">{{fullname}}</a></h3>
+                            <a class="projectn-course-card__action" href="{{url}}">{{morelabel}}</a>
+                        </div>
+                    </li>
+                {{/teachercourses}}
+            </ul>
+        {{/hasteachercourses}}
+        {{^hasteachercourses}}
+            <div class="projectn-learner-dashboard__empty">
+                <h3>{{teacheremptytitle}}</h3>
+                <p>{{teacheremptydescription}}</p>
+            </div>
+        {{/hasteachercourses}}
+    </section>
+</div>
