@@ -22,6 +22,9 @@ class learner_dashboard {
     /** Maximum number of course cards displayed in each section. */
     private const COURSE_LIMIT = 6;
 
+    /** Iomad role shortnames identifying company-level teaching assignments. */
+    private const IOMAD_TEACHER_ROLES = ['companycourseeditor', 'companycoursenoeditor'];
+
     /**
      * Build the Mustache context for the learner dashboard.
      *
@@ -39,7 +42,7 @@ class learner_dashboard {
 
         // Load role archetypes once. Custom roles without an archetype are
         // additionally detected through their effective course capabilities.
-        $roles = $DB->get_records('role', [], '', 'id, archetype');
+        $roles = $DB->get_records('role', [], '', 'id, shortname, archetype');
         $learnercourses = [];
         $teachercourses = [];
 
@@ -52,7 +55,8 @@ class learner_dashboard {
                 $roleid = $assignedrole->roleid;
                 $archetype = $roles[$roleid]->archetype ?? '';
 
-                if (in_array($archetype, ['editingteacher', 'teacher'], true)) {
+                if (in_array($roles[$roleid]->shortname ?? '', self::IOMAD_TEACHER_ROLES, true)
+                        || in_array($archetype, ['editingteacher', 'teacher'], true)) {
                     $isteacher = true;
                     break;
                 }
