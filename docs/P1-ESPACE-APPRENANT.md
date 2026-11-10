@@ -36,7 +36,7 @@ Le hook `before_standard_top_of_body_html_generation` reste réservé à la navi
 - Le modèle Moodle ne fournit pas de notion universelle « formateur » indépendante des rôles et capacités. Les rôles personnalisés des sites doivent donc être testés.
 - Un rôle d'enseignement sans archétype et sans les deux capacités de repli peut être classé côté apprenant : il faudra ajuster la règle si les tests Iomad ou les rôles métier le révèlent.
 - Le classement ne donne aucun droit supplémentaire. Les pages de cours restent soumises aux contrôles natifs Moodle/Iomad.
-- Six cours maximum sont affichés dans chaque section.
+- Six cours maximum sont affichés dans chaque section. Une section n'est affichée que si elle contient au moins un cours ; un état vide commun apparaît lorsque le compte n'a aucune formation active à présenter.
 - Progression, prochaine activité, échéances et cours terminés ne sont pas encore présentés.
 
 ## 5. Vérifications restantes
