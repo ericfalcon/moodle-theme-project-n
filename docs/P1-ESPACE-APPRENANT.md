@@ -1,67 +1,46 @@
-# Project N — P1 : premier espace apprenant
+# Project N — P1 : formations apprenant et enseignant
 
-**Statut :** fournisseur de données, template et styles préparés sur `feature/p1-foundation` ; le composant n'est pas encore raccordé au contenu principal de la page ; tests ajoutés mais non exécutés.  
-**Version de développement :** `2026111004`.
+**Statut :** fournisseur et template séparant les deux catégories préparés sur `feature/p1-foundation`. Le composant n'est pas encore raccordé à la zone de contenu principale du tableau de bord. Tests ajoutés/à compléter, non exécutés.  
+**Version de développement :** `2026111005`.
 
-## 1. Objectif de cette tranche
+## 1. Principe de classement
 
-Faire apparaître sur le tableau de bord personnel Moodle un premier espace apprenant plus lisible, inspiré de la hiérarchie visuelle de Chamilo, sans remplacer les mécanismes Moodle.
+Le classement est effectué **pour chaque cours**, et non à partir d'un rôle global de l'utilisateur. Un même compte peut donc apparaître dans les deux sections :
+- **Mes formations en tant qu'apprenant** ;
+- **Mes formations en tant qu'enseignant**.
 
-Le composant reste volontairement limité aux formations auxquelles l'utilisateur est inscrit. Il ne cherche pas à reconstituer un profil de rôle : un même compte peut être apprenant dans certains cours et formateur dans d'autres.
+La récupération initiale passe par `enrol_get_my_courses()` et ne retient que les inscriptions actives. Le thème ne crée aucun mécanisme d'inscription ni de contrôle d'accès.
 
-## 2. Fonctionnement livré
+## 2. Détection du rôle d'enseignement
 
-- Le fournisseur et le template sont prêts pour le tableau de bord personnel (`/my/` et `/my/index.php`).
-- Le composant n'est volontairement pas injecté par le hook `before_standard_top_of_body_html_generation` : ce point d'extension intervient avant le layout Boost et placerait les cartes avant l'en-tête et le contenu principal.
-- Le raccordement visuel attend un point d'extension qui insère le composant dans la zone de contenu, sans surcharge complète du layout Boost ni manipulation DOM fragile.
-- Le fournisseur `classes/output/learner_dashboard.php` récupère les cours avec `enrol_get_my_courses()`, l'API Moodle d'inscription.
-- Seuls les cours issus des inscriptions actives sont demandés.
-- Six cartes au maximum sont affichées pour conserver une page d'accueil compacte.
-- Chaque carte renvoie directement vers la page native `/course/view.php?id=…`.
-- Un état vide est prévu pour les comptes sans inscription active.
-- Les libellés sont disponibles en français et en anglais.
-- Le template est sémantique et les cartes sont utilisables au clavier ; la grille passe d'une colonne sur smartphone à deux puis trois colonnes sur les écrans plus larges.
+Pour chaque cours récupéré :
+1. le fournisseur examine les rôles affectés dans le contexte du cours et ses contextes parents via `get_user_roles()` ;
+2. les archétypes Moodle `editingteacher` et `teacher` classent le cours dans la section enseignante ;
+3. pour les rôles personnalisés sans archétype, les capacités effectives `moodle/course:update` ou `moodle/grade:viewall` servent de solution de repli ;
+4. les autres cours inscrits sont classés dans la section apprenant.
 
-## 3. Limites assumées
+Les rôles standards de gestion (`manager`) ne sont pas assimilés à un rôle enseignant sur la seule base de leurs capacités étendues. Un rôle personnalisé qui cumule des fonctions d'enseignement et de gestion devra être validé avec des configurations réelles.
 
-Cette première tranche ne présente pas encore :
-- le pourcentage de progression ;
-- la prochaine activité ;
-- les échéances ;
-- les cours terminés ou archivés ;
-- les images de cours.
+## 3. Limites et vigilance
 
-Ces informations seront ajoutées seulement après vérification des API Moodle communes aux versions ciblées et des règles de disponibilité des données. Aucun calcul de progression ni lien d'activité n'est simulé.
+- Le modèle Moodle ne fournit pas de notion universelle « formateur » indépendante des rôles et capacités. Les rôles personnalisés des sites doivent donc être testés.
+- Un rôle d'enseignement sans archétype et sans les deux capacités de repli peut être classé côté apprenant : il faudra ajuster la règle si les tests Iomad ou les rôles métier le révèlent.
+- Le classement ne donne aucun droit supplémentaire. Les pages de cours restent soumises aux contrôles natifs Moodle/Iomad.
+- Six cours maximum sont affichés dans chaque section.
+- Progression, prochaine activité, échéances et cours terminés ne sont pas encore présentés.
 
-Le composant ne remplace pas les blocs du tableau de bord Moodle ni la page native « Mes cours ». Son emplacement final et le risque de redondance avec les blocs activés devront être évalués avant son raccordement.
+## 4. Intégration visuelle
 
-## 4. Fichiers
+Le hook `before_standard_top_of_body_html_generation` ne doit servir qu'à la navigation globale : il intervient avant le layout Boost. Le tableau de bord apprenant/enseignant n'y est donc pas injecté. Le point d'insertion dans la zone de contenu reste à valider avant raccordement.
 
-| Fichier | Responsabilité |
-|---|---|
-| `classes/output/learner_dashboard.php` | Récupération et préparation des données de cours |
-| `templates/learner_dashboard.mustache` | Structure accessible du composant |
-| `classes/hook_callbacks.php` | Affichage conditionnel sur le tableau de bord |
-| `scss/projectn.scss` | Cartes et grille responsive |
-| `lang/fr/theme_projectn.php` | Libellés français |
-| `lang/en/theme_projectn.php` | Libellés anglais |
-| `tests/output/learner_dashboard_test.php` | Tests du fournisseur de données |
+## 5. Vérifications restantes
 
-## 5. Vérifications à exécuter
-
-- [ ] `php -l` sur tous les fichiers PHP ajoutés ou modifiés.
-- [ ] PHPUnit : état vide et cours inscrit.
-- [ ] Identifier et valider un point d'insertion dans la zone principale du tableau de bord sans recopier le layout Boost.
-- [ ] Installation et purge des caches sur Moodle 4.5.
-- [ ] Vérifier la même récupération des inscriptions sur Moodle 5.0 à 5.3.
-- [ ] Vérifier le fonctionnement sur Iomad 4.5 à 5.2, sans filtre d'entreprise ajouté au thème.
-- [ ] Vérifier le rendu avec un compte apprenant, un formateur également inscrit à des cours et un compte sans inscription.
-- [ ] Vérifier le rendu sur 320, 390, 768 et 1440 CSS px, puis à 200 % de zoom.
-- [ ] Vérifier l'absence de doublon gênant avec les blocs natifs du tableau de bord.
-- [ ] Contrôler les contrastes, le focus, l'ordre de tabulation et les noms accessibles avec axe-core et des tests manuels.
+- [ ] Vérifier les rôles standard apprenant, enseignant non éditeur et enseignant éditeur.
+- [ ] Vérifier un compte présent dans les deux sections sur des cours différents.
+- [ ] Vérifier les rôles personnalisés et les rôles Iomad.
+- [ ] Vérifier les rôles hérités de catégories.
+- [ ] Exécuter PHPUnit et PHP lint.
+- [ ] Tester Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2.
+- [ ] Vérifier rendu responsive, clavier, focus, contrastes et absence de doublons.
 
 Aucune compatibilité runtime n'est revendiquée avant ces essais.
-
-## 6. Suite de développement
-
-La prochaine tranche technique sera le raccordement du composant dans la zone principale du tableau de bord, après validation du point d'extension Boost/Moodle. La progression et la prochaine action viendront ensuite, après validation des services et méthodes communs Moodle 4.5–5.3. Il faudra conserver les liens vers les activités natives et ne jamais exposer une activité que l'utilisateur ne peut pas consulter.
