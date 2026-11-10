@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   test:
-    name: \${{ inputs.platform }} \${{ inputs.version }}
+    name: ${{ inputs.platform }} ${{ inputs.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     services:
@@ -47,10 +47,10 @@ jobs:
           --health-timeout=5s
           --health-retries=12
     env:
-      MOODLE_REPOSITORY: \${{ inputs.repository }}
-      MOODLE_BRANCH: \${{ inputs.branch }}
-      PLATFORM: \${{ inputs.platform }}
-      PLATFORM_VERSION: \${{ inputs.version }}
+      MOODLE_REPOSITORY: ${{ inputs.repository }}
+      MOODLE_BRANCH: ${{ inputs.branch }}
+      PLATFORM: ${{ inputs.platform }}
+      PLATFORM_VERSION: ${{ inputs.version }}
       DB_NAME: moodle
       DB_USER: root
       DB_PASSWORD: root
@@ -79,7 +79,7 @@ jobs:
           echo "MOODLE_DIR=$RUNNER_TEMP/platform" >> "$GITHUB_ENV"
 
       - name: Install PHP dependencies
-        working-directory: \${{ runner.temp }}/platform
+        working-directory: ${{ runner.temp }}/platform
         run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Install Project N into the platform
@@ -97,31 +97,31 @@ jobs:
           echo "PROJECTN_PLUGIN_DIR=$WEBROOT/theme/projectn" >> "$GITHUB_ENV"
 
       - name: Install Moodle or Iomad
-        working-directory: \${{ runner.temp }}/platform
+        working-directory: ${{ runner.temp }}/platform
         shell: bash
         run: |
           set -euo pipefail
-          php admin/cli/install.php \\
-            --lang=en \\
-            --wwwroot="$MOODLE_URL" \\
-            --dataroot="$RUNNER_TEMP/platform-data" \\
-            --dbtype=mysqli \\
-            --dbhost=127.0.0.1 \\
-            --dbname="$DB_NAME" \\
-            --dbuser="$DB_USER" \\
-            --dbpass="$DB_PASSWORD" \\
-            --prefix=mdl_ \\
-            --fullname="Project N CI $PLATFORM $PLATFORM_VERSION" \\
-            --shortname=projectn-ci \\
-            --adminuser="$ADMIN_USER" \\
-            --adminpass="$ADMIN_PASSWORD" \\
-            --adminemail="$ADMIN_EMAIL" \\
-            --non-interactive \\
+          php admin/cli/install.php \
+            --lang=en \
+            --wwwroot="$MOODLE_URL" \
+            --dataroot="$RUNNER_TEMP/platform-data" \
+            --dbtype=mysqli \
+            --dbhost=127.0.0.1 \
+            --dbname="$DB_NAME" \
+            --dbuser="$DB_USER" \
+            --dbpass="$DB_PASSWORD" \
+            --prefix=mdl_ \
+            --fullname="Project N CI $PLATFORM $PLATFORM_VERSION" \
+            --shortname=projectn-ci \
+            --adminuser="$ADMIN_USER" \
+            --adminpass="$ADMIN_PASSWORD" \
+            --adminemail="$ADMIN_EMAIL" \
+            --non-interactive \
             --agree-license
           php admin/cli/cfg.php --name=theme --set=projectn
 
       - name: Initialise PHPUnit environment
-        working-directory: \${{ runner.temp }}/platform
+        working-directory: ${{ runner.temp }}/platform
         shell: bash
         run: |
           set -euo pipefail
@@ -129,7 +129,7 @@ jobs:
 
           // Dedicated PHPUnit data directory for this CI job.
           $CFG->phpunit_prefix = 'phpu_';
-          $CFG->phpunit_dataroot = getenv('RUNNER_TEMP') . '/phpunit-\${{ inputs.platform }}-\${{ inputs.version }}';
+          $CFG->phpunit_dataroot = getenv('RUNNER_TEMP') . '/phpunit-${{ inputs.platform }}-${{ inputs.version }}';
           PHPUNITCONFIG
           if [[ -f public/admin/tool/phpunit/cli/init.php ]]; then
             PHPUNIT_INIT=public/admin/tool/phpunit/cli/init.php
@@ -139,7 +139,7 @@ jobs:
           php "$PHPUNIT_INIT"
 
       - name: Run Project N PHPUnit tests
-        working-directory: \${{ runner.temp }}/platform
+        working-directory: ${{ runner.temp }}/platform
         run: vendor/bin/phpunit "$PROJECTN_PLUGIN_DIR/tests/output/learner_dashboard_test.php"
 
       - name: Install Playwright and axe-core
@@ -166,18 +166,18 @@ jobs:
       - name: Run axe-core browser audit
         if: inputs.run_axe
         env:
-          BASE_URL: \${{ env.MOODLE_URL }}
-          ADMIN_USERNAME: \${{ env.ADMIN_USER }}
-          ADMIN_PASSWORD: \${{ env.ADMIN_PASSWORD }}
-          PLATFORM_NAME: \${{ inputs.platform }}
-          PLATFORM_VERSION: \${{ inputs.version }}
+          BASE_URL: ${{ env.MOODLE_URL }}
+          ADMIN_USERNAME: ${{ env.ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ env.ADMIN_PASSWORD }}
+          PLATFORM_NAME: ${{ inputs.platform }}
+          PLATFORM_VERSION: ${{ inputs.version }}
         run: node tests/ci/axe-audit.cjs
 
       - name: Upload axe reports and screenshots
         if: always() && inputs.run_axe
         uses: actions/upload-artifact@v4
         with:
-          name: axe-\${{ inputs.platform }}-\${{ inputs.version }}
+          name: axe-${{ inputs.platform }}-${{ inputs.version }}
           path: artifacts/axe/
           if-no-files-found: ignore
           retention-days: 14
@@ -186,7 +186,7 @@ jobs:
         if: failure() && inputs.run_axe
         uses: actions/upload-artifact@v4
         with:
-          name: server-log-\${{ inputs.platform }}-\${{ inputs.version }}
-          path: \${{ runner.temp }}/platform-server.log
+          name: server-log-${{ inputs.platform }}-${{ inputs.version }}
+          path: ${{ runner.temp }}/platform-server.log
           if-no-files-found: ignore
           retention-days: 7
