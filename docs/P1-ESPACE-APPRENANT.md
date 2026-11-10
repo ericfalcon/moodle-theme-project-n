@@ -1,7 +1,7 @@
 # Project N — P1 : formations apprenant et enseignant
 
 **Statut :** fournisseur, template et surcharge ciblée du renderer intégrés sur `feature/p1-foundation`. Le rendu effectif, les tests et la compatibilité runtime restent à valider.  
-**Version de développement :** `2026111006`.
+**Version de développement :** `2026111007`.
 
 ## 1. Principe de classement
 
