@@ -25,3 +25,5 @@ $string['teacherdashboardemptydescription'] = 'Les formations dans lesquelles vo
 
 $string['learnerdashboardprogress'] = 'Progression : {$a} %';
 $string['learnerdashboardnextactivity'] = 'Prochaine activité';
+$string['upcomingactionsheading'] = 'Échéances à venir';
+$string['upcomingactionsdescription'] = 'Les actions à réaliser dans vos formations au cours des 30 prochains jours.';
