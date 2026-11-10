@@ -9,7 +9,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'theme_projectn';
-$plugin->version = 2026111007;
+$plugin->version = 2026111008;
 $plugin->requires = 2024100700; // Moodle 4.5.
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->release = '0.1.0-dev';
