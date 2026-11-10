@@ -40,7 +40,7 @@ Le hook `before_standard_top_of_body_html_generation` reste réservé à la navi
 - Six cours maximum sont affichés dans chaque section. Une section n'est affichée que si elle contient au moins un cours ; un état vide commun apparaît lorsque le compte n'a aucune formation active à présenter.
 - Les cartes apprenant exposent maintenant la progression issue de l'API native d'achèvement lorsque le suivi est activé, ainsi que la première activité visible non terminée qui possède un suivi d'achèvement. Les cours sans suivi activé ne reçoivent pas de progression artificielle.
 - Les cartes enseignant ne calculent pas de progression apprenant.
-- Les échéances, notifications et états des cours terminés restent à intégrer.
+- Les échéances d'activités sont maintenant alimentées par les événements d'action du calendrier Moodle (fenêtre de 30 jours, cinq éléments maximum). Les notifications de messagerie et les états des cours terminés restent à intégrer.
 
 ## 5. Vérifications restantes
 
@@ -54,3 +54,18 @@ Le hook `before_standard_top_of_body_html_generation` reste réservé à la navi
 - [ ] Vérifier rendu responsive, clavier, focus, contrastes et absence de doublons.
 
 Aucune compatibilité runtime n'est revendiquée avant ces essais.
+
+
+## 6. Échéances et actions à venir
+
+Le tableau de bord récupère les événements d'action du calendrier pour les six formations apprenant au maximum qui sont effectivement affichées. L'appel passe par la méthode publique core_calendar\\local\\api::get_action_events_by_course(), avec une fenêtre glissante de 30 jours. Les événements sont fusionnés, triés par échéance et limités aux cinq plus proches.
+
+Ce choix privilégie les échéances/actionnables produites par les modules Moodle plutôt qu'une lecture directe de la table event. L'API applique les règles de visibilité des événements, les callbacks des modules et les dérogations utilisateur/groupe. Le lien d'action n'est rendu actif que lorsque l'API indique que l'action est réalisable. Aucun événement n'est créé ou modifié par le thème.
+
+**Limites explicites :**
+- seuls les événements de type action fournis par les modules sont affichés ; les événements de calendrier ordinaires ne sont pas assimilés à des tâches ;
+- la fenêtre est limitée aux 30 prochains jours et à cinq actions au total ;
+- les notifications de messagerie Moodle ne sont pas encore intégrées ;
+- le rendu et le comportement doivent encore être vérifiés sur Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2.
+
+La validation CI du commit 7c9b0ffd620b5de78896bd283ed86f81a1ef1943 a réussi sur Moodle 5.3 et Iomad 5.2, y compris PHPUnit et axe-core. Cette validation précède l'ajout des échéances décrit ici et ne couvre donc pas encore ce code.
