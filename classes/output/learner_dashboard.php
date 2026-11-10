@@ -105,6 +105,7 @@ class learner_dashboard {
             'teacherheading' => get_string('teacherdashboardheading', 'theme_projectn'),
             'teacherdescription' => get_string('teacherdashboarddescription', 'theme_projectn'),
             'hasteachercourses' => !empty($teachercourses),
+            'hasanycourses' => !empty($learnercourses) || !empty($teachercourses),
             'teachercourses' => $teachercourses,
             'moreurl' => (new \moodle_url('/my/courses.php'))->out(false),
             'morelabel' => get_string('learnerdashboardmore', 'theme_projectn'),
