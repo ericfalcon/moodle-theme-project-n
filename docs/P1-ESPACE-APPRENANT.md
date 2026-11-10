@@ -1,7 +1,7 @@
 # Project N — P1 : formations apprenant et enseignant
 
 **Statut :** fournisseur, template et surcharge ciblée du renderer intégrés sur `feature/p1-foundation`. Le rendu effectif, les tests et la compatibilité runtime restent à valider.  
-**Version de développement :** `2026111007`.
+**Version de développement :** `2026111008`.
 
 ## 1. Principe de classement
 
@@ -37,7 +37,9 @@ Le hook `before_standard_top_of_body_html_generation` reste réservé à la navi
 - Un rôle d'enseignement sans archétype et sans les deux capacités de repli peut être classé côté apprenant : il faudra ajuster la règle si les tests Iomad ou les rôles métier le révèlent.
 - Le classement ne donne aucun droit supplémentaire. Les pages de cours restent soumises aux contrôles natifs Moodle/Iomad.
 - Six cours maximum sont affichés dans chaque section. Une section n'est affichée que si elle contient au moins un cours ; un état vide commun apparaît lorsque le compte n'a aucune formation active à présenter.
-- Progression, prochaine activité, échéances et cours terminés ne sont pas encore présentés.
+- Les cartes apprenant exposent maintenant la progression issue de l'API native d'achèvement lorsque le suivi est activé, ainsi que la première activité visible non terminée qui possède un suivi d'achèvement. Les cours sans suivi activé ne reçoivent pas de progression artificielle.
+- Les cartes enseignant ne calculent pas de progression apprenant.
+- Les échéances, notifications et états des cours terminés restent à intégrer.
 
 ## 5. Vérifications restantes
 
