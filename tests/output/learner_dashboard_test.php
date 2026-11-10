@@ -71,6 +71,8 @@ final class learner_dashboard_test extends \advanced_testcase {
             $context['learnercourses'][0]['url']
         );
         $this->assertFalse($context['hasteachercourses']);
+        $this->assertFalse($context['learnercourses'][0]['hasprogress']);
+        $this->assertFalse($context['learnercourses'][0]['hasnextactivity']);
     }
 
     /**
@@ -103,6 +105,8 @@ final class learner_dashboard_test extends \advanced_testcase {
         $this->assertTrue($context['hasteachercourses']);
         $this->assertCount(1, $context['teachercourses']);
         $this->assertSame('Formation enseignée', $context['teachercourses'][0]['fullname']);
+        $this->assertFalse($context['teachercourses'][0]['hasprogress']);
+        $this->assertFalse($context['teachercourses'][0]['hasnextactivity']);
         $this->assertStringContainsString(
             '/course/view.php?id=' . $course->id,
             $context['teachercourses'][0]['url']
