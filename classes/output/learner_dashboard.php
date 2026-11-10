@@ -90,7 +90,7 @@ class learner_dashboard {
             // Progress and next-step information are learner-only. The
             // completion API handles disabled tracking and course settings.
             if (!$isteacher && !empty($course->enablecompletion)) {
-                $completioninfo = new \\completion_info($course);
+                $completioninfo = new \completion_info($course);
                 $progress = $completioninfo->get_progress_percentage($USER->id);
 
                 if ($progress !== null) {
@@ -119,7 +119,7 @@ class learner_dashboard {
                         continue;
                     }
 
-                    $activityurl = new \\moodle_url('/mod/' . $cm->modname . '/view.php', [
+                    $activityurl = new \moodle_url('/mod/' . $cm->modname . '/view.php', [
                         'id' => $cm->id,
                     ]);
                     $card['hasnextactivity'] = true;
