@@ -1,7 +1,7 @@
 # Project N — P1 : première navigation globale implémentée
 
 **Statut :** code présent sur `feature/p1-foundation` ; tests runtime non exécutés.  
-**Version de développement :** `2026111004`.  
+**Version de développement :** `2026111006`.  
 **Références P0 :** [architecture hybride](P0-NAVIGATION.md), [cartographie technique](P0-CARTOGRAPHIE-NAVIGATION.md), [matrice de compatibilité](P0-MATRICE-COMPATIBILITE.md).
 
 ## 1. Périmètre livré
@@ -23,7 +23,8 @@ Ce périmètre réduit permet de valider la chaîne technique complète avant d'
 | `templates/global_navigation.mustache` | Produit le balisage sémantique |
 | `lang/en/theme_projectn.php` | Libellés anglais |
 | `lang/fr/theme_projectn.php` | Libellés français |
-| `scss/projectn.scss` | Présentation responsive du composant |\n| `tests/output/global_navigation_test.php` | Tests PHPUnit du contrat de données |
+| `scss/projectn.scss` | Présentation responsive du composant |
+| `tests/output/global_navigation_test.php` | Tests PHPUnit du contrat de données |
 
 La séparation données / callback / template évite de mélanger la logique de préparation et le HTML.
 
@@ -33,7 +34,8 @@ La séparation données / callback / template évite de mélanger la logique de 
 - Elle est masquée sur les layouts spécialisés `login`, `popup`, `embedded`, `maintenance`, `print` et `secure`.
 - L'état courant est exposé par `aria-current="page"` et renforcé autrement que par la couleur seule.
 - Les liens utilisent les URL natives Moodle ; aucune liste de cours ou donnée utilisateur n'est reconstruite.
-- Sur smartphone, les destinations utilisent une grille compacte avec des cibles d'au moins 44 CSS px ; sur écran plus large, elles sont présentées en ligne.\n- Le composant reste dans le flux normal du document : aucun positionnement fixe ou superposé susceptible de masquer le contenu.
+- Sur smartphone, les destinations utilisent une grille compacte avec des cibles d'au moins 44 CSS px ; sur écran plus large, elles sont présentées en ligne.
+- Le composant reste dans le flux normal du document : aucun positionnement fixe ou superposé susceptible de masquer le contenu.
 - Moodle conserve les contrôles d'accès sur les pages cibles et reste responsable des navigations primaire/secondaire, du fil d'Ariane, de l'index de cours, des activités et de l'administration.
 - Aucun code Iomad n'est appelé. Le composant doit donc rester utilisable sur Moodle standard.
 
@@ -78,7 +80,6 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 
 **Prochaine tranche :** exécuter `php -l` sur les fichiers PHP modifiés et les tests PHPUnit, puis installer le thème sur un environnement Moodle de référence. Vérifier la chaîne hook → callback → fournisseur de données → Mustache, en particulier l'absence de rendu avec un autre thème actif et le chevauchement éventuel avec la barre Boost `fixed-top`. Corriger les écarts visuels avant de construire la navigation d'espace.
 
+## 6. Tableau de bord apprenant et enseignant
 
-## 6. Préparation du tableau de bord apprenant
-
-Le fournisseur de données, le template Mustache et les styles du composant « Mes formations » sont préparés pour le tableau de bord personnel. Ils ne sont pas encore raccordés au rendu de la page : le hook actuellement utilisé pour la navigation globale intervient avant le layout Boost et placerait les cartes avant l'en-tête et le contenu principal. Le point d'insertion adapté est à définir sans surcharge complète du layout ni manipulation DOM fragile. Les données s'appuient sur l'API d'inscription Moodle ; aucune logique de rôle ni aucun contrôle d'accès n'est dupliqué. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Les tests du fournisseur sont ajoutés mais non exécutés.
+Le composant est maintenant inséré dans la zone de contenu principale par le renderer Project N, qui étend le renderer Boost et surcharge uniquement `main_content()`. L'insertion est limitée aux pages personnelles `/my/` et `/my/index.php`, pour les utilisateurs connectés non invités. Le rendu natif est conservé par appel à `parent::main_content()`. Le fournisseur classe les cours inscrits dans deux sections selon les rôles et capacités effectifs au niveau des cours : un même utilisateur peut donc avoir des cours dans les deux sections. Le hook pré-layout n'est pas utilisé pour cette insertion. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le rendu doit encore être contrôlé en installation réelle ; les tests ne sont pas exécutés.
