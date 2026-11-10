@@ -22,3 +22,6 @@ $string['teacherdashboardheading'] = 'Mes formations en tant qu’enseignant';
 $string['teacherdashboarddescription'] = 'Retrouvez les formations dans lesquelles vous intervenez comme enseignant ou formateur.';
 $string['teacherdashboardemptytitle'] = 'Aucune formation en tant qu’enseignant';
 $string['teacherdashboardemptydescription'] = 'Les formations dans lesquelles vous avez un rôle d’enseignement apparaîtront ici.';
+
+$string['learnerdashboardprogress'] = 'Progression : {$a} %';
+$string['learnerdashboardnextactivity'] = 'Prochaine activité';
