@@ -16,8 +16,23 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | P5 | Adaptation Iomad | Fondations et cloisonnement dans le MVP | À réaliser |
 | P6 | Stabilisation et validation | MVP / version 1.0 | À réaliser |
 | P7 | Documentation et publication | Version 1.0 | À réaliser |
+| CI | GitHub Actions : contrôles PHP, PHPUnit Moodle, validation plugin, compilation SCSS et axe-core sur navigateur ; compléter progressivement | En cours |
 
 Aucune phase n'est déclarée terminée à ce stade.
+
+**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. Le tableau de bord personnel distingue maintenant les formations apprenant et enseignant dans deux sections, à partir des rôles et capacités effectifs au niveau des cours. Il affiche également les cinq prochaines actions issues du calendrier Moodle sur une fenêtre de 30 jours, sous réserve des événements d'action fournis par les modules. Son insertion passe par une surcharge ciblée du renderer Boost `main_content()`, sans copie du layout. Voir [docs/P1-ESPACE-APPRENANT.md](docs/P1-ESPACE-APPRENANT.md). Le code et les tests PHPUnit sont présents mais non exécutés ; l'installation, le rendu effectif et les tests multi-versions restent à faire. Le premier workflow GitHub Actions contrôle la syntaxe PHP sur plusieurs versions ; le workflow de tests installe désormais Moodle et Iomad depuis les forks GitHub, exécute PHPUnit et axe-core à chaque push sur Moodle 4.5/5.3 et Iomad 4.5/5.2 ; la matrice complète des autres versions reste planifiée/manuelle, est décrite dans [docs/P1-CI-TESTS.md](docs/P1-CI-TESTS.md).
+
+## Jalons
+
+| Jalon | Contenu | Critère de passage |
+|---|---|---|
+| J0 | Cadrage (P0) | Décisions structurantes, parcours, maquettes et matrice de tests documentés |
+| J1 | Socle installable (P1) | Thème Boost installable et responsive, contrôles initiaux réussis |
+| J2 | MVP fonctionnel (P2, P3 essentiel, fondations P5) | Parcours apprenant et formateur utilisables sur mobile et desktop ; tests Iomad et isolation validés |
+| J3 | Version 1.0 publiable (P6, P7) | Matrice testée, accessibilité évaluée, documentation et paquet publiable prêts |
+| J4 | Version 1.x | Espace administrateur enrichi et fonctions formateur avancées selon retours utilisateurs |
+
+Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les environnements disponibles confirmés.
 
 ## Décisions structurantes
 
@@ -27,7 +42,7 @@ Aucune phase n'est déclarée terminée à ce stade.
 | Approche ergonomique | Mobile-first pour les trois espaces, puis adaptation tablette/desktop | Retenu |
 | Navigation | Approche hybride : navigation globale Project N et navigation contextuelle native Moodle | Retenu ; détails à prototyper dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md) |
 | Accessibilité | WCAG 2.2 AA, RGAA et EN 301 549 applicables ; validation continue | Retenu |
-| CI | GitHub Actions : contrôles PHP, PHPUnit Moodle, validation plugin, compilation SCSS et axe-core sur navigateur ; compléter progressivement | En cours |
+| CI | CI en place sur `feature/p1-foundation` : workflows GitHub Actions (syntaxe PHP, PHPUnit, axe-core) sur les forks Moodle et Iomad ; périmètre à compléter. Décision initiale conservée : « CI envisageable et à définir en P0 ; elle n'est pas exclue ». | Retenu sur la branche, à valider à la fusion |
 | Licence | GPL v3 ou ultérieure envisagée, à confirmer | À confirmer |
 | Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5–5.2 ; compatibilité réelle à établir par génération et tests exécutés | À vérifier |
 | Points d'extension | Inventaire des API, composants, renderers, layouts et templates nécessaires | À documenter |
@@ -37,7 +52,7 @@ Aucune phase n'est déclarée terminée à ce stade.
 
 ## P0 — Cadrage, spécifications et décisions
 
-Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : l'inventaire a été complété sur les renderers de cours, tableaux de bord et la configuration, mais reste une analyse statique. La cartographie technique [docs/P0-CARTOGRAPHIE-NAVIGATION.md](docs/P0-CARTOGRAPHIE-NAVIGATION.md) a été enrichie jusqu'à la section 69. La synthèse fonctionnelle du point 66.22 (comptes utilisateurs et cohortes) est consignée dans [docs/P0-SYNTHESE-66.22-COMPTES-COHORTES.md](docs/P0-SYNTHESE-66.22-COMPTES-COHORTES.md) ; elle clôt la synthèse de la section 66 sans valoir validation runtime, accessibilité ou mobile. Les sections 65 à 68 couvrent l'espace formateur, les comptes/cohortes, les catégories/cours et les méthodes d'inscription ; leurs comparaisons ciblées Moodle/Iomad 4.5 à 5.2 sont désormais consignées, avec les rôles Iomad et les personnalisations du fork Iomad 5.0. La synthèse ergonomique du point 67.13 (gestion des catégories et cours, navigation mobile-first, capacités et actions) est consignée dans la cartographie ; elle ne vaut pas validation runtime, accessibilité ou responsive. La section 69 fixe la méthode de comparaison interversions. La section 70 documente le modèle Moodle des rôles, capacités, contextes, attributions et dérogations, ainsi que les comparaisons ciblées Moodle/Iomad ; la matrice exhaustive et les tests runtime restent à réaliser. Le registre vivant des versions et écarts est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](docs/P0-MATRICE-COMPATIBILITE.md). Les corrections documentaires de cohérence (métrique des capacités, numérotation, statut des constats non revalidés et version courante d'Épure) sont consignées dans la matrice, la cartographie et le REX Épure. Les sections consacrées aux activités, aux contrats techniques et aux fichiers/éditeurs sont également documentées. Cette cartographie reste une analyse statique ; elle ne clôture pas P0. À la demande du porteur du projet, une construction P1 limitée a néanmoins commencé en parallèle sur `feature/p1-foundation` : socle du thème et premiers tokens du design system. Les choix dépendant encore de P0 restent explicitement provisoires et aucun parcours fonctionnel ne sera déclaré validé sans tests.
+Le dossier de travail est suivi dans [docs/P0-CADRAGE.md](docs/P0-CADRAGE.md). Il rassemble la première analyse Boost, les parcours prioritaires, les exigences mobile-first, la stratégie de validation et les décisions restant à instruire. La décision d'architecture de navigation est détaillée dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md). Ces documents ne valent pas validation de compatibilité : les prototypes et tests sur environnements réels restent à réaliser. Le retour d'expérience du thème Épure est documenté dans [docs/P0-REX-EPURE-PROJECTN.md](docs/P0-REX-EPURE-PROJECTN.md) : l'inventaire a été complété sur les renderers de cours, tableaux de bord et la configuration, mais reste une analyse statique. La cartographie technique [docs/P0-CARTOGRAPHIE-NAVIGATION.md](docs/P0-CARTOGRAPHIE-NAVIGATION.md) a été enrichie jusqu'à la section 69. La synthèse fonctionnelle du point 66.22 (comptes utilisateurs et cohortes) est consignée dans [docs/P0-SYNTHESE-66.22-COMPTES-COHORTES.md](docs/P0-SYNTHESE-66.22-COMPTES-COHORTES.md) ; elle clôt la synthèse de la section 66 sans valoir validation runtime, accessibilité ou mobile. Les sections 65 à 68 couvrent l'espace formateur, les comptes/cohortes, les catégories/cours et les méthodes d'inscription ; leurs comparaisons ciblées Moodle/Iomad 4.5 à 5.2 sont désormais consignées, avec les rôles Iomad et les personnalisations du fork Iomad 5.0. La synthèse ergonomique du point 67.13 (gestion des catégories et cours, navigation mobile-first, capacités et actions) est consignée dans la cartographie ; elle ne vaut pas validation runtime, accessibilité ou responsive. La section 69 fixe la méthode de comparaison interversions. La section 70 documente le modèle Moodle des rôles, capacités, contextes, attributions et dérogations, ainsi que les comparaisons ciblées Moodle/Iomad ; la matrice exhaustive et les tests runtime restent à réaliser. Le registre vivant des versions et écarts est maintenu dans [docs/P0-MATRICE-COMPATIBILITE.md](docs/P0-MATRICE-COMPATIBILITE.md). Les corrections documentaires de cohérence (métrique des capacités, numérotation, statut des constats non revalidés et version courante d'Épure) sont consignées dans la matrice, la cartographie et le REX Épure. Les sections consacrées aux activités, aux contrats techniques et aux fichiers/éditeurs sont également documentées. Cette cartographie reste une analyse statique ; elle ne clôture pas P0 et ne déclenche pas le développement.
 
 **Objectif :** transformer la vision en spécifications vérifiables et sécuriser les décisions structurantes.
 
@@ -82,8 +97,6 @@ Critères d'acceptation :
 
 ## P1 — Socle Boost et design system responsive
 
-**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. Le tableau de bord personnel distingue maintenant les formations apprenant et enseignant dans deux sections, à partir des rôles et capacités effectifs au niveau des cours. Il affiche également les cinq prochaines actions issues du calendrier Moodle sur une fenêtre de 30 jours, sous réserve des événements d'action fournis par les modules. Son insertion passe par une surcharge ciblée du renderer Boost `main_content()`, sans copie du layout. Voir [docs/P1-ESPACE-APPRENANT.md](docs/P1-ESPACE-APPRENANT.md). Le code et les tests PHPUnit sont présents mais non exécutés ; l'installation, le rendu effectif et les tests multi-versions restent à faire. Le premier workflow GitHub Actions contrôle la syntaxe PHP sur plusieurs versions ; le workflow de tests installe désormais Moodle et Iomad depuis les forks GitHub, exécute PHPUnit et axe-core à chaque push sur Moodle 4.5/5.3 et Iomad 4.5/5.2 ; la matrice complète des autres versions reste planifiée/manuelle, est décrite dans [docs/P1-CI-TESTS.md](docs/P1-CI-TESTS.md).
-
 **Objectif :** créer une base installable, maintenable et cohérente, conçue mobile-first.
 
 Livrables :
@@ -100,7 +113,7 @@ Livrables :
 Critères d'acceptation :
 - installation, activation, désactivation et mise à niveau vérifiées sur les premières versions de référence ;
 - navigation utilisable sur smartphone, tablette et desktop ;
-- aucune fonction dépendant d'un survol ;
+- aucune dépendance à un survol pour accéder à une fonction ;
 - cibles tactiles conformes aux objectifs de conception ;
 - pas de défilement horizontal global à 320 CSS px ;
 - focus visible, sémantique et contrastes contrôlés ;
@@ -129,3 +142,170 @@ Critères d'acceptation :
 - états dynamiques perceptibles autrement que par la couleur seule ;
 - aucune régression d'accessibilité connue non traitée.
 
+## P3 — Espace formateur
+
+**Objectif :** simplifier la création et le pilotage d'un cours sans remplacer les outils Moodle.
+
+Périmètre MVP :
+- création guidée d'un cours ;
+- organisation des sections ;
+- ajout d'activités et ressources par intention pédagogique : transmettre, pratiquer, évaluer, collaborer ;
+- accès aux paramètres natifs avancés à tout moment ;
+- prévisualisation du cours côté apprenant ;
+- parcours mobile pour les opérations simples et fréquentes.
+
+Version 1.x :
+- réorganisation avancée et réutilisation enrichie des contenus ;
+- accès consolidé aux participants, évaluations et corrections ;
+- amélioration des opérations complexes sur smartphone.
+
+Les fonctions non intégrées au MVP restent accessibles par les pages natives Moodle lorsque les droits le permettent.
+
+Critères d'acceptation :
+- aucune fonction guidée ne crée un format de cours propriétaire ;
+- les réglages natifs restent accessibles ;
+- capacités et contextes Moodle respectés ;
+- parcours testés avec plusieurs profils de formateurs ;
+- ajout d'activités et organisation testés sur smartphone et desktop ;
+- dialogues, sélecteurs, formulaires et interactions accessibles ;
+- aucune opération n'est déclarée mobile-compatible sans test réel.
+
+## P4 — Espace administrateur
+
+**Objectif :** rendre l'administration plus repérable sans réécrire le cœur de Moodle.
+
+Périmètre version 1.x :
+- centre de gestion organisé par domaines ;
+- raccourcis vers les actions fréquentes ;
+- recherche et regroupements thématiques des réglages ;
+- accès aux fonctions de gestion des utilisateurs, cours, plugins, rapports et maintenance ;
+- renvoi vers les pages natives pour les formulaires, validations et contrôles de droits ;
+- consultation mobile et accès aux opérations courantes.
+
+Le lancement de cette phase dépendra d'une démonstration de valeur ajoutée par rapport à la recherche et à la navigation d'administration natives.
+
+Critères d'acceptation :
+- raccourcis conditionnés par les capacités effectives ;
+- aucune donnée ni action exposée à un rôle non autorisé ;
+- pages natives toujours accessibles ;
+- parcours testés avec plusieurs profils de droits ;
+- interface adaptée au smartphone, sans rendre les opérations complexes impraticables.
+
+## P5 — Adaptation Iomad
+
+**Objectif :** intégrer les spécificités multi-entreprises dès le MVP, sans dégrader Moodle standard.
+
+Travaux anticipés :
+- environnements Iomad de test identifiés dès P0 ;
+- détection et points d'intégration conçus dès P1 ;
+- fonctionnement Moodle standard garanti en l'absence d'Iomad.
+
+Périmètre MVP :
+- détection fiable de l'environnement Iomad ;
+- prise en compte du contexte entreprise dans les écrans du MVP ;
+- adaptation minimale des parcours et menus nécessaires aux rôles impliqués dans ces parcours ;
+- accès aux fonctions de gestionnaire d'entreprise nécessaires au MVP ;
+- tests dédiés du cloisonnement des données entre entreprises.
+
+Version 1.x :
+- enrichissement de l'espace gestionnaire d'entreprise et de ses raccourcis ;
+- couverture élargie des fonctions spécifiques Iomad.
+
+Critères d'acceptation :
+- tests sur Iomad 4.5 LTS, 5.0, 5.1 et 5.2 dès qu'un environnement correspondant est disponible ; distinguer la branche expérimentale Iomad 4.5 de la branche LTS ;
+- absence de fuite de données entre entreprises, vérifiée par des tests dédiés ;
+- rôles, capacités et contextes contrôlés ;
+- aucune dépendance Iomad dans le chemin d'exécution Moodle standard ;
+- parcours Iomad du MVP validés sur smartphone et desktop ;
+- écarts de compatibilité documentés.
+
+## P6 — Stabilisation et validation
+
+**Objectif :** consolider la qualité avant publication.
+
+Périmètre :
+- tests d'installation, mise à niveau et désinstallation sur la matrice retenue ;
+- tests de régression Moodle et Iomad ;
+- tests avec les activités natives et les plugins courants du périmètre ;
+- revue de sécurité et des contrôles d'accès ;
+- tests responsive sur appareils réels et navigateurs ciblés ;
+- mesure des performances, notamment sur réseau mobile ;
+- CI et tests automatisés si retenus en P0 ;
+- axe-core et tests manuels d'accessibilité ;
+- tests clavier, lecteurs d'écran, zoom, contraste, reflow et interactions tactiles ;
+- tests utilisateurs de validation et correction des anomalies.
+
+Critères d'acceptation :
+- aucun défaut bloquant connu non traité ;
+- compatibilités annoncées appuyées par des tests réels ;
+- parcours principaux validés sur smartphone, tablette et desktop ;
+- résultats axe-core analysés et anomalies pertinentes corrigées ;
+- tests manuels documentés ;
+- limites connues et écarts résiduels publiés.
+
+## P7 — Documentation et publication
+
+**Objectif :** rendre le thème installable, compréhensible et maintenable.
+
+Livrables :
+- vérification de l'unicité du nom de composant ;
+- licence GPL compatible confirmée et en-têtes ajoutés ;
+- `version.php` renseigné selon les versions effectivement supportées ;
+- documentation d'installation, mise à jour et désinstallation ;
+- guide administrateur ;
+- guide formateur ;
+- guide apprenant si nécessaire ;
+- documentation Iomad et réglages ;
+- déclaration d'accessibilité et limites connues ;
+- documentation des tests et de la CI ;
+- changelog et procédure de contribution ;
+- paquet et première version stable publiables dans le répertoire des plugins Moodle.
+
+Critères d'acceptation :
+- documentation conforme à la version publiée ;
+- installation vérifiée sur environnement vierge ;
+- versions supportées et non supportées clairement indiquées ;
+- procédure de signalement des anomalies disponible.
+
+---
+
+## Architecture et garde-fous
+
+- Livrable principal : thème Moodle autonome `theme_projectn`, enfant de Boost.
+- Un éventuel `local_projectn` ne sera créé que si une logique métier le justifie ; il ne sera jamais une dépendance obligatoire.
+- Aucun format de cours propriétaire.
+- API, composants, capacités, contextes et formulaires natifs privilégiés.
+- Surcharges de templates sélectives, justifiées et documentées.
+- Adaptations Iomad isolées et conditionnelles.
+- Aucune logique d'autorisation parallèle aux capacités Moodle.
+- Aucun code ou asset Chamilo/Épure copié sans vérification de licence et décision explicite.
+- Le thème web mobile ne remplace pas l'application mobile Moodle.
+
+## Qualité : validation à chaque étape
+
+Chaque fonctionnalité est examinée selon cinq axes indissociables :
+
+1. **Fonctionnel** — le parcours répond au besoin et respecte les comportements Moodle attendus.
+2. **Technique** — le code suit les API et conventions Moodle, reste maintenable et compatible avec la matrice.
+3. **Sécurité** — capacités, contextes, validations et données sont correctement protégés.
+4. **Responsive et performance** — fonctionnement et confort d'usage sur smartphone, tablette et desktop, avec attention aux réseaux mobiles.
+5. **Accessibilité** — WCAG 2.2 AA, RGAA et EN 301 549 applicables, vérifiés dès la conception.
+
+La validation accessibilité combine axe-core, tests clavier, focus, contrastes, zoom à 200 %, reflow à 320 CSS px, lecteurs d'écran (NVDA et TalkBack), noms accessibles, annonces d'état et interactions tactiles. Un résultat axe-core sans anomalie ne suffit pas à déclarer un parcours accessible.
+
+## Mesure par l'usage
+
+Les tâches types sont rejouées aux jalons majeurs et comparées, lorsque cela est pertinent, à Moodle standard. Mesures : taux de réussite, temps de réalisation, erreurs, demandes d'aide et difficultés observées. Les tests couvrent apprenants, formateurs et administrateurs ; des utilisateurs en situation de handicap sont associés autant que possible. Les petits échantillons servent à détecter des problèmes d'usage, pas à revendiquer une validation statistique.
+
+## Hors périmètre
+
+- réécriture du moteur Moodle ;
+- remplacement généralisé des formulaires et mécanismes natifs ;
+- création d'un format de cours propriétaire ;
+- dépendance obligatoire à un plugin compagnon ;
+- modification de l'application mobile Moodle ;
+- reproduction de l'interface ou reprise de code/assets Chamilo.
+
+## Règle de mise à jour
+
+La feuille de route est mise à jour à chaque évolution significative. Chaque tranche de cartographie validée doit être intégrée au dépôt avant de poursuivre l'analyse ; le numéro de section et son périmètre sont reportés ici lorsque cela modifie l'état ou l'ordre des travaux. Une phase ne passe à « Terminée » qu'après vérification de tous ses livrables et critères d'acceptation. Les éléments partiellement réalisés sont signalés comme tels, avec les preuves ou tests associés. Toute décision structurante est datée et justifiée.
