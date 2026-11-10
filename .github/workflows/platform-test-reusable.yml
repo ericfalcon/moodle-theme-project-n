@@ -148,7 +148,7 @@ jobs:
 
       - name: Run Project N PHPUnit tests
         working-directory: ${{ runner.temp }}/platform
-        run: vendor/bin/phpunit "$PROJECTN_PLUGIN_DIR/tests/output/learner_dashboard_test.php"
+        run: vendor/bin/phpunit "$PROJECTN_PLUGIN_DIR/tests"
 
       - name: Install Playwright and axe-core
         if: inputs.run_axe
