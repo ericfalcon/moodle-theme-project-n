@@ -31,7 +31,7 @@ class learner_dashboard {
         global $DB, $USER;
 
         $enrolledcourses = enrol_get_my_courses(
-            'id, fullname, shortname, visible',
+            'id, fullname, shortname, visible, enablecompletion',
             'visible DESC, sortorder ASC',
             0,
             true
@@ -83,7 +83,55 @@ class learner_dashboard {
                 'fullname' => format_string($course->fullname),
                 'shortname' => format_string($course->shortname),
                 'url' => $courseurl->out(false),
+                'hasprogress' => false,
+                'hasnextactivity' => false,
             ];
+
+            // Progress and next-step information are learner-only. The
+            // completion API handles disabled tracking and course settings.
+            if (!$isteacher && !empty($course->enablecompletion)) {
+                $completioninfo = new \\completion_info($course);
+                $progress = $completioninfo->get_progress_percentage($USER->id);
+
+                if ($progress !== null) {
+                    $card['hasprogress'] = true;
+                    $card['progresspercent'] = (int) round($progress);
+                    $card['progresslabel'] = get_string(
+                        'learnerdashboardprogress',
+                        'theme_projectn',
+                        (int) round($progress)
+                    );
+                }
+
+                $modinfo = get_fast_modinfo($course, $USER->id);
+                foreach ($modinfo->get_cms() as $cm) {
+                    if (!$cm->uservisible || empty($cm->completion)
+                            || !$completioninfo->is_enabled($cm)) {
+                        continue;
+                    }
+
+                    $completiondata = $completioninfo->get_data($cm, false, $USER->id);
+                    if (in_array($completiondata->completionstate, [
+                            COMPLETION_COMPLETE,
+                            COMPLETION_COMPLETE_PASS,
+                            COMPLETION_COMPLETE_FAIL,
+                        ], true)) {
+                        continue;
+                    }
+
+                    $activityurl = new \\moodle_url('/mod/' . $cm->modname . '/view.php', [
+                        'id' => $cm->id,
+                    ]);
+                    $card['hasnextactivity'] = true;
+                    $card['nextactivitylabel'] = get_string(
+                        'learnerdashboardnextactivity',
+                        'theme_projectn'
+                    );
+                    $card['nextactivityname'] = format_string($cm->name);
+                    $card['nextactivityurl'] = $activityurl->out(false);
+                    break;
+                }
+            }
 
             if ($isteacher) {
                 $teachercourses[] = $card;
