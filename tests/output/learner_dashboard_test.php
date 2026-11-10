@@ -33,6 +33,7 @@ final class learner_dashboard_test extends \advanced_testcase {
         $this->assertSame([], $context['learnercourses']);
         $this->assertFalse($context['hasteachercourses']);
         $this->assertSame([], $context['teachercourses']);
+        $this->assertFalse($context['hasanycourses']);
         $this->assertNotEmpty($context['emptytitle']);
         $this->assertNotEmpty($context['teacheremptytitle']);
     }
