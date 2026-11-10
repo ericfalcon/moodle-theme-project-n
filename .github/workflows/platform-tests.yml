@@ -21,6 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { platform: Moodle, version: '4.5', repository: ericfalcon/moodle, branch: MOODLE_405_STABLE }
+          - { platform: Iomad, version: '4.5', repository: ericfalcon/iomad, branch: IOMAD_405_STABLE }
           - { platform: Moodle, version: '5.3', repository: ericfalcon/moodle, branch: MOODLE_503_STABLE }
           - { platform: Iomad, version: '5.2', repository: ericfalcon/iomad, branch: IOMAD_502_STABLE }
     uses: ./.github/workflows/platform-test-reusable.yml
