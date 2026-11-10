@@ -132,6 +132,7 @@ class learner_dashboard {
                     'name' => format_string($actionevent->get_name()),
                     'coursename' => format_string($course->fullname),
                     'date' => userdate($eventtime, get_string('strftimedatetime', 'langconfig')),
+                    'datetime' => gmdate('c', $eventtime),
                     'timestamp' => $eventtime,
                     'hasurl' => $action->is_actionable(),
                     'url' => $actionurl->out(false),
