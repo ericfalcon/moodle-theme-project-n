@@ -157,4 +157,128 @@ final class learner_dashboard_test extends \advanced_testcase {
         $this->assertCount(1, $context['teachercourses']);
         $this->assertSame('Formation animée', $context['teachercourses'][0]['fullname']);
     }
+
+
+    /**
+     * Iomad course-editor roles are recognised by their stable shortname.
+     *
+     * This keeps the Moodle-first theme compatible with Iomad without
+     * depending on Iomad classes or constants in Moodle core.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_iomad_company_course_editor_role_is_classified_as_teacher(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation Iomad',
+            'shortname' => 'IOMAD-TEACH',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $instance = $DB->get_record('enrol', [
+            'courseid' => $course->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $studentroles = get_archetype_roles('student');
+        $studentrole = reset($studentroles);
+        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+
+        $iomadroleid = create_role(
+            'Iomad company course editor',
+            'companycourseeditor',
+            'Iomad course editor test role',
+            ''
+        );
+        role_assign($iomadroleid, $user->id, \context_course::instance($course->id)->id);
+
+        $context = learner_dashboard::get_template_context();
+
+        $this->assertFalse($context['haslearnercourses']);
+        $this->assertTrue($context['hasteachercourses']);
+        $this->assertCount(1, $context['teachercourses']);
+        $this->assertSame('Formation Iomad', $context['teachercourses'][0]['fullname']);
+    }
+
+    /**
+     * A manager role is not mistaken for a teaching role.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_manager_role_is_not_classified_as_teacher(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation de gestion',
+            'shortname' => 'MANAGER-01',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $instance = $DB->get_record('enrol', [
+            'courseid' => $course->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $studentroles = get_archetype_roles('student');
+        $studentrole = reset($studentroles);
+        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+
+        $managerroles = get_archetype_roles('manager');
+        $managerrole = reset($managerroles);
+        role_assign($managerrole->id, $user->id, \context_course::instance($course->id)->id);
+
+        $context = learner_dashboard::get_template_context();
+
+        $this->assertTrue($context['haslearnercourses']);
+        $this->assertFalse($context['hasteachercourses']);
+        $this->assertSame('Formation de gestion', $context['learnercourses'][0]['fullname']);
+    }
+
+    /**
+     * Learner cards expose native completion progress and the next incomplete activity.
+     *
+     * @covers ::get_template_context
+     */
+    public function test_learner_course_exposes_progress_and_next_activity(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course([
+            'fullname' => 'Formation avec suivi',
+            'shortname' => 'PROGRESS-01',
+            'enablecompletion' => 1,
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $instance = $DB->get_record('enrol', [
+            'courseid' => $course->id,
+            'enrol' => 'manual',
+        ], '*', MUST_EXIST);
+        $studentroles = get_archetype_roles('student');
+        $studentrole = reset($studentroles);
+        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+
+        $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Lire le support',
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+
+        $context = learner_dashboard::get_template_context();
+
+        $this->assertTrue($context['haslearnercourses']);
+        $this->assertTrue($context['learnercourses'][0]['hasprogress']);
+        $this->assertSame(0, $context['learnercourses'][0]['progresspercent']);
+        $this->assertTrue($context['learnercourses'][0]['hasnextactivity']);
+        $this->assertSame('Lire le support', $context['learnercourses'][0]['nextactivityname']);
+        $this->assertStringContainsString(
+            '/mod/page/view.php?id=',
+            $context['learnercourses'][0]['nextactivityurl']
+        );
+    }
 }
