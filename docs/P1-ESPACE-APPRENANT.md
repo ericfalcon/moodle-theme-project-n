@@ -1,7 +1,7 @@
 # Project N — P1 : formations apprenant et enseignant
 
-**Statut :** fournisseur et template séparant les deux catégories préparés sur `feature/p1-foundation`. Le composant n'est pas encore raccordé à la zone de contenu principale du tableau de bord. Tests ajoutés/à compléter, non exécutés.  
-**Version de développement :** `2026111005`.
+**Statut :** fournisseur, template et surcharge ciblée du renderer intégrés sur `feature/p1-foundation`. Le rendu effectif, les tests et la compatibilité runtime restent à valider.  
+**Version de développement :** `2026111006`.
 
 ## 1. Principe de classement
 
@@ -21,17 +21,23 @@ Pour chaque cours récupéré :
 
 Les rôles standards de gestion (`manager`) ne sont pas assimilés à un rôle enseignant sur la seule base de leurs capacités étendues. Un rôle personnalisé qui cumule des fonctions d'enseignement et de gestion devra être validé avec des configurations réelles.
 
-## 3. Limites et vigilance
+## 3. Intégration dans le contenu principal
+
+La configuration active `theme_overridden_renderer_factory`. Le renderer Project N étend celui de Boost et surcharge uniquement `main_content()` :
+- il conserve le rendu natif en appelant `parent::main_content()` ;
+- il ajoute le composant uniquement sur `/my/` et `/my/index.php`, pour un utilisateur connecté non invité ;
+- le composant est placé dans le contenu principal, après l'en-tête et les navigations générés par Boost ;
+- aucun layout Boost n'est copié et aucune manipulation du DOM côté navigateur n'est utilisée.
+
+Le hook `before_standard_top_of_body_html_generation` reste réservé à la navigation globale. Le tableau de bord apprenant/enseignant n'y est pas injecté.
+
+## 4. Limites et vigilance
 
 - Le modèle Moodle ne fournit pas de notion universelle « formateur » indépendante des rôles et capacités. Les rôles personnalisés des sites doivent donc être testés.
 - Un rôle d'enseignement sans archétype et sans les deux capacités de repli peut être classé côté apprenant : il faudra ajuster la règle si les tests Iomad ou les rôles métier le révèlent.
 - Le classement ne donne aucun droit supplémentaire. Les pages de cours restent soumises aux contrôles natifs Moodle/Iomad.
 - Six cours maximum sont affichés dans chaque section.
 - Progression, prochaine activité, échéances et cours terminés ne sont pas encore présentés.
-
-## 4. Intégration visuelle
-
-Le hook `before_standard_top_of_body_html_generation` ne doit servir qu'à la navigation globale : il intervient avant le layout Boost. Le tableau de bord apprenant/enseignant n'y est donc pas injecté. Le point d'insertion dans la zone de contenu reste à valider avant raccordement.
 
 ## 5. Vérifications restantes
 
@@ -40,6 +46,7 @@ Le hook `before_standard_top_of_body_html_generation` ne doit servir qu'à la na
 - [ ] Vérifier les rôles personnalisés et les rôles Iomad.
 - [ ] Vérifier les rôles hérités de catégories.
 - [ ] Exécuter PHPUnit et PHP lint.
+- [ ] Tester l'ordre du contenu dans le layout Boost, l'absence de doublon et les pages autres que `/my/`.
 - [ ] Tester Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2.
 - [ ] Vérifier rendu responsive, clavier, focus, contrastes et absence de doublons.
 
