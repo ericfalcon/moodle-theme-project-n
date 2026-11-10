@@ -96,11 +96,11 @@ Le zoom à 200 % et les parcours clavier restent également à contrôler. Le vi
 
 axe-core ne détecte pas tous les problèmes d'accessibilité. Les tests automatisés doivent être complétés par des contrôles manuels : navigation clavier, ordre et visibilité du focus, lecteurs d'écran, intitulés et annonces dynamiques, contraste dans les états interactifs, zoom et reflow.
 
-## 6. Conditions d'activation du gate axe
+## 6. Gate axe et limites actuelles
 
-Les jobs axe deviennent obligatoires dès que le pipeline peut démarrer de façon reproductible les deux instances (Moodle et Iomad), installer Project N, créer les jeux de données et se connecter aux pages testées. Avant cela, le statut « axe non exécuté » doit rester visible : une absence de résultat ne vaut jamais réussite.
+Le gate axe est actif sur les deux plateformes de référence (Moodle 5.3 et Iomad 5.2), sur les pages et états décrits en section 7. Il bloque les violations `critical` et `serious`. Il ne constitue pas encore une validation complète de tous les parcours Project N.
 
-Les rapports axe (résumé JSON/HTML et captures en cas d'échec) doivent être conservés comme artefacts de CI pour faciliter la correction.
+Les rapports JSON et captures en cas de violation bloquante sont conservés comme artefacts de CI. Les audits sur les tableaux de bord apprenant/enseignant avec données réelles de test, les rôles Iomad en contexte entreprise, les menus ouverts, les modales et le thème sombre restent à ajouter.
 
 
 ## 7. Workflows actifs
