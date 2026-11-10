@@ -21,3 +21,6 @@ $string['teacherdashboardheading'] = 'My courses as a teacher';
 $string['teacherdashboarddescription'] = 'Find the courses where you teach or provide training.';
 $string['teacherdashboardemptytitle'] = 'No courses as a teacher';
 $string['teacherdashboardemptydescription'] = 'Courses where you have a teaching role will appear here.';
+
+$string['learnerdashboardprogress'] = 'Progress: {$a}%';
+$string['learnerdashboardnextactivity'] = 'Next activity';
