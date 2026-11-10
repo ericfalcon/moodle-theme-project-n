@@ -104,10 +104,41 @@ class learner_dashboard {
         $learnercourses = array_slice($learnercourses, 0, self::COURSE_LIMIT);
         $teachercourses = array_slice($teachercourses, 0, self::COURSE_LIMIT);
 
-        // Completion and activity lookups are limited to learner cards that
-        // will be displayed, avoiding unnecessary work for large enrolment lists.
+        // Completion, next activities and calendar actions are limited to the
+        // learner cards that will be displayed.
+        $upcomingactions = [];
+        $now = time();
+        $actionwindow = $now + (30 * DAYSECS);
+
         foreach ($learnercourses as &$card) {
             $course = $card['course'];
+
+            // Retrieve actionable calendar events through Moodle's public API.
+            // This honours activity callbacks, user/group overrides and visibility.
+            $actionevents = \core_calendar\local\api::get_action_events_by_course(
+                $course,
+                $now,
+                $actionwindow,
+                null,
+                5
+            );
+
+            foreach ($actionevents as $actionevent) {
+                $action = $actionevent->get_action();
+                $eventtime = $actionevent->get_times()->get_sort_time()->getTimestamp();
+                $actionurl = $action->get_url();
+
+                $upcomingactions[] = [
+                    'name' => format_string($actionevent->get_name()),
+                    'coursename' => format_string($course->fullname),
+                    'date' => userdate($eventtime, get_string('strftimedatetime', 'langconfig')),
+                    'timestamp' => $eventtime,
+                    'hasurl' => $action->is_actionable(),
+                    'url' => $actionurl->out(false),
+                    'actionlabel' => format_string($action->get_name()),
+                ];
+            }
+
             unset($card['course']);
 
             if (empty($course->enablecompletion)) {
@@ -163,7 +194,20 @@ class learner_dashboard {
         }
         unset($card);
 
+        // Merge events from the displayed learner courses and keep the five
+        // nearest actions, independently of the number of enrolled courses.
+        usort($upcomingactions, static function($left, $right): int {
+            return $left['timestamp'] <=> $right['timestamp'];
+        });
+        $upcomingactions = array_slice($upcomingactions, 0, 5);
+        foreach ($upcomingactions as &$upcomingaction) {
+            unset($upcomingaction['timestamp']);
+        }
+        unset($upcomingaction);
+
         return [
+            'hasupcomingactions' => !empty($upcomingactions),
+            'upcomingactions' => $upcomingactions,
             'learnerheading' => get_string('learnerdashboardheading', 'theme_projectn'),
             'learnerdescription' => get_string('learnerdashboarddescription', 'theme_projectn'),
             'haslearnercourses' => !empty($learnercourses),
