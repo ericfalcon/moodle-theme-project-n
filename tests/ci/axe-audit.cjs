@@ -77,6 +77,13 @@ async function main() {
 
         if (blockingViolations.length > 0) {
             console.error('axe-core found ' + blockingViolations.length + ' serious/critical violation(s).');
+            for (const violation of blockingViolations) {
+                const targets = violation.nodes.slice(0, 3).map(node => node.target.join(' ')).join(' | ');
+                console.error(
+                    '- ' + violation.id + ' (' + violation.impact + ') on ' + violation.page +
+                    ' at ' + violation.width + ' px, ' + violation.nodes.length + ' node(s): ' + targets,
+                );
+            }
             process.exitCode = 1;
         } else {
             console.log('axe-core: no serious or critical violations in the audited states.');
