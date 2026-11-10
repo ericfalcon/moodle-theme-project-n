@@ -18,7 +18,7 @@ use theme_projectn\output\learner_dashboard;
  */
 final class learner_dashboard_test extends \advanced_testcase {
     /**
-     * A user without active course enrolments receives both empty states.
+     * A user without active course enrolments receives the common empty state.
      *
      * @covers ::get_template_context
      */
@@ -35,7 +35,6 @@ final class learner_dashboard_test extends \advanced_testcase {
         $this->assertSame([], $context['teachercourses']);
         $this->assertFalse($context['hasanycourses']);
         $this->assertNotEmpty($context['emptytitle']);
-        $this->assertNotEmpty($context['teacheremptytitle']);
     }
 
     /**
