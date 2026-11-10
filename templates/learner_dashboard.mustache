@@ -18,6 +18,18 @@
                         <div class="projectn-course-card__body">
                             <p class="projectn-course-card__eyebrow">{{shortname}}</p>
                             <h3 class="projectn-course-card__title"><a href="{{url}}">{{fullname}}</a></h3>
+                            {{#hasprogress}}
+                                <div class="projectn-course-card__progress">
+                                    <div class="projectn-course-card__progress-label">{{progresslabel}}</div>
+                                    <progress max="100" value="{{progresspercent}}" aria-label="{{progresslabel}}">{{progresspercent}}%</progress>
+                                </div>
+                            {{/hasprogress}}
+                            {{#hasnextactivity}}
+                                <a class="projectn-course-card__next" href="{{nextactivityurl}}">
+                                    <span>{{nextactivitylabel}}</span>
+                                    <strong>{{nextactivityname}}</strong>
+                                </a>
+                            {{/hasnextactivity}}
                             <a class="projectn-course-card__action" href="{{url}}">{{morelabel}}</a>
                         </div>
                     </li>
