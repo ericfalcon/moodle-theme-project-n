@@ -81,7 +81,7 @@ class learner_dashboard {
                 }
             }
 
-            $courseurl = new \\moodle_url('/course/view.php', ['id' => $course->id]);
+            $courseurl = new \moodle_url('/course/view.php', ['id' => $course->id]);
             $card = [
                 // Retain the course object only until visible cards are selected.
                 'course' => $course,
@@ -114,7 +114,7 @@ class learner_dashboard {
                 continue;
             }
 
-            $completioninfo = new \\completion_info($course);
+            $completioninfo = new \completion_info($course);
             $progress = $completioninfo->get_progress_percentage($USER->id);
 
             if ($progress !== null) {
@@ -143,7 +143,7 @@ class learner_dashboard {
                     continue;
                 }
 
-                $activityurl = new \\moodle_url('/mod/' . $cm->modname . '/view.php', [
+                $activityurl = new \moodle_url('/mod/' . $cm->modname . '/view.php', [
                     'id' => $cm->id,
                 ]);
                 $card['hasnextactivity'] = true;
