@@ -1,6 +1,6 @@
 # Project N — CI et stratégie de tests
 
-**Statut :** stratégie définie ; premier contrôle CI PHP activé. Les tests PHPUnit Moodle et les audits axe-core sur navigateur seront ajoutés dès que l'environnement Moodle de test et les parcours concernés seront disponibles.
+**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. Les premiers runs restent à exécuter et à fiabiliser ; aucune réussite n'est présumée.
 
 ## 1. Principes
 
@@ -42,12 +42,12 @@ Le choix des versions de référence et la fréquence des campagnes complètes d
 | Activé | Syntaxe PHP (`php -l`) | Push, pull request | Aucune erreur |
 | À intégrer | Moodle Coding Style / PHPCS | Push, pull request | Aucune violation non justifiée |
 | À intégrer | Validation du plugin et des templates | Push, pull request | Validation réussie |
-| À intégrer | PHPUnit dans Moodle | Push, pull request | Tous les tests passent |
+| Activé, exécution à vérifier | PHPUnit sur Moodle et Iomad | Push, pull request (versions de référence) ; matrice complète planifiée/manuelle | Tests du thème réussis |
 | À intégrer | Compilation SCSS / vérification des assets | Push, pull request | Compilation réussie |
-| À intégrer | axe-core via Playwright sur Moodle | Push, pull request | Aucun défaut impactant bloquant |
+| Activé, exécution à vérifier | axe-core via Playwright sur Moodle et Iomad | Push, pull request (versions de référence) ; matrice complète planifiée/manuelle | Aucune violation critical/serious sur les pages auditées |
 | À organiser | Tests Behat et parcours Iomad | Pull request et campagnes ciblées | Parcours critiques réussis |
 
-Le premier workflow est `.github/workflows/php-quality.yml`. Il vérifie la syntaxe sur PHP 8.1, 8.2 et 8.3. Ce contrôle ne remplace ni PHPUnit ni les tests d'intégration Moodle.
+Le contrôle syntaxique est défini dans `.github/workflows/php-quality.yml` (PHP 8.1, 8.2 et 8.3). Les installations et tests d'intégration sont définis dans `.github/workflows/platform-tests.yml`, qui appelle `.github/workflows/platform-test-reusable.yml`.
 
 ## 4. Tests PHPUnit à couvrir
 
@@ -105,10 +105,11 @@ Les rapports axe (résumé JSON/HTML et captures en cas d'échec) doivent être 
 
 ## 7. Workflows actifs
 
-Deux workflows GitHub Actions sont maintenant présents :
+Trois workflows GitHub Actions sont maintenant présents :
 
 - `.github/workflows/php-quality.yml` : contrôle syntaxique PHP sur PHP 8.1, 8.2 et 8.3.
-- `.github/workflows/platform-tests.yml` : clone les forks `ericfalcon/moodle` ou `ericfalcon/iomad` sur la branche de version indiquée, installe les dépendances Composer, installe Project N dans le code source, crée une base MySQL dédiée, lance l'installation CLI de la plateforme, initialise PHPUnit et exécute les tests du thème.
+- `.github/workflows/platform-tests.yml` : orchestre les matrices de référence et complète.
+- `.github/workflows/platform-test-reusable.yml` : clone les forks `ericfalcon/moodle` ou `ericfalcon/iomad` sur la branche de version indiquée, installe les dépendances Composer, installe Project N dans le code source, crée une base MySQL dédiée, lance l'installation CLI de la plateforme, initialise PHPUnit et exécute les tests du thème.
 
 Déclenchement de la matrice :
 
