@@ -31,7 +31,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
             return $content;
         }
 
-        if (!$this->page->url instanceof \moodle_url) {
+        if (!($this->page->url instanceof \moodle_url)) {
             return $content;
         }
 
