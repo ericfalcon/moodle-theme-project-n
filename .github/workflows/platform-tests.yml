@@ -1,0 +1,187 @@
+name: Platform integration and accessibility
+
+on:
+  pull_request:
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  platform-tests:
+    name: ${{ matrix.platform }} ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event_name != 'pull_request' || matrix.reference == true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: Moodle, version: '4.5', repository: ericfalcon/moodle, branch: MOODLE_405_STABLE, reference: false }
+          - { platform: Moodle, version: '5.0', repository: ericfalcon/moodle, branch: MOODLE_500_STABLE, reference: false }
+          - { platform: Moodle, version: '5.1', repository: ericfalcon/moodle, branch: MOODLE_501_STABLE, reference: false }
+          - { platform: Moodle, version: '5.2', repository: ericfalcon/moodle, branch: MOODLE_502_STABLE, reference: false }
+          - { platform: Moodle, version: '5.3', repository: ericfalcon/moodle, branch: MOODLE_503_STABLE, reference: true }
+          - { platform: Iomad, version: '4.5', repository: ericfalcon/iomad, branch: IOMAD_405_STABLE, reference: false }
+          - { platform: Iomad, version: '5.0', repository: ericfalcon/iomad, branch: IOMAD_500_STABLE, reference: false }
+          - { platform: Iomad, version: '5.1', repository: ericfalcon/iomad, branch: IOMAD_501_STABLE, reference: false }
+          - { platform: Iomad, version: '5.2', repository: ericfalcon/iomad, branch: IOMAD_502_STABLE, reference: true }
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: moodle
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      MOODLE_REPOSITORY: ${{ matrix.repository }}
+      MOODLE_BRANCH: ${{ matrix.branch }}
+      PLATFORM: ${{ matrix.platform }}
+      PLATFORM_VERSION: ${{ matrix.version }}
+      DB_NAME: moodle
+      DB_USER: root
+      DB_PASSWORD: root
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: MoodleCI-Strong!2026
+      ADMIN_EMAIL: ci-admin@example.invalid
+      MOODLE_URL: http://127.0.0.1:8000
+    steps:
+      - name: Checkout Project N
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, dom, exif, gd, intl, mbstring, mysqli, soap, sodium, xml, zip
+          coverage: none
+          ini-values: memory_limit=512M, max_input_vars=5000
+
+      - name: Clone selected project fork branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$MOODLE_BRANCH" "https://github.com/$MOODLE_REPOSITORY.git" "$RUNNER_TEMP/platform"
+          git -C "$RUNNER_TEMP/platform" log -1 --format='Testing source commit: %H%nSubject: %s'
+          echo "MOODLE_DIR=$RUNNER_TEMP/platform" >> "$GITHUB_ENV"
+
+      - name: Install PHP dependencies
+        working-directory: ${{ runner.temp }}/platform
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Install Project N into the platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -d "$MOODLE_DIR/public" && -f "$MOODLE_DIR/public/index.php" ]]; then
+            WEBROOT="$MOODLE_DIR/public"
+          else
+            WEBROOT="$MOODLE_DIR"
+          fi
+          mkdir -p "$WEBROOT/theme/projectn"
+          git archive HEAD | tar -x -C "$WEBROOT/theme/projectn"
+          echo "MOODLE_WEBROOT=$WEBROOT" >> "$GITHUB_ENV"
+          echo "PROJECTN_PLUGIN_DIR=$WEBROOT/theme/projectn" >> "$GITHUB_ENV"
+
+      - name: Install Moodle or Iomad
+        working-directory: ${{ runner.temp }}/platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          php admin/cli/install.php \
+            --lang=en \
+            --wwwroot="$MOODLE_URL" \
+            --dataroot="$RUNNER_TEMP/platform-data" \
+            --dbtype=mysqli \
+            --dbhost=127.0.0.1 \
+            --dbname="$DB_NAME" \
+            --dbuser="$DB_USER" \
+            --dbpass="$DB_PASSWORD" \
+            --prefix=mdl_ \
+            --fullname="Project N CI $PLATFORM $PLATFORM_VERSION" \
+            --shortname=projectn-ci \
+            --adminuser="$ADMIN_USER" \
+            --adminpass="$ADMIN_PASSWORD" \
+            --adminemail="$ADMIN_EMAIL" \
+            --non-interactive \
+            --agree-license
+          php admin/cli/cfg.php --name=theme --set=projectn
+
+      - name: Initialise PHPUnit environment
+        working-directory: ${{ runner.temp }}/platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> config.php <<'PHPUNITCONFIG'
+
+          // Dedicated PHPUnit data directory for this CI job.
+          $CFG->phpunit_prefix = 'phpu_';
+          $CFG->phpunit_dataroot = getenv('RUNNER_TEMP') . '/phpunit-${{ matrix.platform }}-${{ matrix.version }}';
+          PHPUNITCONFIG
+          if [[ -f public/admin/tool/phpunit/cli/init.php ]]; then
+            PHPUNIT_INIT=public/admin/tool/phpunit/cli/init.php
+          else
+            PHPUNIT_INIT=admin/tool/phpunit/cli/init.php
+          fi
+          php "$PHPUNIT_INIT"
+
+      - name: Run Project N PHPUnit tests
+        working-directory: ${{ runner.temp }}/platform
+        run: vendor/bin/phpunit "$PROJECTN_PLUGIN_DIR/tests/output/learner_dashboard_test.php"
+
+      - name: Install Playwright and axe-core
+        if: matrix.reference == true
+        run: |
+          npm install --no-save --no-package-lock playwright axe-core
+          npx playwright install --with-deps chromium
+
+      - name: Start platform web server
+        if: matrix.reference == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8000 -t "$MOODLE_WEBROOT" > "$RUNNER_TEMP/platform-server.log" 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent "$MOODLE_URL/login/index.php" >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/platform-server.log"
+          exit 1
+
+      - name: Run axe-core browser audit
+        if: matrix.reference == true
+        env:
+          BASE_URL: ${{ env.MOODLE_URL }}
+          ADMIN_USERNAME: ${{ env.ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ env.ADMIN_PASSWORD }}
+          PLATFORM_NAME: ${{ matrix.platform }}
+          PLATFORM_VERSION: ${{ matrix.version }}
+        run: node tests/ci/axe-audit.cjs
+
+      - name: Upload axe reports and screenshots
+        if: always() && matrix.reference == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: axe-${{ matrix.platform }}-${{ matrix.version }}
+          path: artifacts/axe/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-${{ matrix.platform }}-${{ matrix.version }}
+          path: ${{ runner.temp }}/platform-server.log
+          if-no-files-found: ignore
+          retention-days: 7
