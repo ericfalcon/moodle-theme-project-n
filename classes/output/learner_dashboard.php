@@ -13,13 +13,13 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Data provider for the learner dashboard.
  *
- * Course enrolments are retrieved through Moodle's enrolment API. This class
- * does not infer roles or implement access checks of its own.
+ * Courses are classified from role assignments in each course context. Moodle
+ * remains responsible for enrolment, capability evaluation and access control.
  *
  * @package theme_projectn
  */
 class learner_dashboard {
-    /** Maximum number of course cards displayed on the dashboard. */
+    /** Maximum number of course cards displayed in each section. */
     private const COURSE_LIMIT = 6;
 
     /**
@@ -28,6 +28,8 @@ class learner_dashboard {
      * @return array
      */
     public static function get_template_context(): array {
+        global $DB, $USER;
+
         $enrolledcourses = enrol_get_my_courses(
             'id, fullname, shortname, visible',
             'visible DESC, sortorder ASC',
@@ -35,25 +37,81 @@ class learner_dashboard {
             true
         );
 
-        $courses = [];
-        foreach (array_slice($enrolledcourses, 0, self::COURSE_LIMIT) as $course) {
+        // Load role archetypes once. Custom roles without an archetype are
+        // additionally detected through their effective course capabilities.
+        $roles = $DB->get_records('role', [], '', 'id, archetype');
+        $learnercourses = [];
+        $teachercourses = [];
+
+        foreach ($enrolledcourses as $course) {
+            $coursecontext = \context_course::instance($course->id);
+            $assignedroles = get_user_roles($coursecontext, $USER->id, true);
+            $isteacher = false;
+
+            foreach ($assignedroles as $assignedrole) {
+                $roleid = $assignedrole->roleid;
+                $archetype = $roles[$roleid]->archetype ?? '';
+
+                if (in_array($archetype, ['editingteacher', 'teacher'], true)) {
+                    $isteacher = true;
+                    break;
+                }
+            }
+
+            // Custom teaching roles may not have a standard Moodle archetype.
+            // Do not let broad manager/admin roles trigger this fallback.
+            if (!$isteacher && empty($assignedroles)) {
+                $isteacher = has_capability('moodle/course:update', $coursecontext, $USER)
+                    || has_capability('moodle/grade:viewall', $coursecontext, $USER);
+            } else if (!$isteacher) {
+                $hascustomrole = false;
+                foreach ($assignedroles as $assignedrole) {
+                    $roleid = $assignedrole->roleid;
+                    if (empty($roles[$roleid]->archetype)) {
+                        $hascustomrole = true;
+                        break;
+                    }
+                }
+                if ($hascustomrole) {
+                    $isteacher = has_capability('moodle/course:update', $coursecontext, $USER)
+                        || has_capability('moodle/grade:viewall', $coursecontext, $USER);
+                }
+            }
+
             $courseurl = new \moodle_url('/course/view.php', ['id' => $course->id]);
-            $courses[] = [
+            $card = [
                 'fullname' => format_string($course->fullname),
                 'shortname' => format_string($course->shortname),
                 'url' => $courseurl->out(false),
             ];
+
+            if ($isteacher) {
+                $teachercourses[] = $card;
+            } else {
+                // The enrolment API has already restricted this list to the
+                // current user's active course enrolments.
+                $learnercourses[] = $card;
+            }
         }
 
+        $learnercourses = array_slice($learnercourses, 0, self::COURSE_LIMIT);
+        $teachercourses = array_slice($teachercourses, 0, self::COURSE_LIMIT);
+
         return [
-            'heading' => get_string('learnerdashboardheading', 'theme_projectn'),
-            'description' => get_string('learnerdashboarddescription', 'theme_projectn'),
-            'hascourses' => !empty($courses),
-            'courses' => $courses,
+            'learnerheading' => get_string('learnerdashboardheading', 'theme_projectn'),
+            'learnerdescription' => get_string('learnerdashboarddescription', 'theme_projectn'),
+            'haslearnercourses' => !empty($learnercourses),
+            'learnercourses' => $learnercourses,
+            'teacherheading' => get_string('teacherdashboardheading', 'theme_projectn'),
+            'teacherdescription' => get_string('teacherdashboarddescription', 'theme_projectn'),
+            'hasteachercourses' => !empty($teachercourses),
+            'teachercourses' => $teachercourses,
             'moreurl' => (new \moodle_url('/my/courses.php'))->out(false),
             'morelabel' => get_string('learnerdashboardmore', 'theme_projectn'),
             'emptytitle' => get_string('learnerdashboardemptytitle', 'theme_projectn'),
             'emptydescription' => get_string('learnerdashboardemptydescription', 'theme_projectn'),
+            'teacheremptytitle' => get_string('teacherdashboardemptytitle', 'theme_projectn'),
+            'teacheremptydescription' => get_string('teacherdashboardemptydescription', 'theme_projectn'),
         ];
     }
 }
