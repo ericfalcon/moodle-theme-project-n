@@ -11,9 +11,10 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Project N theme configuration.
  *
- * Keep Boost layouts and templates as the default. Project N adds its own
- * design tokens and a global navigation through the output hook. Native
- * contextual navigation and page layouts remain owned by Moodle.
+ * Boost layouts and templates remain the default. Project N adds its own
+ * renderer for the personal dashboard and a global navigation through the
+ * output hook. Native contextual navigation and page layouts remain owned
+ * by Moodle.
  */
 
 $THEME->name = 'projectn';
@@ -21,3 +22,4 @@ $THEME->parents = ['boost'];
 $THEME->sheets = [];
 $THEME->editor_sheets = [];
 $THEME->extrascsscallback = 'theme_projectn_get_extra_scss';
+$THEME->rendererfactory = 'theme_overridden_renderer_factory';
