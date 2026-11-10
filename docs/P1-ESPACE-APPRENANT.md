@@ -1,7 +1,7 @@
 # Project N — P1 : formations apprenant et enseignant
 
 **Statut :** fournisseur, template et surcharge ciblée du renderer intégrés sur `feature/p1-foundation`. Le rendu effectif, les tests et la compatibilité runtime restent à valider.  
-**Version de développement :** `2026111008`.
+**Version de développement :** `2026111009`.
 
 ## 1. Principe de classement
 
@@ -15,9 +15,10 @@ La récupération initiale passe par `enrol_get_my_courses()` et ne retient que 
 
 Pour chaque cours récupéré :
 1. le fournisseur examine les rôles affectés dans le contexte du cours et ses contextes parents via `get_user_roles()` ;
-2. les archétypes Moodle `editingteacher` et `teacher` classent le cours dans la section enseignante ;
-3. pour les rôles personnalisés sans archétype, les capacités effectives `moodle/course:update` ou `moodle/grade:viewall` servent de solution de repli ;
-4. les autres cours inscrits sont classés dans la section apprenant.
+2. les rôles Iomad `companycourseeditor` et `companycoursenoeditor` classent le cours dans la section enseignante, quel que soit leur éventuel archétype ;
+3. les archétypes Moodle `editingteacher` et `teacher` classent également le cours dans la section enseignante ;
+4. pour les autres rôles personnalisés sans archétype, les capacités effectives `moodle/course:update` ou `moodle/grade:viewall` servent de solution de repli ;
+5. les autres cours inscrits sont classés dans la section apprenant.
 
 Les rôles standards de gestion (`manager`) ne sont pas assimilés à un rôle enseignant sur la seule base de leurs capacités étendues. Un rôle personnalisé qui cumule des fonctions d'enseignement et de gestion devra être validé avec des configurations réelles.
 
@@ -43,7 +44,7 @@ Le hook `before_standard_top_of_body_html_generation` reste réservé à la navi
 
 ## 5. Vérifications restantes
 
-- [ ] Vérifier les rôles standard apprenant, enseignant non éditeur et enseignant éditeur.
+- [ ] Vérifier les rôles standard Moodle et les rôles Iomad `companycourseeditor` et `companycoursenoeditor` sur une instance Iomad réelle.
 - [ ] Vérifier un compte présent dans les deux sections sur des cours différents.
 - [ ] Vérifier les rôles personnalisés et les rôles Iomad.
 - [ ] Vérifier les rôles hérités de catégories.
