@@ -38,7 +38,13 @@ async function main() {
 
         await page.locator('#username').fill(username);
         await page.locator('#password').fill(password);
-        await page.locator('#loginbtn').click();
+        // Wait for the navigation triggered by the click: waiting for the DOM of the
+        // current login page can return before the form is submitted, which reads as a
+        // failed login.
+        await Promise.all([
+            page.waitForURL((url) => !url.pathname.endsWith('/login/index.php'), { timeout: 30000 }).catch(() => null),
+            page.locator('#loginbtn').click(),
+        ]);
         await page.waitForLoadState('domcontentloaded');
 
         if (new URL(page.url()).pathname.endsWith('/login/index.php')) {
