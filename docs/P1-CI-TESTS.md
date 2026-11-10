@@ -101,3 +101,23 @@ axe-core ne détecte pas tous les problèmes d'accessibilité. Les tests automat
 Les jobs axe deviennent obligatoires dès que le pipeline peut démarrer de façon reproductible les deux instances (Moodle et Iomad), installer Project N, créer les jeux de données et se connecter aux pages testées. Avant cela, le statut « axe non exécuté » doit rester visible : une absence de résultat ne vaut jamais réussite.
 
 Les rapports axe (résumé JSON/HTML et captures en cas d'échec) doivent être conservés comme artefacts de CI pour faciliter la correction.
+
+
+## 7. Workflows actifs
+
+Deux workflows GitHub Actions sont maintenant présents :
+
+- `.github/workflows/php-quality.yml` : contrôle syntaxique PHP sur PHP 8.1, 8.2 et 8.3.
+- `.github/workflows/platform-tests.yml` : clone les forks `ericfalcon/moodle` ou `ericfalcon/iomad` sur la branche de version indiquée, installe les dépendances Composer, installe Project N dans le code source, crée une base MySQL dédiée, lance l'installation CLI de la plateforme, initialise PHPUnit et exécute les tests du thème.
+
+Déclenchement de la matrice :
+
+- Push et pull request : Moodle 5.3 et Iomad 5.2, versions de référence actuelles.
+- Exécution hebdomadaire (lundi) et déclenchement manuel : matrice complète Moodle 4.5–5.3 et Iomad 4.5–5.2.
+- Chaque job journalise le SHA du fork réellement testé. Le job Iomad clone exclusivement le fork personnel ; la branche Iomad 5.0 n'est ni remplacée ni réinitialisée.
+
+Sur les deux versions de référence, le workflow démarre aussi un serveur PHP local et lance Playwright + axe-core sur la connexion, le tableau de bord et l'index des cours, aux largeurs 320, 390, 768 et 1280 CSS px. Les rapports JSON et captures d'écran des violations bloquantes sont publiés comme artefacts.
+
+**Périmètre actuel de l'audit axe :** les pages sont visitées avec le compte administrateur créé pour l'installation. Cela valide le rendu initial des pages communes et l'état vide du tableau de bord, mais ne prétend pas encore couvrir les tableaux de bord peuplés apprenant/enseignant, les rôles Iomad en contexte entreprise, les menus ouverts, les modales ni le thème sombre. Ces états seront ajoutés avec des données de test dédiées.
+
+**Statut d'exécution :** les fichiers de workflow et le script axe sont enregistrés dans GitHub. Aucun run GitHub Actions n'a encore été observé dans cette session ; les installations, PHPUnit et audits axe ne sont donc pas déclarés réussis. Les premiers runs devront servir à corriger les éventuelles différences de démarrage entre générations Moodle/Iomad.
