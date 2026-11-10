@@ -98,7 +98,7 @@ axe-core ne détecte pas tous les problèmes d'accessibilité. Les tests automat
 
 ## 6. Gate axe et limites actuelles
 
-Le gate axe est actif sur les deux plateformes de référence (Moodle 5.3 et Iomad 5.2), sur les pages et états décrits en section 7. Il bloque les violations `critical` et `serious`. Il ne constitue pas encore une validation complète de tous les parcours Project N.
+Le gate axe est actif sur les quatre environnements de référence (Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2), sur les pages et états décrits en section 7. Il bloque les violations `critical` et `serious`. Il ne constitue pas encore une validation complète de tous les parcours Project N.
 
 Les rapports JSON et captures en cas de violation bloquante sont conservés comme artefacts de CI. Les audits sur les tableaux de bord apprenant/enseignant avec données réelles de test, les rôles Iomad en contexte entreprise, les menus ouverts, les modales et le thème sombre restent à ajouter.
 
@@ -113,12 +113,21 @@ Trois workflows GitHub Actions sont maintenant présents :
 
 Déclenchement de la matrice :
 
-- Push et pull request : Moodle 5.3 et Iomad 5.2, versions de référence actuelles.
+- Push et pull request : Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2. Les deux générations 4.5 sont exécutées à chaque changement.
 - Exécution hebdomadaire (lundi) et déclenchement manuel : matrice complète Moodle 4.5–5.3 et Iomad 4.5–5.2.
 - Chaque job journalise le SHA du fork réellement testé. Le job Iomad clone exclusivement le fork personnel ; la branche Iomad 5.0 n'est ni remplacée ni réinitialisée.
 
-Sur les deux versions de référence, le workflow démarre aussi un serveur PHP local et lance Playwright + axe-core sur la connexion, le tableau de bord et l'index des cours, aux largeurs 320, 390, 768 et 1280 CSS px. Les rapports JSON et captures d'écran des violations bloquantes sont publiés comme artefacts.
+Sur les quatre versions de référence, le workflow démarre aussi un serveur PHP local et lance Playwright + axe-core sur la connexion, le tableau de bord et l'index des cours, aux largeurs 320, 390, 768 et 1280 CSS px. Les rapports JSON et captures d'écran des violations bloquantes sont publiés comme artefacts.
 
 **Périmètre actuel de l'audit axe :** les pages sont visitées avec le compte administrateur créé pour l'installation. Cela valide le rendu initial des pages communes et l'état vide du tableau de bord, mais ne prétend pas encore couvrir les tableaux de bord peuplés apprenant/enseignant, les rôles Iomad en contexte entreprise, les menus ouverts, les modales ni le thème sombre. Ces états seront ajoutés avec des données de test dédiées.
 
 **Statut d'exécution :** les fichiers de workflow et le script axe sont enregistrés dans GitHub. Aucun run GitHub Actions n'a encore été observé dans cette session ; les installations, PHPUnit et audits axe ne sont donc pas déclarés réussis. Les premiers runs devront servir à corriger les éventuelles différences de démarrage entre générations Moodle/Iomad.
+
+
+## 8. Référence 4.5 exécutée à chaque changement
+
+À compter de la mise à jour du workflow, Moodle 4.5 (`MOODLE_405_STABLE`) et Iomad 4.5 (`IOMAD_405_STABLE`) rejoignent les deux environnements récents dans la matrice déclenchée sur chaque push et pull request. Les deux branches ont été vérifiées dans les forks personnels avant modification du workflow.
+
+Les quatre jobs de référence exécutent l'installation réelle, PHPUnit et l'audit axe-core. La matrice complète planifiée/manuelle reste utile pour Moodle 5.0, 5.1 et 5.2 ainsi que Iomad 5.0 et 5.1 ; elle ne remplace pas les quatre tests de référence exécutés à chaque changement.
+
+Cette évolution augmente le coût de CI sur chaque push, mais évite de détecter trop tard une régression de compatibilité avec la base historique 4.5. Les résultats doivent être lus par job et par commit : un succès sur 5.3/5.2 ne vaut pas validation 4.5.
