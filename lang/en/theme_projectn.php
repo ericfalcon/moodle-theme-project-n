@@ -24,3 +24,5 @@ $string['teacherdashboardemptydescription'] = 'Courses where you have a teaching
 
 $string['learnerdashboardprogress'] = 'Progress: {$a}%';
 $string['learnerdashboardnextactivity'] = 'Next activity';
+$string['upcomingactionsheading'] = 'Upcoming deadlines';
+$string['upcomingactionsdescription'] = 'Actions to complete in your courses over the next 30 days.';
