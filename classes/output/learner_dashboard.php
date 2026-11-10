@@ -209,6 +209,8 @@ class learner_dashboard {
         return [
             'hasupcomingactions' => !empty($upcomingactions),
             'upcomingactions' => $upcomingactions,
+            'upcomingactionsheading' => get_string('upcomingactionsheading', 'theme_projectn'),
+            'upcomingactionsdescription' => get_string('upcomingactionsdescription', 'theme_projectn'),
             'learnerheading' => get_string('learnerdashboardheading', 'theme_projectn'),
             'learnerdescription' => get_string('learnerdashboarddescription', 'theme_projectn'),
             'haslearnercourses' => !empty($learnercourses),
