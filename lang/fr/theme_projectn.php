@@ -13,8 +13,12 @@ $string['globalnavigation'] = 'Navigation principale';
 $string['home'] = 'Accueil';
 $string['courses'] = 'Formations';
 
-$string['learnerdashboardheading'] = 'Mes formations';
-$string['learnerdashboarddescription'] = 'Retrouvez les formations auxquelles vous êtes inscrit et accédez directement à leur contenu.';
+$string['learnerdashboardheading'] = 'Mes formations en tant qu’apprenant';
+$string['learnerdashboarddescription'] = 'Retrouvez les formations auxquelles vous participez en tant qu’apprenant.';
 $string['learnerdashboardmore'] = 'Accéder à la formation';
-$string['learnerdashboardemptytitle'] = 'Aucune formation à afficher';
-$string['learnerdashboardemptydescription'] = 'Les formations auxquelles vous êtes inscrit apparaîtront ici.';
+$string['learnerdashboardemptytitle'] = 'Aucune formation en tant qu’apprenant';
+$string['learnerdashboardemptydescription'] = 'Les formations auxquelles vous êtes inscrit comme apprenant apparaîtront ici.';
+$string['teacherdashboardheading'] = 'Mes formations en tant qu’enseignant';
+$string['teacherdashboarddescription'] = 'Retrouvez les formations dans lesquelles vous intervenez comme enseignant ou formateur.';
+$string['teacherdashboardemptytitle'] = 'Aucune formation en tant qu’enseignant';
+$string['teacherdashboardemptydescription'] = 'Les formations dans lesquelles vous avez un rôle d’enseignement apparaîtront ici.';
