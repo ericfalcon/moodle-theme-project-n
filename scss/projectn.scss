@@ -299,3 +299,52 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }
+
+
+.projectn-course-card__progress {
+    width: 100%;
+    margin: 0.25rem 0 0.75rem;
+}
+
+.projectn-course-card__progress-label {
+    margin-bottom: 0.375rem;
+    color: var(--projectn-color-text-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.projectn-course-card__progress progress {
+    display: block;
+    width: 100%;
+    height: 0.625rem;
+    accent-color: var(--projectn-color-action);
+}
+
+.projectn-course-card__next {
+    display: flex;
+    width: 100%;
+    min-height: 2.75rem;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.125rem;
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.625rem 0.75rem;
+    color: var(--projectn-color-text);
+    background: var(--projectn-color-surface);
+    border-radius: var(--projectn-radius-sm);
+    text-decoration: none;
+}
+
+.projectn-course-card__next span {
+    color: var(--projectn-color-text-muted);
+    font-size: 0.8125rem;
+}
+
+.projectn-course-card__next strong {
+    overflow-wrap: anywhere;
+}
+
+.projectn-course-card__next:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
