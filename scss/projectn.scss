@@ -54,7 +54,13 @@
     --projectn-shadow-card: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.24);
 }
 
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
     outline: var(--projectn-focus-outline-width) solid var(--projectn-color-focus);
     outline-offset: 0.1875rem;
 }
