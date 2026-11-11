@@ -3,6 +3,7 @@
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
 $string['pluginname'] = 'Project N';
@@ -11,6 +12,7 @@ $string['privacy:metadata'] = 'The Project N theme does not store any personal d
 $string['globalnavigation'] = 'Main navigation';
 $string['primarynavigation'] = 'Moodle primary navigation';
 $string['secondarynavigation'] = 'Moodle secondary navigation';
+$string['navigationlandmark'] = 'Moodle navigation: {$a}';
 $string['home'] = 'Home';
 $string['courses'] = 'Courses';
 
