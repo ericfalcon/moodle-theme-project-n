@@ -115,9 +115,46 @@ async function auditPage(page, pageName, width, results, blockingViolations) {
             helpUrl: violation.helpUrl,
             nodes: violation.nodes.map(node => ({
                 target: node.target,
+                html: node.html,
                 failureSummary: node.failureSummary,
+                any: node.any,
+                all: node.all,
+                none: node.none,
             })),
         })),
+        diagnostics: await page.evaluate(() => {
+            const describe = element => {
+                const style = window.getComputedStyle(element);
+                const rect = element.getBoundingClientRect();
+                return {
+                    html: element.outerHTML,
+                    rect: {
+                        x: rect.x,
+                        y: rect.y,
+                        width: rect.width,
+                        height: rect.height,
+                    },
+                    display: style.display,
+                    position: style.position,
+                    minWidth: style.minWidth,
+                    minHeight: style.minHeight,
+                    width: style.width,
+                    height: style.height,
+                    padding: style.padding,
+                    margin: style.margin,
+                    lineHeight: style.lineHeight,
+                    fontSize: style.fontSize,
+                };
+            };
+            return {
+                projectnNavigation: [...document.querySelectorAll('.projectn-global-navigation')].map(describe),
+                projectnLinks: [...document.querySelectorAll('.projectn-global-navigation__link')].map(describe),
+                timelineButtons: [...document.querySelectorAll(
+                    'button[aria-label="Filter timeline by date"], button[aria-label="Sort timeline items"]'
+                )].map(describe),
+                stylesheets: [...document.styleSheets].map(sheet => sheet.href).filter(Boolean),
+            };
+        }),
     };
     results.push(summary);
 
