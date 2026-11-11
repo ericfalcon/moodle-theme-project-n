@@ -1,6 +1,6 @@
 # Project N — CI et stratégie de tests
 
-**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. Les premières exécutions réelles ont validé PHPUnit sur les quatre plateformes de référence ; les audits axe 4.5 ont révélé des écarts désormais corrigés dans le code, dont la validation reste à confirmer par la CI du dernier commit.
+**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. L'exécution du 11 novembre 2026 a révélé que la commande PHPUnit se terminait avec succès sans découvrir de test (`No tests executed!`) sur les environnements inspectés. Le workflow a été corrigé pour utiliser le suffixe Moodle `*_test.php` et échouer si aucune suite n'est découverte. La validation effective reste à confirmer par une nouvelle CI.
 
 ## 1. Principes
 
@@ -139,7 +139,7 @@ Cette évolution maintient un contrôle de compatibilité sur la base historique
 
 Le run GitHub Actions `42906823791`, sur le commit `6af403a44b7d7426572b3d44829cbbbd14c6c74d`, fournit les rapports JSON et captures exploitables.
 
-- **PHPUnit :** succès sur Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2.
+- **PHPUnit :** l'étape apparaissait en succès, mais les logs du run `42999263534` montrent `No tests executed!` sur Moodle 5.3 et Iomad 5.2. Ce résultat ne valide aucun test ; la même anomalie doit être considérée comme possible sur les deux environnements 4.5 tant que leurs logs n'ont pas été corrigés et revérifiés.
 - **Moodle 5.3 et Iomad 5.2 :** jobs de référence réussis, sans violation bloquante.
 - **Moodle 4.5 :** 12 occurrences de violations bloquantes sur les pages auditées :
   - `label-content-name-mismatch` sur les deux boutons du bloc Timeline (`Filter timeline by date`, `Sort timeline items`) aux quatre largeurs du tableau de bord ;
@@ -151,7 +151,7 @@ Les rapports et captures d'origine sont les artefacts `axe-Moodle-4.5` (ID `1380
 
 ### Corrections enregistrées sur `feature/p1-foundation`
 
-- **Fixtures PHPUnit :** les inscriptions des tests du tableau de bord utilisent le générateur de données Moodle ; les tests sont désormais confirmés verts sur les quatre plateformes de référence.
+- **Fixtures PHPUnit :** les inscriptions des tests du tableau de bord utilisent le générateur de données Moodle. Attention : l'exécution `42999263534` n'a découvert aucun test malgré le statut vert de l'étape. Les tests ne sont donc pas considérés comme validés par cette exécution.
 - **Compatibilité SCSS 4.5 :** Moodle 4.5 embarque SCSSPHP 1.12.1 ; son compilateur ne supporte pas correctement le sélecteur complexe `:where(...)` utilisé dans le style de focus. Le callback SCSS échouait donc et les styles Project N n'étaient pas appliqués. Le sélecteur a été remplacé par une liste explicite de sélecteurs `:focus-visible`. Les syntaxes CSS récentes de couleur et de calcul ont également été remplacées par des équivalents compatibles ; les liens de navigation reçoivent une cible minimale de 44 × 44 px.
 - **Timeline :** surcharge ciblée des templates `block_timeline/nav-day-filter` et `block_timeline/nav-view-selector`. Le nom accessible reprend maintenant le libellé visible de l'option sélectionnée, en conservant les chaînes traduites de Moodle.
 - **Landmarks :** surcharge de `core/moremenu` avec des noms accessibles distincts pour la navigation primaire et la navigation secondaire Moodle, en s'appuyant sur le contexte `istablist` du template.
@@ -180,3 +180,23 @@ Corrections engagées sur `feature/p1-foundation` :
 - Les rapports axe restent conservés comme artefacts pour permettre l'inspection des pages, largeurs, nœuds et diagnostics.
 
 La validation de ces corrections doit être effectuée par une nouvelle exécution GitHub Actions sur le commit qui contient l'ensemble des modifications. Le statut vert du run précédent ne vaut pas validation de cette correction. Le critère de clôture est : quatre environnements de référence terminés, PHPUnit réussi, audit axe sans aucune violation et contrôles PHP réussis.
+
+## 10. Correction de la découverte PHPUnit — 11 novembre 2026
+
+### Diagnostic confirmé par les logs
+
+Les fichiers de tests du thème suivent la convention Moodle `*_test.php` (`tests/output/global_navigation_test.php` et `tests/output/learner_dashboard_test.php`). La commande précédente lançait PHPUnit sur un répertoire sans lui transmettre ce suffixe. PHPUnit retournait un code de sortie nul tout en affichant `No tests executed!`, ce qui laissait passer une suite vide.
+
+### Correctif CI
+
+Dans `.github/workflows/platform-test-reusable.yml`, l'étape PHPUnit utilise désormais explicitement :
+
+- `--test-suffix _test.php` pour découvrir les fichiers de tests Moodle ;
+- `--fail-on-empty-test-suite` pour transformer toute découverte vide en échec CI ;
+- `set -euo pipefail` pour conserver un échec bloquant de la commande.
+
+Cette correction s'applique à tous les environnements de la matrice, Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2. Elle ne vaut pas preuve de réussite : la prochaine exécution doit montrer un décompte PHPUnit non nul et zéro échec sur Moodle 5.3 et Iomad 5.2, ainsi que sur les autres versions couvertes.
+
+### Commit de correction
+
+`5440e254e53f6f676e5eb8a22ce2b491e20a8b19` — `Fix PHPUnit test discovery and fail on empty suite`.
