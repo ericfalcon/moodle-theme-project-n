@@ -31,8 +31,21 @@ class global_navigation {
         $homeurl = new \moodle_url('/');
         $coursesurl = new \moodle_url('/my/courses.php');
 
+        // moodle_url stores the site-root path as an empty string and may retain
+        // a trailing slash for directory URLs. Normalise before comparing paths.
+        $normalisepath = static function(string $path): string {
+            $path = rtrim($path, '/');
+            return $path === '' ? '/' : $path;
+        };
+        $currentpath = $normalisepath($currentpath);
+        $homepath = $normalisepath($homeurl->get_path());
+        $dashboardpaths = [
+            $normalisepath((new \moodle_url('/my/'))->get_path()),
+            $normalisepath((new \moodle_url('/my/index.php'))->get_path()),
+        ];
+
         // Treat the personal dashboard as the user's home workspace as well.
-        $ishome = in_array($currentpath, ['/', '/my/', '/my/index.php'], true);
+        $ishome = $currentpath === $homepath || in_array($currentpath, $dashboardpaths, true);
 
         return [
             'label' => get_string('globalnavigation', 'theme_projectn'),
@@ -45,7 +58,7 @@ class global_navigation {
                 [
                     'label' => get_string('courses', 'theme_projectn'),
                     'url' => $coursesurl->out(false),
-                    'current' => $currentpath === $coursesurl->get_path(),
+                    'current' => $currentpath === $normalisepath($coursesurl->get_path()),
                 ],
             ],
         ];
