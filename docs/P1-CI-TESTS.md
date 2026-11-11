@@ -44,7 +44,7 @@ Le choix des versions de référence et la fréquence des campagnes complètes d
 | À intégrer | Validation du plugin et des templates | Push, pull request | Validation réussie |
 | Activé, exécution à vérifier | PHPUnit sur Moodle et Iomad | Push, pull request (versions de référence) ; matrice complète planifiée/manuelle | Tests du thème réussis |
 | À intégrer | Compilation SCSS / vérification des assets | Push, pull request | Compilation réussie |
-| Activé, exécution à vérifier | axe-core via Playwright sur Moodle et Iomad | Push, pull request (versions de référence) ; matrice complète planifiée/manuelle | Aucune violation critical/serious sur les pages auditées |
+| Activé, exécution à vérifier | axe-core via Playwright sur Moodle et Iomad | Push, pull request (versions de référence) ; matrice complète planifiée/manuelle | Aucune violation axe-core sur les pages auditées |
 | À organiser | Tests Behat et parcours Iomad | Pull request et campagnes ciblées | Parcours critiques réussis |
 
 Le contrôle syntaxique est défini dans `.github/workflows/php-quality.yml` (PHP 8.1, 8.2 et 8.3). Les installations et tests d'intégration sont définis dans `.github/workflows/platform-tests.yml`, qui appelle `.github/workflows/platform-test-reusable.yml`.
@@ -87,8 +87,8 @@ Le zoom à 200 % et les parcours clavier restent également à contrôler. Le vi
 ### Règles et seuils
 
 - Utiliser axe-core avec les tags WCAG 2.1 niveau A et AA, WCAG 2.2 A/AA lorsque les règles sont pertinentes, et les bonnes pratiques axe.
-- Faire échouer la CI sur les violations `critical` et `serious`.
-- Traiter les violations `moderate` et `minor` dans le rapport ; leur exclusion du seuil bloquant doit rester explicite et temporaire.
+- Faire échouer la CI sur **toute violation axe-core**, quel que soit son niveau (`critical`, `serious`, `moderate` ou `minor`).
+- Aucune violation `moderate` ou `minor` n'est ignorée : elles bloquent également la CI.
 - Toute exception doit être documentée avec le sélecteur concerné, la justification, le risque résiduel et une échéance de correction.
 - Ne pas neutraliser globalement une règle axe pour faire passer le pipeline.
 
@@ -98,7 +98,7 @@ axe-core ne détecte pas tous les problèmes d'accessibilité. Les tests automat
 
 ## 6. Gate axe et limites actuelles
 
-Le gate axe est actif sur les quatre environnements de référence (Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2), sur les pages et états décrits en section 7. Il bloque les violations `critical` et `serious`. Il ne constitue pas encore une validation complète de tous les parcours Project N.
+Le gate axe est actif sur les quatre environnements de référence (Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2), sur les pages et états décrits en section 7. Il bloque désormais **toutes les violations axe-core**, sans distinction de gravité. Il ne constitue pas encore une validation complète de tous les parcours Project N.
 
 Les rapports JSON et captures en cas de violation bloquante sont conservés comme artefacts de CI. Les audits sur les tableaux de bord apprenant/enseignant avec données réelles de test, les rôles Iomad en contexte entreprise, les menus ouverts, les modales et le thème sombre restent à ajouter.
 
@@ -163,6 +163,20 @@ Les rapports et captures d'origine sont les artefacts `axe-Moodle-4.5` (ID `1380
 Le commit `8993c4f8c6544155244aeef540252d117111a8` regroupe les premières corrections ; le commit suivant corrige aussi le sélecteur `:where(...)` qui empêchait la compilation SCSS en Moodle 4.5. Les workflows déclenchés pour le dernier commit doivent confirmer :
 1. syntaxe PHP sur PHP 8.1, 8.2 et 8.3 ;
 2. PHPUnit sur Moodle 4.5 et 5.3, Iomad 4.5 et 5.2 ;
-3. axe-core sans violation `critical` ou `serious` sur les quatre environnements.
+3. axe-core sans aucune violation, quelle que soit sa gravité, sur les quatre environnements.
 
 Aucune de ces trois validations n'est déclarée réussie pour le commit `8993c4f` avant lecture de ses résultats GitHub Actions réels.
+
+
+## 10. Correction du contrôle des landmarks — 11 novembre 2026
+
+L'analyse des artefacts du run `42999263534` (commit `5c2c8527a4fbd0a4e58cf2e9e74361ad0e9070e1`) a révélé que le workflow était vert alors que les rapports JSON conservaient des violations modérées `landmark-unique` sur l'index des cours de Moodle 4.5, Iomad 4.5 et Iomad 5.2. La cause était une deuxième navigation `core/moremenu` rendue avec le même nom accessible que la navigation primaire ; le contexte `istablist` ne suffisait pas à distinguer le menu de catégorie rendu avec la classe `nav-tabs`.
+
+Corrections engagées sur `feature/p1-foundation` :
+
+- Le template `core/moremenu` conserve le nom « navigation secondaire de Moodle » pour les véritables tablists et utilise désormais un nom localisé incluant le style de navigation pour les autres menus. Cela différencie notamment `navbar-nav` et `nav-tabs`.
+- Les chaînes anglaise et française `navigationlandmark` sont ajoutées.
+- Le script axe-core traite maintenant **toutes** les violations comme bloquantes, y compris `moderate` et `minor`. Le précédent seuil limité à `serious` et `critical` expliquait pourquoi les jobs pouvaient réussir malgré ces résultats.
+- Les rapports axe restent conservés comme artefacts pour permettre l'inspection des pages, largeurs, nœuds et diagnostics.
+
+La validation de ces corrections doit être effectuée par une nouvelle exécution GitHub Actions sur le commit qui contient l'ensemble des modifications. Le statut vert du run précédent ne vaut pas validation de cette correction. Le critère de clôture est : quatre environnements de référence terminés, PHPUnit réussi, audit axe sans aucune violation et contrôles PHP réussis.
