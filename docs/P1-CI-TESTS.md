@@ -1,6 +1,6 @@
 # Project N — CI et stratégie de tests
 
-**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. Les premiers runs restent à exécuter et à fiabiliser ; aucune réussite n'est présumée.
+**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. Les premières exécutions réelles ont validé PHPUnit sur les quatre plateformes de référence ; les audits axe 4.5 ont révélé des écarts désormais corrigés dans le code, dont la validation reste à confirmer par la CI du dernier commit.
 
 ## 1. Principes
 
@@ -131,3 +131,38 @@ Sur les quatre versions de référence, le workflow démarre aussi un serveur PH
 Les quatre jobs de référence exécutent l'installation réelle, PHPUnit et l'audit axe-core. La matrice complète planifiée/manuelle reste utile pour Moodle 5.0, 5.1 et 5.2 ainsi que Iomad 5.0 et 5.1 ; elle ne remplace pas les quatre tests de référence exécutés à chaque changement.
 
 Cette évolution augmente le coût de CI sur chaque push, mais évite de détecter trop tard une régression de compatibilité avec la base historique 4.5. Les résultats doivent être lus par job et par commit : un succès sur 5.3/5.2 ne vaut pas validation 4.5.
+
+
+## 9. Diagnostic et corrections axe-core — 11 novembre 2026
+
+### Référence de départ
+
+Le run GitHub Actions `42906823791`, sur le commit `6af403a44b7d7426572b3d44829cbbbd14c6c74d`, fournit les rapports JSON et captures exploitables.
+
+- **PHPUnit :** succès sur Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2.
+- **Moodle 5.3 et Iomad 5.2 :** jobs de référence réussis, sans violation bloquante.
+- **Moodle 4.5 :** 12 occurrences de violations bloquantes sur les pages auditées :
+  - `label-content-name-mismatch` sur les deux boutons du bloc Timeline (`Filter timeline by date`, `Sort timeline items`) aux quatre largeurs du tableau de bord ;
+  - `target-size` sur les deux liens de navigation Project N aux quatre largeurs, sur le tableau de bord et l'index des cours.
+  - `landmark-unique` sur le repère `core/moremenu` aux largeurs 768 et 1280.
+- **Iomad 4.5 :** 8 occurrences bloquantes `target-size` sur les liens de navigation Project N, plus le repère `core/moremenu` aux largeurs 768 et 1280.
+
+Les rapports et captures d'origine sont les artefacts `axe-Moodle-4.5` (ID `13805412307`) et `axe-Iomad-4.5` (ID `13805757714`). Les mesures axe montraient des liens de navigation de 16 à 17 px de haut, alors que le SCSS source annonçait une hauteur minimale de 44 px : la feuille SCSS ne produisait donc pas le rendu attendu sur les deux plateformes 4.5.
+
+### Corrections enregistrées sur `feature/p1-foundation`
+
+- **Fixtures PHPUnit :** les inscriptions des tests du tableau de bord utilisent le générateur de données Moodle ; les tests sont désormais confirmés verts sur les quatre plateformes de référence.
+- **Compatibilité SCSS 4.5 :** remplacement des syntaxes CSS récentes de couleur et de calcul par des équivalents plus compatibles avec le compilateur historique ; les liens de navigation reçoivent explicitement une cible minimale de 44 × 44 px.
+- **Timeline :** surcharge ciblée des templates `block_timeline/nav-day-filter` et `block_timeline/nav-view-selector`. Le nom accessible reprend maintenant le libellé visible de l'option sélectionnée, en conservant les chaînes traduites de Moodle.
+- **Landmark :** surcharge de `core/moremenu` avec un nom accessible distinct de la navigation globale Project N.
+- **Diagnostic :** le rapport axe conserve désormais le HTML des nœuds et leurs résultats `any/all/none`, ainsi que les dimensions calculées des liens Project N et des boutons Timeline.
+- **Exécutions concurrentes :** les workflows sont limités au push sur `main` et aux pull requests vers `main`, avec annulation des exécutions obsolètes d'une même branche afin d'éviter la double matrice push/PR.
+
+### Validation en attente
+
+Le commit de correction regroupé est `8993c4f8c6544155244aeef540252d117111a8a8`. Les workflows déclenchés pour ce commit doivent confirmer :
+1. syntaxe PHP sur PHP 8.1, 8.2 et 8.3 ;
+2. PHPUnit sur Moodle 4.5 et 5.3, Iomad 4.5 et 5.2 ;
+3. axe-core sans violation `critical` ou `serious` sur les quatre environnements.
+
+Aucune de ces trois validations n'est déclarée réussie pour le commit `8993c4f` avant lecture de ses résultats GitHub Actions réels.
