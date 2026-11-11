@@ -151,7 +151,7 @@ class learner_dashboard {
                 continue;
             }
 
-            $completioninfo = new \\completion_info($course);
+            $completioninfo = new \completion_info($course);
             $activities = $completioninfo->get_activities();
             $trackablecount = 0;
             $completedcount = 0;
@@ -185,7 +185,7 @@ class learner_dashboard {
             }
 
             if ($nextactivity !== null) {
-                $activityurl = new \\moodle_url('/mod/' . $nextactivity->modname . '/view.php', [
+                $activityurl = new \moodle_url('/mod/' . $nextactivity->modname . '/view.php', [
                     'id' => $nextactivity->id,
                 ]);
                 $card['hasnextactivity'] = true;
