@@ -45,8 +45,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_student_course_is_classified_as_learner(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation apprenant',
@@ -55,13 +53,9 @@ final class learner_dashboard_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        $instance = $DB->get_record('enrol', [
-            'courseid' => $course->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $studentroles = get_archetype_roles('student');
         $studentrole = reset($studentroles);
-        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
         $context = learner_dashboard::get_template_context();
 
@@ -83,8 +77,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_teacher_course_is_classified_as_teacher(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation enseignée',
@@ -93,13 +85,9 @@ final class learner_dashboard_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        $instance = $DB->get_record('enrol', [
-            'courseid' => $course->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $teacherroles = get_archetype_roles('teacher');
         $teacherrole = reset($teacherroles);
-        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $teacherrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, $teacherrole->id);
 
         $context = learner_dashboard::get_template_context();
 
@@ -121,8 +109,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_user_can_appear_in_both_sections(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $learnercourse = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation suivie',
@@ -134,23 +120,13 @@ final class learner_dashboard_test extends \advanced_testcase {
         ]);
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
-        $manual = enrol_get_plugin('manual');
-
-        $learnerinstance = $DB->get_record('enrol', [
-            'courseid' => $learnercourse->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $studentroles = get_archetype_roles('student');
         $studentrole = reset($studentroles);
-        $manual->enrol_user($learnerinstance, $user->id, $studentrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $learnercourse->id, $studentrole->id);
 
-        $teacherinstance = $DB->get_record('enrol', [
-            'courseid' => $teachercourse->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $teacherroles = get_archetype_roles('teacher');
         $teacherrole = reset($teacherroles);
-        $manual->enrol_user($teacherinstance, $user->id, $teacherrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $teachercourse->id, $teacherrole->id);
 
         $context = learner_dashboard::get_template_context();
 
@@ -170,8 +146,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_iomad_company_course_editor_role_is_classified_as_teacher(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation Iomad',
@@ -180,16 +154,13 @@ final class learner_dashboard_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        $instance = $DB->get_record('enrol', [
-            'courseid' => $course->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $studentroles = get_archetype_roles('student');
         $studentrole = reset($studentroles);
-        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
         // Iomad already defines this role; create a compatible fixture only
         // when the test runs on standard Moodle.
+        global $DB;
         $iomadrole = $DB->get_record('role', ['shortname' => 'companycourseeditor']);
         if (!$iomadrole) {
             $iomadroleid = create_role(
@@ -217,8 +188,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_manager_role_is_not_classified_as_teacher(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation de gestion',
@@ -227,13 +196,9 @@ final class learner_dashboard_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        $instance = $DB->get_record('enrol', [
-            'courseid' => $course->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $studentroles = get_archetype_roles('student');
         $studentrole = reset($studentroles);
-        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
         $managerroles = get_archetype_roles('manager');
         $managerrole = reset($managerroles);
@@ -252,8 +217,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      * @covers ::get_template_context
      */
     public function test_learner_course_exposes_progress_and_next_activity(): void {
-        global $DB;
-
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course([
             'fullname' => 'Formation avec suivi',
@@ -263,13 +226,9 @@ final class learner_dashboard_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        $instance = $DB->get_record('enrol', [
-            'courseid' => $course->id,
-            'enrol' => 'manual',
-        ], '*', MUST_EXIST);
         $studentroles = get_archetype_roles('student');
         $studentrole = reset($studentroles);
-        enrol_get_plugin('manual')->enrol_user($instance, $user->id, $studentrole->id);
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
         $this->getDataGenerator()->create_module('page', [
             'course' => $course->id,
