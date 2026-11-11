@@ -200,3 +200,17 @@ Cette correction s'applique à tous les environnements de la matrice, Moodle 4.5
 ### Commit de correction
 
 `5440e254e53f6f676e5eb8a22ce2b491e20a8b19` — `Fix PHPUnit test discovery and fail on empty suite`.
+
+
+## 11. Diagnostic et correction du SCSS du thème — 11 novembre 2026
+
+Le rapport axe-core Moodle 4.5 de l'exécution antérieure (artefact `axe-Moodle-4.5`, ID `13805412307`) a été téléchargé et inspecté. Sur les pages `/my/` et `/course/index.php`, les liens de navigation Project N n'atteignaient que 39 × 16 px ou 55 × 16 px, alors que `scss/projectn.scss` leur déclare une hauteur minimale de 44 px. Le CSS du thème n'était donc pas effectivement pris en compte dans le rendu testé.
+
+La cause identifiée dans `config.php` : le thème enfant déclarait seulement `extrascsscallback`, sans déclarer explicitement le callback SCSS de base de Boost. La configuration a été corrigée pour :
+- charger le preset SCSS natif de Boost avec `theme_boost_get_main_scss_content()` ;
+- reprendre le callback de pré-SCSS Boost `theme_boost_get_pre_scss` ;
+- conserver `theme_projectn_get_extra_scss` pour ajouter les tokens et composants Project N.
+
+Commit : `af979b04b1f906bf544ebc600e2dc1e4fc8023cf` — `Load Boost base SCSS and Project N styles`.
+
+Cette modification est une correction du thème, pas seulement du workflow. Elle doit encore être confirmée sur le rendu réel par la CI : les dimensions des liens doivent être mesurées à 44 px minimum et axe-core doit confirmer la disparition de `target-size`. Les violations de la chronologie Moodle 4.5 (`label-content-name-mismatch`) et les landmarks doivent être revérifiés séparément ; ils ne sont pas déclarés corrigés sur la seule base de cette modification.
