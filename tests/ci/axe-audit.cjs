@@ -76,7 +76,7 @@ async function main() {
         );
 
         if (blockingViolations.length > 0) {
-            console.error('axe-core found ' + blockingViolations.length + ' serious/critical violation(s).');
+            console.error('axe-core found ' + blockingViolations.length + ' violation(s) across the audited states.');
             for (const violation of blockingViolations) {
                 const targets = violation.nodes.slice(0, 3).map(node => node.target.join(' ')).join(' | ');
                 console.error(
@@ -86,7 +86,7 @@ async function main() {
             }
             process.exitCode = 1;
         } else {
-            console.log('axe-core: no serious or critical violations in the audited states.');
+            console.log('axe-core: no violations in the audited states.');
         }
     } finally {
         await browser.close();
@@ -165,7 +165,7 @@ async function auditPage(page, pageName, width, results, blockingViolations) {
     results.push(summary);
 
     for (const violation of summary.violations) {
-        if (violation.impact === 'critical' || violation.impact === 'serious') {
+        {
             blockingViolations.push({
                 page: pageName,
                 width: width,
