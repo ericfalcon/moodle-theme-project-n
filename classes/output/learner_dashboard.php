@@ -132,7 +132,7 @@ class learner_dashboard {
                 $action = $actionevent->get_action();
                 $eventtime = $actionevent->get_times()->get_sort_time()->getTimestamp();
                 $actionurl = $action->get_url();
-                $hasactionurl = $action->is_actionable() && $actionurl instanceof \\moodle_url;
+                $hasactionurl = $action->is_actionable() && $actionurl instanceof \moodle_url;
 
                 $upcomingactions[] = [
                     'name' => format_string($actionevent->get_name()),
