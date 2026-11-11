@@ -19,8 +19,9 @@
 
     Project N override of Moodle's core user menu template.
 
-    The accessible name includes the visible first name on wide viewports,
-    followed by the translated menu label. This satisfies WCAG 2.5.3 (Label in Name).
+    The accessible name is built from the visible avatar initials and the
+    visually hidden menu label. This keeps the visible text in the accessible
+    name, as required by WCAG 2.5.3 (Label in Name).
 }}
 <div class="usermenu">
     {{#unauthenticateduser}}
@@ -37,14 +38,11 @@
     {{^unauthenticateduser}}
         <div class="dropdown show">
             <a href="#" role="button" id="user-menu-toggle" data-bs-toggle="dropdown"
-               aria-label="{{#userfirstname}}{{userfirstname}} {{/userfirstname}}{{#str}}usermenu{{/str}}"
                aria-haspopup="true" aria-controls="user-action-menu" class="btn dropdown-toggle">
                 <span class="userbutton">
                     {{> core/user_menu_metadata }}
                 </span>
-                {{#userfirstname}}
-                    <span class="userfirstname d-none d-xl-block" dir="auto" aria-hidden="true">{{userfirstname}}</span>
-                {{/userfirstname}}
+                <span class="visually-hidden">{{#str}}usermenu{{/str}}</span>
             </a>
             <div id="user-action-menu" class="dropdown-menu dropdown-menu-end">
                 <div id="usermenu-carousel" class="carousel slide" data-touch="false" data-interval="false" data-keyboard="false">

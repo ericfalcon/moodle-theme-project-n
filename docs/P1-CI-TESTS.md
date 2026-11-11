@@ -4,7 +4,7 @@
 
 ## 1. Principes
 
-- La CI est exécutée sur chaque push des branches de développement et sur chaque pull request.
+- La CI est exécutée sur les pull requests vers `main` et sur les push vers `main`. Les branches de travail ne déclenchent pas une seconde matrice redondante en plus de leur pull request.
 - Une anomalie bloquante de syntaxe, de test ou d'accessibilité doit faire échouer le pipeline.
 - Les contrôles sont réalisés sur le thème installé dans Moodle, et pas uniquement sur des fichiers isolés.
 - Les versions Moodle et Iomad sont testées séparément : Moodle 4.5 à 5.3 ; Iomad 4.5 à 5.2. Iomad 5.3 sera ajouté lorsqu'une version exploitable sera disponible.
@@ -113,7 +113,7 @@ Trois workflows GitHub Actions sont maintenant présents :
 
 Déclenchement de la matrice :
 
-- Push et pull request : Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2. Les deux générations 4.5 sont exécutées à chaque changement.
+- Pull request vers `main` et push sur `main` : Moodle 4.5 et 5.3 ; Iomad 4.5 et 5.2. Les deux générations 4.5 sont exécutées à chaque pull request.
 - Exécution hebdomadaire (lundi) et déclenchement manuel : matrice complète Moodle 4.5–5.3 et Iomad 4.5–5.2.
 - Chaque job journalise le SHA du fork réellement testé. Le job Iomad clone exclusivement le fork personnel ; la branche Iomad 5.0 n'est ni remplacée ni réinitialisée.
 
@@ -121,16 +121,16 @@ Sur les quatre versions de référence, le workflow démarre aussi un serveur PH
 
 **Périmètre actuel de l'audit axe :** les pages sont visitées avec le compte administrateur créé pour l'installation. Cela valide le rendu initial des pages communes et l'état vide du tableau de bord, mais ne prétend pas encore couvrir les tableaux de bord peuplés apprenant/enseignant, les rôles Iomad en contexte entreprise, les menus ouverts, les modales ni le thème sombre. Ces états seront ajoutés avec des données de test dédiées.
 
-**Statut d'exécution :** les fichiers de workflow et le script axe sont enregistrés dans GitHub. Aucun run GitHub Actions n'a encore été observé dans cette session ; les installations, PHPUnit et audits axe ne sont donc pas déclarés réussis. Les premiers runs devront servir à corriger les éventuelles différences de démarrage entre générations Moodle/Iomad.
+**Statut d'exécution :** les premières exécutions GitHub Actions ont confirmé les installations réelles et PHPUnit sur les quatre environnements de référence. Les audits axe ont ensuite révélé des violations spécifiques aux deux environnements 4.5 ; elles sont documentées en section 9 et font l'objet d'une nouvelle campagne de validation.
 
 
 ## 8. Référence 4.5 exécutée à chaque changement
 
-À compter de la mise à jour du workflow, Moodle 4.5 (`MOODLE_405_STABLE`) et Iomad 4.5 (`IOMAD_405_STABLE`) rejoignent les deux environnements récents dans la matrice déclenchée sur chaque push et pull request. Les deux branches ont été vérifiées dans les forks personnels avant modification du workflow.
+À compter de la mise à jour du workflow, Moodle 4.5 (`MOODLE_405_STABLE`) et Iomad 4.5 (`IOMAD_405_STABLE`) rejoignent les deux environnements récents dans la matrice déclenchée sur chaque pull request vers `main` et push sur `main`. Les deux branches ont été vérifiées dans les forks personnels avant modification du workflow.
 
 Les quatre jobs de référence exécutent l'installation réelle, PHPUnit et l'audit axe-core. La matrice complète planifiée/manuelle reste utile pour Moodle 5.0, 5.1 et 5.2 ainsi que Iomad 5.0 et 5.1 ; elle ne remplace pas les quatre tests de référence exécutés à chaque changement.
 
-Cette évolution augmente le coût de CI sur chaque push, mais évite de détecter trop tard une régression de compatibilité avec la base historique 4.5. Les résultats doivent être lus par job et par commit : un succès sur 5.3/5.2 ne vaut pas validation 4.5.
+Cette évolution maintient un contrôle de compatibilité sur la base historique 4.5 sans lancer deux matrices identiques pour chaque commit d'une branche associée à une pull request. Les résultats doivent être lus par job et par commit : un succès sur 5.3/5.2 ne vaut pas validation 4.5.
 
 
 ## 9. Diagnostic et corrections axe-core — 11 novembre 2026
