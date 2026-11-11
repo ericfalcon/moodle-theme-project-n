@@ -1,6 +1,6 @@
 # Project N — CI et stratégie de tests
 
-**Statut :** workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sur navigateur enregistrés dans GitHub. L'exécution du 11 novembre 2026 a révélé que la commande PHPUnit se terminait avec succès sans découvrir de test (`No tests executed!`) sur les environnements inspectés. Le workflow a été corrigé pour utiliser le suffixe Moodle `*_test.php` et échouer si aucune suite n'est découverte. La validation effective reste à confirmer par une nouvelle CI.
+**Statut :** les workflows de syntaxe PHP, d'installation réelle Moodle/Iomad, PHPUnit ciblé et axe-core sont actifs. Le 11 novembre 2026, l'audit a identifié et corrigé la découverte PHPUnit vide, des appels Moodle non compatibles et la normalisation des URL de navigation. Le run `43062446983` a validé PHP 8.1/8.2/8.3, PHPUnit sur les quatre environnements, et axe-core sans violation sur Moodle 4.5, Iomad 4.5 et Iomad 5.2. L'audit Moodle 5.3 était encore en cours lors de la rédaction ; le run de validation du commit final doit confirmer les quatre environnements.
 
 ## 1. Principes
 
@@ -214,3 +214,36 @@ La cause identifiée dans `config.php` : le thème enfant déclarait seulement `
 Commit : `af979b04b1f906bf544ebc600e2dc1e4fc8023cf` — `Load Boost base SCSS and Project N styles`.
 
 Cette modification est une correction du thème, pas seulement du workflow. Elle doit encore être confirmée sur le rendu réel par la CI : les dimensions des liens doivent être mesurées à 44 px minimum et axe-core doit confirmer la disparition de `target-size`. Les violations de la chronologie Moodle 4.5 (`label-content-name-mismatch`) et les landmarks doivent être revérifiés séparément ; ils ne sont pas déclarés corrigés sur la seule base de cette modification.
+
+
+## 11. Compatibilité des API Moodle et validation PHPUnit/axe — 11 novembre 2026
+
+### Défauts mis en évidence par l'exécution réelle
+
+Le run `43002769891` sur le commit `73ea29c8a96805900c1296ce79248d04e18fce3a` a fait échouer PHPUnit dans les quatre environnements après activation de la vraie découverte des fichiers `*_test.php`. Les journaux montraient notamment :
+
+- `Undefined constant core_calendar\\local\\event\\data_access\\CALENDAR_EVENT_TYPE_ACTION` : le dashboard appelait l'API d'événements d'action avant le chargement de `calendar/lib.php`, qui déclare cette constante ;
+- `Call to undefined method completion_info::get_progress_percentage()` : cette méthode n'existe pas dans `completion_info` sur les versions prises en charge ;
+- deux assertions de navigation active échouaient parce que `moodle_url::get_path()` normalise le chemin racine et peut conserver un slash final.
+
+### Corrections du thème
+
+- `classes/output/learner_dashboard.php` charge explicitement `calendar/lib.php` avant d'interroger les événements d'action. Les URL d'action sont vérifiées avant leur sérialisation.
+- Le pourcentage de progression est calculé à partir des activités suivies renvoyées par `completion_info::get_activities()` et de leur état `get_data()`. Le calcul et la sélection de la prochaine activité partagent les mêmes données de complétion.
+- `classes/output/global_navigation.php` normalise les chemins (racine vide et slash final) avant de déterminer la destination active.
+- Le workflow conserve `--test-suffix _test.php` et `--fail-on-empty-test-suite` : une suite vide ne peut plus être annoncée comme réussie.
+
+### Commits de correction
+
+- `34ae3d45fe2003ac5bbbf418fe0d5bf9cba99f45` — API de complétion et calendrier prises en charge.
+- `588ab276c4e0edc3635ae34a75ecd1d4f01919b0` — chargement de la bibliothèque calendrier et calcul de progression.
+- `fc98716c2dcbddc408e2aecf0dd80a8ccd23846a` — normalisation des URL de navigation.
+- `3e6fa050892fa549343b1dcc33572aea7c7f13e9` et `06a7252d580254af28b9d8313d79aa392da3e967` — garde sur les URL d'événements non actionnables et correction de la référence de classe.
+
+### Résultats observés sur le run 43062446983
+
+Tous les jobs PHP 8.1, 8.2 et 8.3 sont verts. PHPUnit a réussi sur Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Les journaux consultés confirment `11 tests, 50 assertions` sur Moodle 4.5, Iomad 4.5 et Iomad 5.2.
+
+Les artefacts axe inspectés montrent zéro violation sur les 12 états audités de Moodle 4.5 (`axe-Moodle-4.5`), Iomad 4.5 (`axe-Iomad-4.5`) et Iomad 5.2 (`axe-Iomad-5.2`). Le contrôle axe de Moodle 5.3 n'était pas encore terminé au moment de cette mise à jour documentaire.
+
+Le critère de clôture reste inchangé : une seule exécution finale, sur le commit final, doit terminer avec succès les quatre jobs de référence, chaque audit axe sans violation, les suites PHPUnit non vides et les trois contrôles de syntaxe. Aucun merge vers `main` avant ce résultat.
