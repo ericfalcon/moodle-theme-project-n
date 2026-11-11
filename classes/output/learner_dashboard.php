@@ -118,7 +118,7 @@ class learner_dashboard {
         foreach ($learnercourses as &$card) {
             $course = $card['course'];
 
-            // Retrieve actionable calendar events through Moodle's public API.
+            // Retrieve actionable calendar events through Moodle's calendar action API.
             // This honours activity callbacks, user/group overrides and visibility.
             $actionevents = \core_calendar\local\api::get_action_events_by_course(
                 $course,
@@ -132,6 +132,7 @@ class learner_dashboard {
                 $action = $actionevent->get_action();
                 $eventtime = $actionevent->get_times()->get_sort_time()->getTimestamp();
                 $actionurl = $action->get_url();
+                $hasactionurl = $action->is_actionable() && $actionurl instanceof \\moodle_url;
 
                 $upcomingactions[] = [
                     'name' => format_string($actionevent->get_name()),
@@ -139,8 +140,8 @@ class learner_dashboard {
                     'date' => userdate($eventtime, get_string('strftimedatetime', 'langconfig')),
                     'datetime' => gmdate('c', $eventtime),
                     'timestamp' => $eventtime,
-                    'hasurl' => $action->is_actionable(),
-                    'url' => $actionurl->out(false),
+                    'hasurl' => $hasactionurl,
+                    'url' => $hasactionurl ? $actionurl->out(false) : '',
                     'actionlabel' => format_string($action->get_name()),
                 ];
             }
