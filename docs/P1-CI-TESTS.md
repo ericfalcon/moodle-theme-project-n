@@ -261,4 +261,4 @@ Moodle 5.3 ne rend plus le bloc Timeline avec les anciens templates Mustache : `
 
 `tests/ci/axe-audit.cjs` attend désormais, uniquement pour le tableau de bord Moodle 5.3, que le composant React Timeline soit monté et que les deux boutons aient un nom accessible ainsi que le champ de recherche son placeholder et son label. Cette attente est explicite et bornée à 15 secondes : si les libellés ne sont pas chargés, le job échoue. Aucun contrôle axe-core n'est désactivé, aucune violation n'est filtrée et les quatre largeurs sont toujours auditées.
 
-Le résultat précédent n'est pas déclaré vert : la nouvelle exécution sur le commit qui contient cette correction doit confirmer zéro violation sur Moodle 5.3.
+Le résultat précédent n'est pas déclaré vert : la nouvelle exécution sur le commit qui contient cette correction doit confirmer zéro violation sur Moodle 5.3. Le correctif de synchronisation est enregistré dans le commit `92b2f17e2b8f5d65a8a8cba096cadc27aae736f8`.
