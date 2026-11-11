@@ -12,6 +12,7 @@ $string['privacy:metadata'] = 'Le thème Project N ne stocke aucune donnée pers
 $string['globalnavigation'] = 'Navigation principale';
 $string['primarynavigation'] = 'Navigation principale de Moodle';
 $string['secondarynavigation'] = 'Navigation secondaire de Moodle';
+$string['navigationlandmark'] = 'Navigation Moodle : {$a}';
 $string['home'] = 'Accueil';
 $string['courses'] = 'Formations';
 
