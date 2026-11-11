@@ -247,3 +247,18 @@ Tous les jobs PHP 8.1, 8.2 et 8.3 sont verts. PHPUnit a réussi sur Moodle 4.5, 
 Les artefacts axe inspectés montrent zéro violation sur les 12 états audités de Moodle 4.5 (`axe-Moodle-4.5`), Iomad 4.5 (`axe-Iomad-4.5`) et Iomad 5.2 (`axe-Iomad-5.2`). Le contrôle axe de Moodle 5.3 n'était pas encore terminé au moment de cette mise à jour documentaire.
 
 Le critère de clôture reste inchangé : une seule exécution finale, sur le commit final, doit terminer avec succès les quatre jobs de référence, chaque audit axe sans violation, les suites PHPUnit non vides et les trois contrôles de syntaxe. Aucun merge vers `main` avant ce résultat.
+
+
+## 12. Synchronisation de l'audit React Moodle 5.3 — 11 novembre 2026
+
+Le run `43064246301` a confirmé zéro violation sur Moodle 4.5, Iomad 4.5 et Iomad 5.2, mais a relevé trois nœuds critiques sur Moodle 5.3 à 390 px : les boutons de filtre et de tri de `block_timeline` (`button-name`) et le champ de recherche (`label`).
+
+### Cause
+
+Moodle 5.3 ne rend plus le bloc Timeline avec les anciens templates Mustache : `block_timeline.php` monte directement le composant React `@moodle/lms/block_timeline/Timeline`. Les composants `DayFilter`, `ViewSelector` et `Search` chargent leurs libellés via `getString()` de façon asynchrone. L'audit commençait dès `DOMContentLoaded`, avant la résolution de ces chaînes ; à 390 px, axe-core inspectait donc un état transitoire où les attributs `aria-label`, le placeholder et le label étaient encore vides. Les autres largeurs pouvaient être auditées après la résolution des chaînes, d'où le caractère intermittent.
+
+### Correction du banc de test
+
+`tests/ci/axe-audit.cjs` attend désormais, uniquement pour le tableau de bord Moodle 5.3, que le composant React Timeline soit monté et que les deux boutons aient un nom accessible ainsi que le champ de recherche son placeholder et son label. Cette attente est explicite et bornée à 15 secondes : si les libellés ne sont pas chargés, le job échoue. Aucun contrôle axe-core n'est désactivé, aucune violation n'est filtrée et les quatre largeurs sont toujours auditées.
+
+Le résultat précédent n'est pas déclaré vert : la nouvelle exécution sur le commit qui contient cette correction doit confirmer zéro violation sur Moodle 5.3.

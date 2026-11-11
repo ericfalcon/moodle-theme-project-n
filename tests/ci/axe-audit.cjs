@@ -53,6 +53,9 @@ async function main() {
 
         for (const target of pagesToAudit) {
             await page.goto(new URL(target.path, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
+            if (target.name === 'dashboard' && platform === 'Moodle' && version === '5.3') {
+                await waitForMoodle53TimelineReady(page);
+            }
             for (const width of [320, 390, 768, 1280]) {
                 await page.setViewportSize({ width: width, height: 844 });
                 await auditPage(page, target.name, width, results, blockingViolations);
@@ -91,6 +94,32 @@ async function main() {
     } finally {
         await browser.close();
     }
+}
+
+async function waitForMoodle53TimelineReady(page) {
+    // Moodle 5.3 mounts the Timeline block as a React component. Its accessible
+    // labels are fetched asynchronously, so domcontentloaded alone is not a
+    // reliable signal that the component is ready for an accessibility audit.
+    await page.waitForSelector('[data-region="timeline"]', { state: 'visible', timeout: 15000 });
+    await page.waitForFunction(() => {
+        const timeline = document.querySelector('[data-region="timeline"]');
+        if (!timeline) {
+            return false;
+        }
+
+        const dayFilter = timeline.querySelector('button[aria-controls="menudayfilter"]');
+        const viewSelector = timeline.querySelector('button[aria-controls="menusortby"]');
+        const searchInput = timeline.querySelector('input[data-action="search"]');
+        const searchLabel = searchInput && [...timeline.querySelectorAll('label')]
+            .find(label => label.htmlFor === searchInput.id);
+
+        return Boolean(
+            dayFilter?.getAttribute('aria-label')?.trim() &&
+            viewSelector?.getAttribute('aria-label')?.trim() &&
+            searchInput?.getAttribute('placeholder')?.trim() &&
+            searchLabel?.textContent?.trim()
+        );
+    }, null, { timeout: 15000 });
 }
 
 async function auditPage(page, pageName, width, results, blockingViolations) {
