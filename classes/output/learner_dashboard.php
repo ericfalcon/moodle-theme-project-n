@@ -31,7 +31,7 @@ class learner_dashboard {
      * @return array
      */
     public static function get_template_context(): array {
-        global $DB, $USER;
+        global $DB, $USER, $CFG;
 
         $enrolledcourses = enrol_get_my_courses(
             'id, fullname, shortname, visible, enablecompletion',
@@ -107,6 +107,11 @@ class learner_dashboard {
         // Completion, next activities and calendar actions are limited to the
         // learner cards that will be displayed.
         $upcomingactions = [];
+        // The action-event API relies on constants declared by calendar/lib.php.
+        // Dashboard rendering does not otherwise guarantee that this library is loaded.
+        if (!empty($learnercourses)) {
+            require_once($CFG->dirroot . '/calendar/lib.php');
+        }
         $now = time();
         $actionwindow = $now + (30 * DAYSECS);
 
@@ -146,46 +151,50 @@ class learner_dashboard {
                 continue;
             }
 
-            $completioninfo = new \completion_info($course);
-            $progress = $completioninfo->get_progress_percentage($USER->id);
+            $completioninfo = new \\completion_info($course);
+            $activities = $completioninfo->get_activities();
+            $trackablecount = 0;
+            $completedcount = 0;
+            $nextactivity = null;
 
-            if ($progress !== null) {
+            // Moodle exposes completion state per activity, not through a
+            // get_progress_percentage() method on completion_info.
+            foreach ($activities as $cm) {
+                if (!$cm->uservisible || !$completioninfo->is_enabled($cm)) {
+                    continue;
+                }
+
+                $trackablecount++;
+                $completiondata = $completioninfo->get_data($cm, false, $USER->id);
+                if ($completiondata->completionstate >= COMPLETION_COMPLETE) {
+                    $completedcount++;
+                } else if ($nextactivity === null) {
+                    $nextactivity = $cm;
+                }
+            }
+
+            if ($trackablecount > 0) {
+                $progress = (int) round(($completedcount / $trackablecount) * 100);
                 $card['hasprogress'] = true;
-                $card['progresspercent'] = (int) round($progress);
+                $card['progresspercent'] = $progress;
                 $card['progresslabel'] = get_string(
                     'learnerdashboardprogress',
                     'theme_projectn',
-                    (int) round($progress)
+                    $progress
                 );
             }
 
-            $modinfo = get_fast_modinfo($course, $USER->id);
-            foreach ($modinfo->get_cms() as $cm) {
-                if (!$cm->uservisible || empty($cm->completion)
-                        || !$completioninfo->is_enabled($cm)) {
-                    continue;
-                }
-
-                $completiondata = $completioninfo->get_data($cm, false, $USER->id);
-                if (in_array($completiondata->completionstate, [
-                        COMPLETION_COMPLETE,
-                        COMPLETION_COMPLETE_PASS,
-                        COMPLETION_COMPLETE_FAIL,
-                    ], true)) {
-                    continue;
-                }
-
-                $activityurl = new \moodle_url('/mod/' . $cm->modname . '/view.php', [
-                    'id' => $cm->id,
+            if ($nextactivity !== null) {
+                $activityurl = new \\moodle_url('/mod/' . $nextactivity->modname . '/view.php', [
+                    'id' => $nextactivity->id,
                 ]);
                 $card['hasnextactivity'] = true;
                 $card['nextactivitylabel'] = get_string(
                     'learnerdashboardnextactivity',
                     'theme_projectn'
                 );
-                $card['nextactivityname'] = format_string($cm->name);
+                $card['nextactivityname'] = format_string($nextactivity->name);
                 $card['nextactivityurl'] = $activityurl->out(false);
-                break;
             }
         }
         unset($card);
