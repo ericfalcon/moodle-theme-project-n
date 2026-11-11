@@ -10,6 +10,7 @@ $string['choosereadme'] = 'Project N is a mobile-first theme based on Boost. It 
 $string['privacy:metadata'] = 'The Project N theme does not store any personal data.';
 $string['globalnavigation'] = 'Main navigation';
 $string['primarynavigation'] = 'Moodle primary navigation';
+$string['secondarynavigation'] = 'Moodle secondary navigation';
 $string['home'] = 'Home';
 $string['courses'] = 'Courses';
 

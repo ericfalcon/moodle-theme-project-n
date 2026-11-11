@@ -152,6 +152,12 @@ async function auditPage(page, pageName, width, results, blockingViolations) {
                 timelineButtons: [...document.querySelectorAll(
                     'button[aria-label="Filter timeline by date"], button[aria-label="Sort timeline items"]'
                 )].map(describe),
+                moremenus: [...document.querySelectorAll('nav.moremenu.navigation')].map(element => ({
+                    html: element.outerHTML,
+                    ariaLabel: element.getAttribute('aria-label'),
+                    listRole: element.querySelector('ul')?.getAttribute('role') || null,
+                    listClass: element.querySelector('ul')?.className || null,
+                })),
                 stylesheets: [...document.styleSheets].map(sheet => sheet.href).filter(Boolean),
             };
         }),

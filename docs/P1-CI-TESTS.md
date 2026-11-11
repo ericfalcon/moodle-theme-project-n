@@ -154,7 +154,7 @@ Les rapports et captures d'origine sont les artefacts `axe-Moodle-4.5` (ID `1380
 - **Fixtures PHPUnit :** les inscriptions des tests du tableau de bord utilisent le générateur de données Moodle ; les tests sont désormais confirmés verts sur les quatre plateformes de référence.
 - **Compatibilité SCSS 4.5 :** Moodle 4.5 embarque SCSSPHP 1.12.1 ; son compilateur ne supporte pas correctement le sélecteur complexe `:where(...)` utilisé dans le style de focus. Le callback SCSS échouait donc et les styles Project N n'étaient pas appliqués. Le sélecteur a été remplacé par une liste explicite de sélecteurs `:focus-visible`. Les syntaxes CSS récentes de couleur et de calcul ont également été remplacées par des équivalents compatibles ; les liens de navigation reçoivent une cible minimale de 44 × 44 px.
 - **Timeline :** surcharge ciblée des templates `block_timeline/nav-day-filter` et `block_timeline/nav-view-selector`. Le nom accessible reprend maintenant le libellé visible de l'option sélectionnée, en conservant les chaînes traduites de Moodle.
-- **Landmark :** surcharge de `core/moremenu` avec un nom accessible distinct de la navigation globale Project N.
+- **Landmarks :** surcharge de `core/moremenu` avec des noms accessibles distincts pour la navigation primaire et la navigation secondaire Moodle, en s'appuyant sur le contexte `istablist` du template.
 - **Diagnostic :** le rapport axe conserve désormais le HTML des nœuds et leurs résultats `any/all/none`, ainsi que les dimensions calculées des liens Project N et des boutons Timeline.
 - **Exécutions concurrentes :** les workflows sont limités au push sur `main` et aux pull requests vers `main`, avec annulation des exécutions obsolètes d'une même branche afin d'éviter la double matrice push/PR.
 

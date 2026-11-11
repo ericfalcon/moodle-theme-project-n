@@ -11,6 +11,7 @@ $string['choosereadme'] = 'Project N est un thème mobile-first basé sur Boost.
 $string['privacy:metadata'] = 'Le thème Project N ne stocke aucune donnée personnelle.';
 $string['globalnavigation'] = 'Navigation principale';
 $string['primarynavigation'] = 'Navigation principale de Moodle';
+$string['secondarynavigation'] = 'Navigation secondaire de Moodle';
 $string['home'] = 'Accueil';
 $string['courses'] = 'Formations';
 
