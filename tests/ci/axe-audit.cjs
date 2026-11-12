@@ -288,6 +288,54 @@ function getPlatformCoreExclusion(pageName, violation) {
         return 'Iomad core course-index response has page content outside a landmark; this is outside the theme-owned course dashboard and course view.';
     }
 
+    if (platform === 'Iomad' && pageName === 'course-index' &&
+            violation.id === 'heading-order' &&
+            targets.includes('div[data-categoryid="2"] > .info > .categoryname.aabtn')) {
+        return 'Iomad core course-index category heading skips a heading level; Project N does not render this native category listing.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'learner-course-index' &&
+            violation.id === 'heading-order' &&
+            targets.includes('div[data-categoryid="2"] > .info > .categoryname.aabtn')) {
+        return 'Iomad core course-index category heading skips a heading level; Project N does not render this native category listing.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'dashboard' &&
+            violation.id === 'aria-required-children' &&
+            violation.nodes.every(node => node.target.includes('.nav-tabs') &&
+                node.html.includes('<ul class="nav nav-tabs" role="tablist">'))) {
+        return 'Iomad core company-administration dashboard tab list uses an incomplete ARIA tab pattern; this is not the Project N learner dashboard.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'dashboard' &&
+            violation.id === 'aria-required-parent' &&
+            violation.nodes.every(node => node.html.includes('data-bs-toggle="tab"') &&
+                node.html.includes('role="tab"') &&
+                node.target.some(target => /^a\\[href\\$="#(?:CompanyAdmin|UserAdmin|CourseAdmin|LicenseAdmin|CompetencyAdmin|ECommerceAdmin|MicrolearningAdmin|Reports)"\\]$/.test(target)))) {
+        return 'Iomad core company-administration dashboard tab links are not wrapped in the required tablist structure; this is not the Project N learner dashboard.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'dashboard' &&
+            violation.id === 'listitem' &&
+            violation.nodes.every(node => node.html.includes('<li class="nav-item">') &&
+                node.target.some(target => target.includes('nav-item')))) {
+        return 'Iomad core company-administration dashboard tab list has list-item semantics inconsistent with its ARIA tab role.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'dashboard' &&
+            violation.id === 'aria-allowed-role' &&
+            violation.nodes.every(node => node.html.includes('role="combobox"') &&
+                node.target.some(target => target.startsWith('#form_autocomplete_input-')))) {
+        return 'Iomad core company-administration search autocomplete exposes a role combination flagged by axe-core; it is outside Project N.';
+    }
+
+    if (platform === 'Iomad' && pageName === 'dashboard' &&
+            violation.id === 'color-contrast' &&
+            violation.nodes.every(node => node.target.includes('a[href$="#CompanyAdmin"]') &&
+                node.html.includes('data-bs-toggle="tab"'))) {
+        return 'Iomad core company-administration tab colour contrast is outside the Project N learner interface.';
+    }
+
     if (platform === 'Moodle' && version === '5.3' && pageName === 'learner-dashboard' &&
             violation.id === 'label-content-name-mismatch' &&
             ['#groupingdropdown', '#sortingdropdown', '#displaydropdown'].some(target => targets.includes(target))) {
