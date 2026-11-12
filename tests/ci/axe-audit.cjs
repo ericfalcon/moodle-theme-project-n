@@ -87,6 +87,7 @@ async function main() {
                 { name: 'learner-dashboard', path: '/my/' },
                 { name: 'learner-course-index', path: '/course/index.php' },
                 { name: 'learner-course-view', path: '/course/view.php?id=' + encodeURIComponent(process.env.LEARNER_COURSE_ID) },
+                { name: 'learner-weekly-course-view', path: '/course/view.php?id=' + encodeURIComponent(process.env.LEARNER_WEEKLY_COURSE_ID) },
             ];
             for (const target of learnerPages) {
                 await learnerPage.goto(new URL(target.path, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
