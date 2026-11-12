@@ -1,0 +1,18 @@
+{{!
+    Project N global navigation.
+    Moodle's native contextual navigation is intentionally not replaced.
+}}
+<div class="projectn-global-navigation">
+    <nav class="projectn-global-navigation__inner" aria-label="{{label}}">
+        <ul class="projectn-global-navigation__list">
+            {{#items}}
+                <li class="projectn-global-navigation__item">
+                    <a class="projectn-global-navigation__link{{#current}} is-current{{/current}}"
+                       href="{{url}}"{{#current}} aria-current="page"{{/current}}>
+                        {{label}}
+                    </a>
+                </li>
+            {{/items}}
+        </ul>
+    </nav>
+</div>

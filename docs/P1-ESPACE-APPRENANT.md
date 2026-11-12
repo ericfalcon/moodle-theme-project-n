@@ -1,0 +1,71 @@
+# Project N — P1 : formations apprenant et enseignant
+
+**Statut :** fournisseur, template et surcharge ciblée du renderer intégrés sur `feature/p1-foundation`. Le rendu effectif, les tests et la compatibilité runtime restent à valider.  
+**Version de développement :** `2026111009`.
+
+## 1. Principe de classement
+
+Le classement est effectué **pour chaque cours**, et non à partir d'un rôle global de l'utilisateur. Un même compte peut donc apparaître dans les deux sections :
+- **Mes formations en tant qu'apprenant** ;
+- **Mes formations en tant qu'enseignant**.
+
+La récupération initiale passe par `enrol_get_my_courses()` et ne retient que les inscriptions actives. Le thème ne crée aucun mécanisme d'inscription ni de contrôle d'accès.
+
+## 2. Détection du rôle d'enseignement
+
+Pour chaque cours récupéré :
+1. le fournisseur examine les rôles affectés dans le contexte du cours et ses contextes parents via `get_user_roles()` ;
+2. les rôles Iomad `companycourseeditor` et `companycoursenoeditor` classent le cours dans la section enseignante, quel que soit leur éventuel archétype ;
+3. les archétypes Moodle `editingteacher` et `teacher` classent également le cours dans la section enseignante ;
+4. pour les autres rôles personnalisés sans archétype, les capacités effectives `moodle/course:update` ou `moodle/grade:viewall` servent de solution de repli ;
+5. les autres cours inscrits sont classés dans la section apprenant.
+
+Les rôles standards de gestion (`manager`) ne sont pas assimilés à un rôle enseignant sur la seule base de leurs capacités étendues. Un rôle personnalisé qui cumule des fonctions d'enseignement et de gestion devra être validé avec des configurations réelles.
+
+## 3. Intégration dans le contenu principal
+
+La configuration active `theme_overridden_renderer_factory`. Le renderer Project N étend celui de Boost et surcharge uniquement `main_content()` :
+- il conserve le rendu natif en appelant `parent::main_content()` ;
+- il ajoute le composant uniquement sur `/my/` et `/my/index.php`, pour un utilisateur connecté non invité ;
+- le composant est placé dans le contenu principal, après l'en-tête et les navigations générés par Boost ;
+- aucun layout Boost n'est copié et aucune manipulation du DOM côté navigateur n'est utilisée.
+
+Le hook `before_standard_top_of_body_html_generation` reste réservé à la navigation globale. Le tableau de bord apprenant/enseignant n'y est pas injecté.
+
+## 4. Limites et vigilance
+
+- Le modèle Moodle ne fournit pas de notion universelle « formateur » indépendante des rôles et capacités. Les rôles personnalisés des sites doivent donc être testés.
+- Un rôle d'enseignement sans archétype et sans les deux capacités de repli peut être classé côté apprenant : il faudra ajuster la règle si les tests Iomad ou les rôles métier le révèlent.
+- Le classement ne donne aucun droit supplémentaire. Les pages de cours restent soumises aux contrôles natifs Moodle/Iomad.
+- Six cours maximum sont affichés dans chaque section. Une section n'est affichée que si elle contient au moins un cours ; un état vide commun apparaît lorsque le compte n'a aucune formation active à présenter.
+- Les cartes apprenant exposent maintenant la progression issue de l'API native d'achèvement lorsque le suivi est activé, ainsi que la première activité visible non terminée qui possède un suivi d'achèvement. Les cours sans suivi activé ne reçoivent pas de progression artificielle.
+- Les cartes enseignant ne calculent pas de progression apprenant.
+- Les échéances d'activités sont maintenant alimentées par les événements d'action du calendrier Moodle (fenêtre de 30 jours, cinq éléments maximum). Les notifications de messagerie et les états des cours terminés restent à intégrer.
+
+## 5. Vérifications restantes
+
+- [ ] Vérifier les rôles standard Moodle et les rôles Iomad `companycourseeditor` et `companycoursenoeditor` sur une instance Iomad réelle.
+- [ ] Vérifier un compte présent dans les deux sections sur des cours différents.
+- [ ] Vérifier les rôles personnalisés et les rôles Iomad.
+- [ ] Vérifier les rôles hérités de catégories.
+- [ ] Exécuter PHPUnit et PHP lint.
+- [ ] Tester l'ordre du contenu dans le layout Boost, l'absence de doublon et les pages autres que `/my/`.
+- [ ] Tester Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2.
+- [ ] Vérifier rendu responsive, clavier, focus, contrastes et absence de doublons.
+
+Aucune compatibilité runtime n'est revendiquée avant ces essais.
+
+
+## 6. Échéances et actions à venir
+
+Le tableau de bord récupère les événements d'action du calendrier pour les six formations apprenant au maximum qui sont effectivement affichées. L'appel passe par la méthode publique core_calendar\\local\\api::get_action_events_by_course(), avec une fenêtre glissante de 30 jours. Les événements sont fusionnés, triés par échéance et limités aux cinq plus proches.
+
+Ce choix privilégie les échéances/actionnables produites par les modules Moodle plutôt qu'une lecture directe de la table event. L'API applique les règles de visibilité des événements, les callbacks des modules et les dérogations utilisateur/groupe. Le lien d'action n'est rendu actif que lorsque l'API indique que l'action est réalisable. Aucun événement n'est créé ou modifié par le thème.
+
+**Limites explicites :**
+- seuls les événements de type action fournis par les modules sont affichés ; les événements de calendrier ordinaires ne sont pas assimilés à des tâches ;
+- la fenêtre est limitée aux 30 prochains jours et à cinq actions au total ;
+- les notifications de messagerie Moodle ne sont pas encore intégrées ;
+- le rendu et le comportement doivent encore être vérifiés sur Moodle 4.5 à 5.3 et Iomad 4.5 à 5.2.
+
+La validation CI du commit 7c9b0ffd620b5de78896bd283ed86f81a1ef1943 a réussi sur Moodle 5.3 et Iomad 5.2, y compris PHPUnit et axe-core. Cette validation précède l'ajout des échéances décrit ici et ne couvre donc pas encore ce code.

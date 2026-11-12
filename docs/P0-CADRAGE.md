@@ -128,7 +128,7 @@ Principes :
 - `settings.php` : réglages utiles, limités et compréhensibles ;
 - `tests` : tests PHP et tests de rendu pertinents.
 
-Cette arborescence est une proposition, pas encore un engagement de créer tous ces répertoires. La structure finale dépendra du prototype et des conventions Moodle de la branche retenue.
+Cette arborescence est une proposition, pas encore un engagement de créer tous ces répertoires. Depuis le 10 novembre 2026, le porteur du projet a demandé le démarrage anticipé de la construction P1 en parallèle de la clôture documentaire P0. Le périmètre engagé reste limité au socle Boost et aux fondations du design system ; les décisions non arbitrées par P0 demeurent provisoires. La structure finale dépendra du prototype et des conventions Moodle de la branche retenue.
 
 ### 3.5 Limites fonctionnelles d'un thème
 

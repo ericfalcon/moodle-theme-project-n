@@ -9,15 +9,18 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | Phase | Objet | Périmètre cible | État |
 |---|---|---|---|
 | P0 | Cadrage, spécifications et décisions | MVP | En cours |
-| P1 | Socle Boost et design system responsive | MVP | À réaliser |
-| P2 | Espace apprenant | MVP | À réaliser |
+| P1 | Socle Boost, design system et premiers composants d'interface | MVP | En cours — navigation globale codée ; tableau de bord apprenant/enseignant intégré par surcharge ciblée de `main_content()` ; tests ajoutés mais non exécutés ; compilation et installation non vérifiées |
+| P2 | Espace apprenant | MVP | En cours — séparation apprenant/enseignant, progression, prochaine activité et premières échéances issues du calendrier natif ; notifications et page de cours à réaliser |
 | P3 | Espace formateur | MVP progressif | À réaliser |
 | P4 | Espace administrateur | Version 1.x, après cadrage de la valeur ajoutée | À réaliser |
 | P5 | Adaptation Iomad | Fondations et cloisonnement dans le MVP | À réaliser |
 | P6 | Stabilisation et validation | MVP / version 1.0 | À réaliser |
 | P7 | Documentation et publication | Version 1.0 | À réaliser |
+| CI | GitHub Actions : contrôles PHP, PHPUnit Moodle, validation plugin, compilation SCSS et axe-core sur navigateur ; compléter progressivement | En cours |
 
 Aucune phase n'est déclarée terminée à ce stade.
+
+**Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. Le tableau de bord personnel distingue maintenant les formations apprenant et enseignant dans deux sections, à partir des rôles et capacités effectifs au niveau des cours. Il affiche également les cinq prochaines actions issues du calendrier Moodle sur une fenêtre de 30 jours, sous réserve des événements d'action fournis par les modules. Son insertion passe par une surcharge ciblée du renderer Boost `main_content()`, sans copie du layout. Voir [docs/P1-ESPACE-APPRENANT.md](docs/P1-ESPACE-APPRENANT.md). Le code et les tests PHPUnit sont présents mais non exécutés ; l'installation, le rendu effectif et les tests multi-versions restent à faire. Le premier workflow GitHub Actions contrôle la syntaxe PHP sur plusieurs versions ; le workflow de tests installe désormais Moodle et Iomad depuis les forks GitHub, exécute PHPUnit et axe-core à chaque push sur Moodle 4.5/5.3 et Iomad 4.5/5.2 ; la matrice complète des autres versions reste planifiée/manuelle, est décrite dans [docs/P1-CI-TESTS.md](docs/P1-CI-TESTS.md).
 
 ## Jalons
 
@@ -39,7 +42,7 @@ Les durées seront estimées à la fin de P0, une fois le périmètre MVP et les
 | Approche ergonomique | Mobile-first pour les trois espaces, puis adaptation tablette/desktop | Retenu |
 | Navigation | Approche hybride : navigation globale Project N et navigation contextuelle native Moodle | Retenu ; détails à prototyper dans [docs/P0-NAVIGATION.md](docs/P0-NAVIGATION.md) |
 | Accessibilité | WCAG 2.2 AA, RGAA et EN 301 549 applicables ; validation continue | Retenu |
-| CI | CI envisageable et à définir en P0 ; elle n'est pas exclue | À définir |
+| CI | CI en place sur `feature/p1-foundation` : workflows GitHub Actions (syntaxe PHP, PHPUnit, axe-core) sur les forks Moodle et Iomad ; périmètre à compléter. Décision initiale conservée : « CI envisageable et à définir en P0 ; elle n'est pas exclue ». | Retenu sur la branche, à valider à la fusion |
 | Licence | GPL v3 ou ultérieure envisagée, à confirmer | À confirmer |
 | Compatibilité | Moodle 4.5–5.3 ; Iomad 4.5–5.2 ; compatibilité réelle à établir par génération et tests exécutés | À vérifier |
 | Points d'extension | Inventaire des API, composants, renderers, layouts et templates nécessaires | À documenter |

@@ -1,0 +1,63 @@
+name: Platform integration and accessibility
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '23 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  reference-platforms:
+    name: Reference ${{ matrix.platform }} ${{ matrix.version }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: Moodle, version: '4.5', repository: ericfalcon/moodle, branch: MOODLE_405_STABLE }
+          - { platform: Iomad, version: '4.5', repository: ericfalcon/iomad, branch: IOMAD_405_STABLE }
+          - { platform: Moodle, version: '5.3', repository: ericfalcon/moodle, branch: MOODLE_503_STABLE }
+          - { platform: Iomad, version: '5.2', repository: ericfalcon/iomad, branch: IOMAD_502_STABLE }
+    uses: ./.github/workflows/platform-test-reusable.yml
+    with:
+      platform: ${{ matrix.platform }}
+      version: ${{ matrix.version }}
+      repository: ${{ matrix.repository }}
+      branch: ${{ matrix.branch }}
+      run_axe: true
+
+  full-version-matrix:
+    name: Full matrix ${{ matrix.platform }} ${{ matrix.version }}
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: Moodle, version: '4.5', repository: ericfalcon/moodle, branch: MOODLE_405_STABLE }
+          - { platform: Moodle, version: '5.0', repository: ericfalcon/moodle, branch: MOODLE_500_STABLE }
+          - { platform: Moodle, version: '5.1', repository: ericfalcon/moodle, branch: MOODLE_501_STABLE }
+          - { platform: Moodle, version: '5.2', repository: ericfalcon/moodle, branch: MOODLE_502_STABLE }
+          - { platform: Moodle, version: '5.3', repository: ericfalcon/moodle, branch: MOODLE_503_STABLE }
+          - { platform: Iomad, version: '4.5', repository: ericfalcon/iomad, branch: IOMAD_405_STABLE }
+          - { platform: Iomad, version: '5.0', repository: ericfalcon/iomad, branch: IOMAD_500_STABLE }
+          - { platform: Iomad, version: '5.1', repository: ericfalcon/iomad, branch: IOMAD_501_STABLE }
+          - { platform: Iomad, version: '5.2', repository: ericfalcon/iomad, branch: IOMAD_502_STABLE }
+    uses: ./.github/workflows/platform-test-reusable.yml
+    with:
+      platform: ${{ matrix.platform }}
+      version: ${{ matrix.version }}
+      repository: ${{ matrix.repository }}
+      branch: ${{ matrix.branch }}
+      run_axe: ${{ (matrix.version == '5.3' && matrix.platform == 'Moodle') || (matrix.version == '5.2' && matrix.platform == 'Iomad') }}
