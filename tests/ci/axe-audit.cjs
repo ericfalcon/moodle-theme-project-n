@@ -311,7 +311,7 @@ function getPlatformCoreExclusion(pageName, violation) {
             violation.id === 'aria-required-parent' &&
             violation.nodes.every(node => node.html.includes('data-bs-toggle="tab"') &&
                 node.html.includes('role="tab"') &&
-                node.target.some(target => /^a\[href\$="#(?:CompanyAdmin|UserAdmin|CourseAdmin|LicenseAdmin|CompetencyAdmin|ECommerceAdmin|MicrolearningAdmin|Reports)"\\]$/.test(target)))) {
+                node.target.some(target => /^a\[href\$="#(?:CompanyAdmin|UserAdmin|CourseAdmin|LicenseAdmin|CompetencyAdmin|ECommerceAdmin|MicrolearningAdmin|Reports)"\]$/.test(target)))) {
         return 'Iomad core company-administration dashboard tab links are not wrapped in the required tablist structure; this is not the Project N learner dashboard.';
     }
 
