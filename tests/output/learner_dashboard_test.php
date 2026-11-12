@@ -14,13 +14,11 @@ use theme_projectn\output\learner_dashboard;
  * Tests for the learner/teacher course dashboard data provider.
  *
  * @package theme_projectn
- * @coversDefaultClass \theme_projectn\output\learner_dashboard
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(learner_dashboard::class)]
 final class learner_dashboard_test extends \advanced_testcase {
     /**
      * A user without active course enrolments receives the common empty state.
-     *
-     * @covers ::get_template_context
      */
     public function test_empty_state_for_user_without_enrolments(): void {
         $this->resetAfterTest();
@@ -41,8 +39,6 @@ final class learner_dashboard_test extends \advanced_testcase {
 
     /**
      * A student enrolment appears in the learner section with a native URL.
-     *
-     * @covers ::get_template_context
      */
     public function test_student_course_is_classified_as_learner(): void {
         $this->resetAfterTest();
@@ -73,8 +69,6 @@ final class learner_dashboard_test extends \advanced_testcase {
 
     /**
      * A non-editing teacher archetype is classified in the teacher section.
-     *
-     * @covers ::get_template_context
      */
     public function test_teacher_course_is_classified_as_teacher(): void {
         $this->resetAfterTest();
@@ -105,8 +99,6 @@ final class learner_dashboard_test extends \advanced_testcase {
 
     /**
      * One account can be a learner in one course and a teacher in another.
-     *
-     * @covers ::get_template_context
      */
     public function test_user_can_appear_in_both_sections(): void {
         $this->resetAfterTest();
@@ -142,8 +134,6 @@ final class learner_dashboard_test extends \advanced_testcase {
      *
      * This keeps the Moodle-first theme compatible with Iomad without
      * depending on Iomad classes or constants in Moodle core.
-     *
-     * @covers ::get_template_context
      */
     public function test_iomad_company_course_editor_role_is_classified_as_teacher(): void {
         $this->resetAfterTest();
@@ -184,8 +174,6 @@ final class learner_dashboard_test extends \advanced_testcase {
 
     /**
      * A manager role is not mistaken for a teaching role.
-     *
-     * @covers ::get_template_context
      */
     public function test_manager_role_is_not_classified_as_teacher(): void {
         $this->resetAfterTest();
@@ -213,8 +201,6 @@ final class learner_dashboard_test extends \advanced_testcase {
 
     /**
      * Learner cards expose native completion progress and the next incomplete activity.
-     *
-     * @covers ::get_template_context
      */
     public function test_learner_course_exposes_progress_and_next_activity(): void {
         $this->resetAfterTest();

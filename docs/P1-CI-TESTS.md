@@ -262,3 +262,35 @@ Moodle 5.3 ne rend plus le bloc Timeline avec les anciens templates Mustache : `
 `tests/ci/axe-audit.cjs` attend désormais, uniquement pour le tableau de bord Moodle 5.3, que le composant React Timeline soit monté et que les deux boutons aient un nom accessible ainsi que le champ de recherche son placeholder et son label. Cette attente est explicite et bornée à 15 secondes : si les libellés ne sont pas chargés, le job échoue. Aucun contrôle axe-core n'est désactivé, aucune violation n'est filtrée et les quatre largeurs sont toujours auditées.
 
 Le résultat précédent n'est pas déclaré vert : la nouvelle exécution sur le commit qui contient cette correction doit confirmer zéro violation sur Moodle 5.3. Le correctif de synchronisation est enregistré dans le commit `92b2f17e2b8f5d65a8a8cba096cadc27aae736f8`.
+
+
+## 13. Compatibilité PHPUnit 9 et suppression des dépréciations PHPUnit 11 — 12 novembre 2026
+
+Le run de diagnostic `43255001037` a mis en évidence deux comportements distincts :
+
+- PHPUnit 9.6 (Moodle 4.5 et Iomad 4.5) ne reconnaît pas l'option `--display-phpunit-deprecations`. Son ajout inconditionnel provoquait un échec avant même la découverte des tests.
+- PHPUnit 11 (Moodle 5.3 et Iomad 5.2) signalait 13 dépréciations, toutes dues aux métadonnées de couverture déclarées dans les docblocks des deux classes de tests : deux `@coversDefaultClass` et onze `@covers`.
+
+Le correctif apporte les changements suivants :
+
+- La commande CI détecte la version majeure de PHPUnit. Elle n'ajoute `--display-phpunit-deprecations` qu'à partir de PHPUnit 11 ; les options `--test-suffix _test.php` et `--fail-on-empty-test-suite` restent systématiques.
+- Les métadonnées de couverture des tests de navigation et du tableau de bord sont migrées vers l'attribut de classe `CoversClass`. Les deux suites couvrent chacune une seule classe de fournisseur de contexte ; cette déclaration reste donc cohérente avec leur périmètre. PHPUnit 11 l'interprète sans dépréciation. PHP 8.1 accepte sa syntaxe ; PHPUnit 9 ignore l'attribut, sans empêcher la découverte ni l'exécution des tests Moodle 4.5.
+- Les scénarios et assertions des onze tests sont conservés.
+
+La validation attendue sur le nouveau commit est : tests non vides et réussis sur les quatre environnements, aucune option inconnue sur PHPUnit 9, aucune dépréciation PHPUnit 11, et zéro violation axe-core. Cette section ne vaut pas résultat de validation ; seuls les logs de la CI du commit final feront foi.
+
+
+### Résultat de validation — run GitHub Actions `43260132688` / `43260132742`
+
+Le commit de tête de la PR `7167e5b68ea20e0b495b14da9a0a146805ec6bef` a été validé par les deux workflows, terminés avec succès.
+
+| Plateforme | PHPUnit | Résultat | Dépréciations PHPUnit | axe-core |
+|---|---:|---:|---:|---:|
+| Moodle 4.5 | 9.6.34 | 11 tests, 50 assertions | 0 | 0 violation |
+| Iomad 4.5 | 9.6.34 | 11 tests, 50 assertions | 0 | 0 violation |
+| Moodle 5.3 | 11.5.56 | 11 tests, 50 assertions | 0 | 0 violation |
+| Iomad 5.2 | 11.5.55 | 11 tests, 50 assertions | 0 | 0 violation |
+
+Les logs des quatre jobs confirment l'absence de l'option inconnue sur PHPUnit 9, l'absence des messages `Metadata found in doc-comment` et de dépréciations PHPUnit sur PHPUnit 11, ainsi que `axe-core: no violations in the audited states`. Les trois contrôles de syntaxe PHP (8.1, 8.2 et 8.3) sont également réussis.
+
+**Conclusion :** la correction est validée sur les quatre environnements de référence. La matrice complète planifiée/manuelle (Moodle 5.0–5.2 et Iomad 5.0–5.1) est ignorée sur ce déclenchement pull request ; elle n'est donc pas déclarée validée par cette exécution.
