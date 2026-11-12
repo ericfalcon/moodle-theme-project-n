@@ -274,7 +274,7 @@ Le run de diagnostic `43255001037` a mis en évidence deux comportements distinc
 Le correctif apporte les changements suivants :
 
 - La commande CI détecte la version majeure de PHPUnit. Elle n'ajoute `--display-phpunit-deprecations` qu'à partir de PHPUnit 11 ; les options `--test-suffix _test.php` et `--fail-on-empty-test-suite` restent systématiques.
-- Les métadonnées de couverture des tests de navigation et du tableau de bord sont migrées vers `CoversClass` et `CoversMethod`, sous forme d'attributs PHP. PHPUnit 11 les interprète sans dépréciation. PHP 8.1 accepte leur syntaxe ; PHPUnit 9 les ignore, sans empêcher la découverte ni l'exécution des tests Moodle 4.5.
+- Les métadonnées de couverture des tests de navigation et du tableau de bord sont migrées vers l'attribut de classe `CoversClass`. Les deux suites couvrent chacune une seule classe de fournisseur de contexte ; cette déclaration reste donc cohérente avec leur périmètre. PHPUnit 11 l'interprète sans dépréciation. PHP 8.1 accepte sa syntaxe ; PHPUnit 9 ignore l'attribut, sans empêcher la découverte ni l'exécution des tests Moodle 4.5.
 - Les scénarios et assertions des onze tests sont conservés.
 
 La validation attendue sur le nouveau commit est : tests non vides et réussis sur les quatre environnements, aucune option inconnue sur PHPUnit 9, aucune dépréciation PHPUnit 11, et zéro violation axe-core. Cette section ne vaut pas résultat de validation ; seuls les logs de la CI du commit final feront foi.
