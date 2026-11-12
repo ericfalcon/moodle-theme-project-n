@@ -231,7 +231,7 @@ final class learner_dashboard_test extends \advanced_testcase {
 
         // Mark the first activity complete to verify that the dashboard
         // calculates a partial percentage and points to the next incomplete one.
-        $completioninfo = new \\completion_info($course);
+        $completioninfo = new \completion_info($course);
         $firstcm = get_coursemodule_from_instance('page', $firstpage->id, $course->id);
         $completioninfo->update_state($firstcm, COMPLETION_COMPLETE, $user->id);
 
