@@ -155,7 +155,8 @@ jobs:
           # Fail the job if discovery ever returns an empty suite.
           # PHPUnit 11 supports this diagnostic option; PHPUnit 9 (Moodle/Iomad 4.5) does not.
           PHPUNIT_VERSION="$(vendor/bin/phpunit --version)"
-          PHPUNIT_MAJOR="$(printf '%s' "$PHPUNIT_VERSION" | sed -E 's/.* ([0-9]+)\\..*/\\1/')"
+          PHPUNIT_MAJOR="${PHPUNIT_VERSION#* }"
+          PHPUNIT_MAJOR="${PHPUNIT_MAJOR%%.*}"
           PHPUNIT_ARGS=(
             --test-suffix _test.php
             --fail-on-empty-test-suite
