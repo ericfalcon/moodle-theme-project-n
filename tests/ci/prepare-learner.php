@@ -118,10 +118,10 @@ if (!$instance) {
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
-    $companyuserclass = class_exists('local_iomad\\company_user') ? 'local_iomad' . chr(92) . 'company_user' : 'company_user';
-    call_user_func([$companyuserclass, 'enrol'], $learner, $weeklycourse->id, $company->id, $studentrole->id);
-    }
+    $companyuserclass = class_exists('local_iomad\\company_user') ? 'local_iomad\\company_user' : 'company_user';
+    call_user_func([$companyuserclass, 'enrol'], $learner, $course->id, $company->id, $studentrole->id);
 }
+
 
 // Add real course content so the learner course-view audit exercises native
 // section and activity markup rather than an empty course shell.
