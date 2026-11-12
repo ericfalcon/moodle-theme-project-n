@@ -275,7 +275,7 @@ async function auditPage(page, pageName, width, results, blockingViolations, pla
 function getPlatformCoreExclusion(pageName, violation) {
     const targets = violation.nodes.flatMap(node => node.target);
     if ((pageName === 'course-index' || pageName === 'learner-course-index') &&
-            violation.id === 'heading-order' && targets.includes('.coursename')) {
+            violation.id === 'heading-order' && targets.some(target => target.endsWith('.coursename'))) {
         return 'Moodle/Iomad core course-index template uses an h3 course title without the preceding heading level; this page is not rendered or templated by Project N.';
     }
 
@@ -310,7 +310,7 @@ function getPlatformCoreExclusion(pageName, violation) {
 
     if (platform === 'Iomad' && pageName === 'dashboard' &&
             violation.id === 'aria-required-parent' &&
-            violation.nodes.every(node => node.html.includes('data-bs-toggle="tab"') &&
+            violation.nodes.every(node => (node.html.includes('data-bs-toggle="tab"') || node.html.includes('data-toggle="tab"')) &&
                 node.html.includes('role="tab"') &&
                 node.target.some(target => /^a\[href\$="#(?:CompanyAdmin|UserAdmin|CourseAdmin|LicenseAdmin|CompetencyAdmin|ECommerceAdmin|MicrolearningAdmin|Reports)"\]$/.test(target)))) {
         return 'Iomad core company-administration dashboard tab links are not wrapped in the required tablist structure; this is not the Project N learner dashboard.';
