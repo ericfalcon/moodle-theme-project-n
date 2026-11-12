@@ -59,6 +59,9 @@ async function main() {
             }
             for (const width of [320, 390, 768, 1280]) {
                 await page.setViewportSize({ width: width, height: 844 });
+                if (target.name === 'dashboard' && platform === 'Moodle' && version === '5.3') {
+                    await waitForMoodle53TimelineReady(page);
+                }
                 await auditPage(page, target.name, width, results, blockingViolations, platformCoreExclusions);
             }
         }
@@ -96,6 +99,9 @@ async function main() {
                 }
                 for (const width of [320, 390, 768, 1280]) {
                     await learnerPage.setViewportSize({ width: width, height: 844 });
+                    if (target.name === 'learner-dashboard' && platform === 'Moodle' && version === '5.3') {
+                        await waitForMoodle53TimelineReady(learnerPage);
+                    }
                     await auditPage(learnerPage, target.name, width, results, blockingViolations, platformCoreExclusions);
                 }
             }
