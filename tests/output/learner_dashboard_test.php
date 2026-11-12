@@ -240,7 +240,7 @@ final class learner_dashboard_test extends \advanced_testcase {
         // calculates a partial percentage and points to the next incomplete one.
         $completioninfo = new \completion_info($course);
         $firstcm = get_coursemodule_from_instance('page', $firstpage->id, $course->id);
-        $completioninfo->update_state($firstcm, COMPLETION_COMPLETE, $user->id, true);
+        $completioninfo->set_module_viewed($firstcm, $user->id);
 
         $context = learner_dashboard::get_template_context();
 
