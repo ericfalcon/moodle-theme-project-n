@@ -216,22 +216,41 @@ final class learner_dashboard_test extends \advanced_testcase {
         $studentrole = reset($studentroles);
         $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
-        $this->getDataGenerator()->create_module('page', [
+        $firstpage = $this->getDataGenerator()->create_module('page', [
             'course' => $course->id,
-            'name' => 'Lire le support',
+            'name' => 'Lire le support initial',
             'completion' => COMPLETION_TRACKING_AUTOMATIC,
             'completionview' => 1,
         ]);
+        $secondpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Consulter le second support',
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+
+        // Mark the first activity complete to verify that the dashboard
+        // calculates a partial percentage and points to the next incomplete one.
+        $completioninfo = new \\completion_info($course);
+        $firstcm = get_coursemodule_from_instance('page', $firstpage->id, $course->id);
+        $completioninfo->update_state($firstcm, COMPLETION_COMPLETE, $user->id);
 
         $context = learner_dashboard::get_template_context();
 
         $this->assertTrue($context['haslearnercourses']);
         $this->assertTrue($context['learnercourses'][0]['hasprogress']);
-        $this->assertSame(0, $context['learnercourses'][0]['progresspercent']);
+        $this->assertSame(50, $context['learnercourses'][0]['progresspercent']);
         $this->assertTrue($context['learnercourses'][0]['hasnextactivity']);
-        $this->assertSame('Lire le support', $context['learnercourses'][0]['nextactivityname']);
+        $this->assertSame(
+            'Consulter le second support',
+            $context['learnercourses'][0]['nextactivityname']
+        );
         $this->assertStringContainsString(
             '/mod/page/view.php?id=',
+            $context['learnercourses'][0]['nextactivityurl']
+        );
+        $this->assertStringContainsString(
+            (string)$secondpage->id,
             $context['learnercourses'][0]['nextactivityurl']
         );
     }
