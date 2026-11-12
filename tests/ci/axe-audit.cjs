@@ -19,6 +19,9 @@ const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-prac
 const pagesToAudit = [
     { name: 'dashboard', path: '/my/' },
     { name: 'course-index', path: '/course/index.php' },
+    // Course 1 is the site course created by the standard Moodle installer.
+    // Auditing it exercises the native course-view shell on every reference platform.
+    { name: 'course-view', path: '/course/view.php?id=1' },
 ];
 
 async function main() {
