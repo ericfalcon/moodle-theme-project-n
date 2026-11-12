@@ -118,10 +118,8 @@ if (!$instance) {
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
-    if (class_exists('local_iomad\\company_user')) {
-        \local_iomad\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
-    } else if (class_exists('company_user')) {
-        \company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+    $companyuserclass = class_exists('local_iomad\\company_user') ? 'local_iomad' . chr(92) . 'company_user' : 'company_user';
+    call_user_func([$companyuserclass, 'enrol'], $learner, $weeklycourse->id, $company->id, $studentrole->id);
     }
 }
 
