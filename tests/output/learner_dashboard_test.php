@@ -228,6 +228,13 @@ final class learner_dashboard_test extends \advanced_testcase {
             'completion' => COMPLETION_TRACKING_AUTOMATIC,
             'completionview' => 1,
         ]);
+        $hiddenpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Support masqué',
+            'visible' => 0,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
 
         // Mark the first activity complete to verify that the dashboard
         // calculates a partial percentage and points to the next incomplete one.
@@ -245,12 +252,17 @@ final class learner_dashboard_test extends \advanced_testcase {
             'Consulter le second support',
             $context['learnercourses'][0]['nextactivityname']
         );
-        $this->assertStringContainsString(
-            '/mod/page/view.php?id=',
-            $context['learnercourses'][0]['nextactivityurl']
+        $secondcm = get_coursemodule_from_instance('page', $secondpage->id, $course->id);
+        $hiddenmodinfo = get_fast_modinfo($course, $user->id)->get_cm(
+            get_coursemodule_from_instance('page', $hiddenpage->id, $course->id)->id
         );
-        $this->assertStringContainsString(
-            (string)$secondpage->id,
+
+        // Hidden activities must not affect the learner's percentage or become
+        // the next activity, even though they have completion tracking enabled.
+        $this->assertFalse($hiddenmodinfo->uservisible);
+        $this->assertSame(50, $context['learnercourses'][0]['progresspercent']);
+        $this->assertSame(
+            get_fast_modinfo($course, $user->id)->get_cm($secondcm->id)->url->out(false),
             $context['learnercourses'][0]['nextactivityurl']
         );
     }
