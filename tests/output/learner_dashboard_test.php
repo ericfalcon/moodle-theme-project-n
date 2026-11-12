@@ -249,10 +249,10 @@ final class learner_dashboard_test extends \advanced_testcase {
             'op' => '&',
             'c' => [[
                 'type' => 'date',
-                'd' => '>',
+                'd' => '>=',
                 't' => time() + DAYSECS,
             ]],
-            'showc' => false,
+            'showc' => [false],
         ];
         $DB->set_field(
             'course_modules',
