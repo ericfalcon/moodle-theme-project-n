@@ -54,6 +54,29 @@ if ($DB->record_exists('user', ['username' => $username, 'mnethostid' => $CFG->m
     $learner->id = user_create_user($learner);
 }
 
+// Iomad requires an explicit tenant membership and company-course assignment
+// in addition to Moodle's normal manual enrolment.
+$company = null;
+if ($DB->get_manager()->table_exists('local_iomad_companies')) {
+    $companyid = $DB->get_field('local_iomad_companies', 'id', ['shortname' => 'projectn_ci']);
+    if ($companyid) {
+        $company = new \\local_iomad\\company($companyid);
+    } else {
+        $company = \\local_iomad\\company::create_company((object)[
+            'name' => 'Project N CI',
+            'shortname' => 'projectn_ci',
+            'city' => 'Test City',
+            'country' => 'FR',
+            'theme' => 'projectn',
+            'lang' => 'en',
+            'timezone' => '99',
+            'templates' => [],
+        ]);
+    }
+    $company->assign_user_to_company($learner->id);
+    $company->add_course($course);
+}
+
 if (!enrol_is_enabled('manual')) {
     throw new moodle_exception('manualenrolnotenabled');
 }
@@ -75,6 +98,9 @@ if (!$instance) {
 }
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
+if ($company) {
+    \\local_iomad\\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+}
 
 // Add real course content so the learner course-view audit exercises native
 // section and activity markup rather than an empty course shell.
