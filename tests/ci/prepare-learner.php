@@ -60,9 +60,9 @@ $company = null;
 if ($DB->get_manager()->table_exists('local_iomad_companies')) {
     $companyid = $DB->get_field('local_iomad_companies', 'id', ['shortname' => 'projectn_ci']);
     if ($companyid) {
-        $company = new \\local_iomad\\company($companyid);
+        $company = new \local_iomad\company($companyid);
     } else {
-        $company = \\local_iomad\\company::create_company((object)[
+        $company = \local_iomad\company::create_company((object)[
             'name' => 'Project N CI',
             'shortname' => 'projectn_ci',
             'city' => 'Test City',
@@ -99,7 +99,7 @@ if (!$instance) {
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
-    \\local_iomad\\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+    \local_iomad\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
 }
 
 // Add real course content so the learner course-view audit exercises native
