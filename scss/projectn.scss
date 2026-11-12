@@ -409,3 +409,121 @@ summary:focus-visible,
     color: var(--projectn-color-text-muted);
     font-size: 0.875rem;
 }
+
+/* P2.2 — Native course page: improve section and activity readability without
+ * replacing Moodle's course-format renderer or its templates. Keep the DOM
+ * order and all native controls intact for keyboard, touch and assistive tech.
+ */
+.path-course-view {
+    .course-content {
+        min-width: 0;
+    }
+
+    .course-content ul.topics,
+    .course-content ul.weeks,
+    .course-content ul.ctopics {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .course-content .course-section {
+        min-width: 0;
+        margin-block: 0 1rem;
+        padding: 1rem;
+        background: var(--projectn-color-surface-raised);
+        border: 1px solid var(--projectn-color-border);
+        border-radius: var(--projectn-radius-md);
+        box-shadow: var(--projectn-shadow-card);
+    }
+
+    .course-content .course-section-header {
+        min-width: 0;
+        margin-bottom: 0.75rem;
+        overflow-wrap: anywhere;
+    }
+
+    .course-content .course-section-header .sectionname,
+    .course-content .course-section-header .section-title {
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .course-content .section-summary,
+    .course-content .section-summary-activities {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .course-content .section-item,
+    .course-content .activity-item {
+        min-width: 0;
+    }
+
+    .course-content .activity-item {
+        margin-block: 0.5rem;
+        padding: 0.75rem;
+        background: var(--projectn-color-surface);
+        border: 1px solid var(--projectn-color-border);
+        border-radius: var(--projectn-radius-sm);
+    }
+
+    .course-content .activity-item .activityname,
+    .course-content .activity-item .activityname a,
+    .course-content .activity-item .activityinstance,
+    .course-content .activity-item .activity-information {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .course-content .activity-item .activityname a {
+        text-underline-offset: 0.2em;
+    }
+
+    .course-content .activity-item .activity-altcontent,
+    .course-content .activity-item .activity-description,
+    .course-content .activity-item .activity-dates {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .course-content .activity-item .activity-completion,
+    .course-content .activity-item .completion-info,
+    .course-content .activity-item .activity-badges {
+        max-width: 100%;
+    }
+
+    .course-content .section-modchooser,
+    .course-content .section-actions,
+    .course-content .activity-actions,
+    .course-content .activity-action-menu {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .path-course-view #region-main {
+        min-width: 0;
+    }
+
+    .path-course-view .course-content .course-section {
+        padding: 0.75rem;
+    }
+
+    .path-course-view .course-content .activity-item {
+        padding: 0.625rem;
+    }
+
+    .path-course-view .course-content .activity-item .activity-action-menu,
+    .path-course-view .course-content .activity-item .dropdown,
+    .path-course-view .course-content .activity-item .dropdown-menu {
+        max-width: min(100%, calc(100vw - 2rem));
+    }
+}
+
+@media (min-width: 768px) {
+    .path-course-view .course-content .course-section {
+        padding: 1.25rem;
+    }
+}
+
