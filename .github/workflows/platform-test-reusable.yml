@@ -156,6 +156,7 @@ jobs:
           vendor/bin/phpunit \
             --test-suffix _test.php \
             --fail-on-empty-test-suite \
+            --display-phpunit-deprecations \
             "$PROJECTN_PLUGIN_DIR/tests"
 
       - name: Install Playwright and axe-core
