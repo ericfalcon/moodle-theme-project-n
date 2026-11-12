@@ -166,6 +166,13 @@ jobs:
           fi
           vendor/bin/phpunit "${PHPUNIT_ARGS[@]}" "$PROJECTN_PLUGIN_DIR/tests"
 
+      - name: Prepare a real learner and enrolled course
+        if: inputs.run_axe
+        working-directory: ${{ runner.temp }}/platform
+        env:
+          MOODLE_DIR: ${{ runner.temp }}/platform
+        run: php "$PROJECTN_PLUGIN_DIR/tests/ci/prepare-learner.php"
+
       - name: Install Playwright and axe-core
         if: inputs.run_axe
         run: |
