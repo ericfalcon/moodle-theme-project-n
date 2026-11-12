@@ -11,8 +11,8 @@ require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->dirroot . '/lib/enrollib.php');
 
-global $DB, $CFG, $USER;
-$USER = get_admin();
+global $DB, $CFG;
+\\core\\session\\manager::set_user(get_admin());
 
 $shortname = 'projectn-learner-ci';
 if ($DB->record_exists('course', ['shortname' => $shortname])) {
