@@ -16,11 +16,11 @@ require_once($CFG->dirroot . '/lib/resourcelib.php');
 global $DB, $CFG;
 \core\session\manager::set_user(get_admin());
 
+$categoryid = $DB->get_field('course_categories', 'id', ['id' => 1], MUST_EXIST);
 $shortname = 'projectn-learner-ci';
 if ($DB->record_exists('course', ['shortname' => $shortname])) {
     $course = $DB->get_record('course', ['shortname' => $shortname], '*', MUST_EXIST);
 } else {
-    $categoryid = $DB->get_field('course_categories', 'id', ['id' => 1], MUST_EXIST);
     $course = create_course((object)[
         'category' => $categoryid,
         'fullname' => 'Project N learner validation',
@@ -202,7 +202,7 @@ $weeklyinstance = $DB->get_record('enrol', ['id' => $weeklyinstanceid], '*', MUS
 $manual->enrol_user($weeklyinstance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
     if (class_exists('local_iomad\\company_user')) {
-        \\local_iomad\\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
+        \local_iomad\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     } else if (class_exists('company_user')) {
         \\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     }
