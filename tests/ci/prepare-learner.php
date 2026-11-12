@@ -202,7 +202,7 @@ $weeklyinstance = $DB->get_record('enrol', ['id' => $weeklyinstanceid], '*', MUS
 $manual->enrol_user($weeklyinstance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
     if (class_exists('local_iomad\\company_user')) {
-        company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
+        \\local_iomad\\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     } else if (class_exists('company_user')) {
         \company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     }
