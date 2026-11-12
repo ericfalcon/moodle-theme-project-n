@@ -204,7 +204,7 @@ if ($company) {
     if (class_exists('local_iomad\\company_user')) {
         \local_iomad\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     } else if (class_exists('company_user')) {
-        \\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
+        \company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
     }
 }
 if (!$DB->record_exists('course_modules', ['course' => $weeklycourse->id, 'module' => $pageModuleId])) {
