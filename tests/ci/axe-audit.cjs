@@ -65,6 +65,39 @@ async function main() {
             }
         }
 
+        // Repeat learner-facing pages in a separate browser context.
+        // This is a real student enrolled in a dedicated course, not an administrator.
+        const learnerContext = await browser.newContext();
+        try {
+            const learnerPage = await learnerContext.newPage();
+            await learnerPage.goto(new URL('/login/index.php', baseUrl).toString(), { waitUntil: 'domcontentloaded' });
+            await learnerPage.locator('#username').fill(process.env.LEARNER_USERNAME);
+            await learnerPage.locator('#password').fill(process.env.LEARNER_PASSWORD);
+            await Promise.all([
+                learnerPage.waitForURL((url) => !url.pathname.endsWith('/login/index.php'), { timeout: 30000 }).catch(() => null),
+                learnerPage.locator('#loginbtn').click(),
+            ]);
+            await learnerPage.waitForLoadState('domcontentloaded');
+            if (new URL(learnerPage.url()).pathname.endsWith('/login/index.php')) {
+                throw new Error('Dedicated learner login failed.');
+            }
+
+            const learnerPages = [
+                { name: 'learner-dashboard', path: '/my/' },
+                { name: 'learner-course-index', path: '/course/index.php' },
+                { name: 'learner-course-view', path: '/course/view.php?id=' + encodeURIComponent(process.env.LEARNER_COURSE_ID) },
+            ];
+            for (const target of learnerPages) {
+                await learnerPage.goto(new URL(target.path, baseUrl).toString(), { waitUntil: 'domcontentloaded' });
+                for (const width of [320, 390, 768, 1280]) {
+                    await learnerPage.setViewportSize({ width: width, height: 844 });
+                    await auditPage(learnerPage, target.name, width, results, blockingViolations);
+                }
+            }
+        } finally {
+            await learnerContext.close();
+        }
+
         const report = {
             platform: platform,
             version: version,
