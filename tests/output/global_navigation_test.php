@@ -14,7 +14,6 @@ use theme_projectn\output\global_navigation;
  * Tests for the Project N global navigation data provider.
  *
  * @package theme_projectn
- * @coversDefaultClass \theme_projectn\output\global_navigation
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(global_navigation::class)]
 final class global_navigation_test extends \advanced_testcase {
