@@ -14,7 +14,6 @@ use theme_projectn\output\learner_dashboard;
  * Tests for the learner/teacher course dashboard data provider.
  *
  * @package theme_projectn
- * @coversDefaultClass \theme_projectn\output\learner_dashboard
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(learner_dashboard::class)]
 final class learner_dashboard_test extends \advanced_testcase {
