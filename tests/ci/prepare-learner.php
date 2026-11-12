@@ -75,6 +75,25 @@ if ($DB->get_manager()->table_exists('local_iomad_companies')) {
     }
     $company->assign_user_to_company($learner->id);
     $company->add_course($course);
+} else if ($DB->get_manager()->table_exists('company') &&
+        $DB->get_manager()->table_exists('company_users')) {
+    // Iomad 4.5 uses the legacy company schema and global classes.
+    require_once($CFG->dirroot . '/local/iomad/lib/company.php');
+    require_once($CFG->dirroot . '/local/iomad/lib/user.php');
+    $companyid = $DB->get_field('company', 'id', ['shortname' => 'projectn_ci']);
+    if (!$companyid) {
+        $companyid = $DB->insert_record('company', (object)[
+            'name' => 'Project N CI',
+            'shortname' => 'projectn_ci',
+            'city' => 'Test City',
+            'country' => 'FR',
+            'theme' => 'projectn',
+            'category' => 1,
+        ]);
+    }
+    $company = new \company($companyid);
+    $company->assign_user_to_company($learner->id);
+    $company->add_course($course);
 }
 
 if (!enrol_is_enabled('manual')) {
@@ -99,7 +118,11 @@ if (!$instance) {
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
 if ($company) {
-    \local_iomad\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+    if (class_exists('local_iomad\\company_user')) {
+        \local_iomad\company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+    } else if (class_exists('company_user')) {
+        \company_user::enrol($learner, $course->id, $company->id, $studentrole->id);
+    }
 }
 
 // Add real course content so the learner course-view audit exercises native
