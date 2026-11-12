@@ -84,16 +84,11 @@ $hasPageActivity = $DB->record_exists('course_modules', [
     'module' => $pageModuleId,
 ]);
 if (!$hasPageActivity) {
-    $sectionid = $DB->get_field('course_sections', 'id', [
-        'course' => $course->id,
-        'section' => 1,
-    ], MUST_EXIST);
-
     $visiblepage = (object)[
         'modulename' => 'page',
         'module' => $pageModuleId,
         'course' => $course->id,
-        'section' => $sectionid,
+        'section' => 1,
         'name' => 'Learner visible resource',
         'intro' => '',
         'introformat' => FORMAT_HTML,
