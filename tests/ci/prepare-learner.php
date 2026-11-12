@@ -65,10 +65,11 @@ foreach ($instances as $candidate) {
     }
 }
 if (!$instance) {
-    $instance = $manual->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-}
-if (!$instance) {
-    throw new moodle_exception('cannotcreateinstance', 'enrol_manual');
+    $instanceid = $manual->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
+    if (!$instanceid) {
+        throw new moodle_exception('cannotcreateinstance', 'enrol_manual');
+    }
+    $instance = $DB->get_record('enrol', ['id' => $instanceid], '*', MUST_EXIST);
 }
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
