@@ -107,7 +107,7 @@ La validation du tableau de bord ne vaut pas validation de la page de cours ni d
 
 ## 9. Analyse technique P2.2 — page de cours
 
-**État : analyse statique des forks terminée pour les points d'entrée principaux ; aucun changement fonctionnel de page de cours n'est encore implémenté.** Les références ci-dessous sont les têtes de branches consultées le 12 novembre 2026.
+**État au 12 novembre 2026 : première couche CSS P2.2 ajoutée sur le DOM natif ; validation runtime encore en attente.** L'analyse statique des points d'entrée principaux est terminée. Le thème ne surcharge ni `course/view.php`, ni le renderer du format, ni les templates core. Les styles sont limités à `.path-course-view` et aux structures de sections/activités natives ; ils préservent l'ordre DOM et les contrôles Moodle. Les références ci-dessous sont les têtes de branches consultées le 12 novembre 2026.
 
 ### 9.1 Contrat de rendu natif
 
