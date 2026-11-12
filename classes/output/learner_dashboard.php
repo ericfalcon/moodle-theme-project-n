@@ -185,7 +185,7 @@ class learner_dashboard {
                 );
             }
 
-            if ($nextactivity !== null && $nextactivity->url instanceof \\moodle_url) {
+            if ($nextactivity !== null && $nextactivity->url instanceof \moodle_url) {
                 // Use the URL supplied by Moodle's course-module information.
                 // Module endpoints are not assumed to share a universal view.php route.
                 $card['hasnextactivity'] = true;
