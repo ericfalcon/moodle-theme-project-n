@@ -10,6 +10,8 @@ require($platformdir . '/config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->dirroot . '/lib/enrollib.php');
+require_once($CFG->dirroot . '/course/modlib.php');
+require_once($CFG->dirroot . '/lib/resourcelib.php');
 
 global $DB, $CFG;
 \core\session\manager::set_user(get_admin());
@@ -73,6 +75,56 @@ if (!$instance) {
 }
 $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
 $manual->enrol_user($instance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
+
+// Add real course content so the learner course-view audit exercises native
+// section and activity markup rather than an empty course shell.
+$pageModuleId = $DB->get_field('modules', 'id', ['name' => 'page'], MUST_EXIST);
+$hasPageActivity = $DB->record_exists('course_modules', [
+    'course' => $course->id,
+    'module' => $pageModuleId,
+]);
+if (!$hasPageActivity) {
+    $sectionid = $DB->get_field('course_sections', 'id', [
+        'course' => $course->id,
+        'section' => 1,
+    ], MUST_EXIST);
+
+    $visiblepage = (object)[
+        'modulename' => 'page',
+        'module' => $pageModuleId,
+        'course' => $course->id,
+        'section' => $sectionid,
+        'name' => 'Learner visible resource',
+        'intro' => '',
+        'introformat' => FORMAT_HTML,
+        'content' => '<p>Visible learning content for responsive course-view testing.</p>',
+        'contentformat' => FORMAT_HTML,
+        'display' => RESOURCELIB_DISPLAY_AUTO,
+        'printintro' => 0,
+        'printlastmodified' => 1,
+        'visible' => 1,
+        'visibleoncoursepage' => 1,
+        'groupmode' => 0,
+        'groupingid' => 0,
+        'completion' => COMPLETION_TRACKING_AUTOMATIC,
+        'completionview' => 1,
+        'completionexpected' => 0,
+        'completionpassgrade' => 0,
+        'availability' => null,
+        'showdescription' => 0,
+        'conditiongradegroup' => [],
+        'conditionfieldgroup' => [],
+        'conditioncompletiongroup' => [],
+        'cmidnumber' => '',
+    ];
+    add_moduleinfo($visiblepage, $course);
+
+    $hiddenpage = clone $visiblepage;
+    $hiddenpage->name = 'Hidden learner resource';
+    $hiddenpage->visible = 0;
+    add_moduleinfo($hiddenpage, $course);
+    rebuild_course_cache($course->id, true);
+}
 
 $githubenv = getenv('GITHUB_ENV');
 if ($githubenv) {
