@@ -245,6 +245,7 @@ final class learner_dashboard_test extends \advanced_testcase {
         // Make the fourth activity unavailable until a future date. The
         // availability API must hide it from this learner and the dashboard.
         $restrictedcm = get_coursemodule_from_instance('page', $restrictedpage->id, $course->id);
+        global $DB;
         $availability = [
             'op' => '&',
             'c' => [[
