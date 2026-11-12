@@ -103,3 +103,62 @@ La validation du tableau de bord ne vaut pas validation de la page de cours ni d
 | P2.3 Échéances / notifications | Échéances calendrier présentes ; notifications non intégrées | API natives utilisées, préférences respectées, états et accès vérifiés |
 | P2.4 États / aide | À compléter | États vides, erreurs, indisponibilités et aides testés |
 | P2.5 Validation | Partielle | CI et tests manuels documentés, aucune anomalie bloquante non traitée |
+
+
+## 9. Analyse technique P2.2 — page de cours
+
+**État : analyse statique des forks terminée pour les points d'entrée principaux ; aucun changement fonctionnel de page de cours n'est encore implémenté.** Les références ci-dessous sont les têtes de branches consultées le 12 novembre 2026.
+
+### 9.1 Contrat de rendu natif
+
+Les quatre branches de référence conservent le même enchaînement général :
+
+1. `course/view.php` charge le cours, vérifie l'accès avec les mécanismes de la plateforme et initialise le contexte de page ;
+2. le format réel du cours est obtenu avec `course_get_format($course)` ;
+3. le renderer propre au format est préchargé avec `$format->get_renderer($PAGE)` ;
+4. le contenu est rendu par le format actif et les classes Output de `core_courseformat`.
+
+Le cœur du rendu des sections repose sur `core_courseformat\\output\\section_renderer`, les classes Output de `core_courseformat\\output\\local\\content` et les templates Mustache `core_courseformat/local/content/*`. Le renderer de section sait résoudre les templates par classe Output ; les formats peuvent fournir leurs propres classes et méthodes de rendu. Le thème ne doit donc ni reconstruire les sections, ni générer lui-même la liste des activités, ni remplacer le renderer du format.
+
+### 9.2 Comparaison des sources consultées
+
+| Source | Moodle 4.5 | Moodle 5.3 | Iomad 4.5 | Iomad 5.2 |
+|---|---|---|---|---|
+| `course/view.php` | Présent à la racine | Sous `public/` | Présent à la racine | Sous `public/` |
+| `course/format/classes/output/section_renderer.php` | Présent | Présent sous `public/` | Présent | Présent sous `public/` |
+| `course/format/classes/output/local/content/section.php` | Présent | Présent sous `public/` | Présent | Présent sous `public/` |
+| Templates `course/format/templates/local/content/*` | Présents | Présents sous `public/` | Présents | Présents sous `public/` |
+
+Les structures de rendu et les fichiers principaux existent sur les quatre branches. La comparaison du template `local/content/section.mustache` montre notamment une différence entre 4.5 et 5.3 : Moodle 5.3 ajoute l'attribut conditionnel `data-returnoptions` sur le conteneur de section. Les données d'exemple du template ajoutent également `headinglevel` dans l'en-tête. Ces évolutions confirment qu'une copie locale de template doit être évitée tant qu'un besoin visuel précis ne l'impose pas.
+
+Les arbres Moodle 5.3 et Iomad 5.2 contiennent aussi des classes Output supplémentaires, notamment autour de l'activité chooser, des activités restreintes et de la vue d'ensemble. Le rendu du cours continue donc d'évoluer ; une surcharge structurelle large augmenterait le risque de divergence.
+
+### 9.3 Écarts Iomad à préserver
+
+Dans `course/view.php`, Iomad ajoute un contrôle spécifique avant la récupération du cours :
+- Iomad 4.5 appelle `iomad::iomad_check_course(...)` ;
+- Iomad 5.2 importe `local_iomad\\iomad` et appelle `iomad::iomad_check_course(...)`.
+
+Ce contrôle intervient avant le chargement du cours et ne doit pas être remplacé ou contourné par le thème. Les contrôles natifs `require_login($course)`, capacités, disponibilité des sections et vérifications de visibilité doivent rester intacts. Aucun appel direct aux tables Iomad ne sera introduit dans Project N.
+
+### 9.4 Décision d'architecture P2.2
+
+La première tranche de développement sera **une amélioration CSS mobile-first du DOM natif**, sans surcharge de `course/view.php`, sans renderer de cours Project N et sans copie des templates core.
+
+Ordre de réalisation :
+1. relever les sélecteurs et structures DOM réellement produits par les formats natifs sur les quatre environnements ;
+2. inventorier les formats installés et vérifier les comportements topics, weekly, single activity et tout format additionnel présent dans les forks ;
+3. définir les règles responsive sans masquer les actions, restrictions, états d'achèvement, badges, menus ou contrôles d'édition ;
+4. ajouter des tests navigateur avec un véritable compte apprenant inscrit à un cours, et non le seul compte administrateur ;
+5. auditer `/course/view.php?id=...` avec activités visibles, activité masquée, section restreinte, suivi d'achèvement et index du cours, aux largeurs 320, 390, 768 et 1280 CSS px.
+
+Une surcharge du template wrapper `core_courseformat/local/content/section` ne sera envisagée que si un besoin non réalisable par CSS est démontré. Elle devra être limitée à ce wrapper, comparée aux quatre versions de référence, et conserver les blocs Mustache de surcharge ainsi que les attributs et données requis par le JavaScript Moodle.
+
+### 9.5 Références des forks au moment de l'analyse
+
+- Moodle 4.5 — `ericfalcon/moodle@c0690bbc765fccacd4956452cbff3f6aacad77c5` (`MOODLE_405_STABLE`).
+- Moodle 5.3 — `ericfalcon/moodle@236a9d702e62dc11f5aa66e4c8b5239cfc26c3d8` (`MOODLE_503_STABLE`).
+- Iomad 4.5 — `ericfalcon/iomad@114ac90f25f74d79e4aae7bd72a749d8ab41a50e` (`IOMAD_405_STABLE`).
+- Iomad 5.2 — `ericfalcon/iomad@88a9a3e9997916a049048db536048918cbdc1e56` (`IOMAD_502_STABLE`).
+
+Cette analyse est statique. Elle ne démontre pas encore le rendu effectif dans un navigateur, la compatibilité de tous les formats tiers, ni l'accessibilité de la page de cours. Ces points restent des critères de validation P2.2.
