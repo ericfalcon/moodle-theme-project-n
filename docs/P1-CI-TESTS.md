@@ -280,9 +280,9 @@ Le correctif apporte les changements suivants :
 La validation attendue sur le nouveau commit est : tests non vides et réussis sur les quatre environnements, aucune option inconnue sur PHPUnit 9, aucune dépréciation PHPUnit 11, et zéro violation axe-core. Cette section ne vaut pas résultat de validation ; seuls les logs de la CI du commit final feront foi.
 
 
-### Résultat de validation — run GitHub Actions `43258748557`
+### Résultat de validation — run GitHub Actions `43260132688` / `43260132742`
 
-Le commit `5f60370a78ac929bca20bd0d114a4e2f6ba8832d` a été validé par les deux workflows : `Platform integration and accessibility` et `Project N quality checks` terminés avec succès.
+Le commit de tête de la PR `7167e5b68ea20e0b495b14da9a0a146805ec6bef` a été validé par les deux workflows, terminés avec succès.
 
 | Plateforme | PHPUnit | Résultat | Dépréciations PHPUnit | axe-core |
 |---|---:|---:|---:|---:|
@@ -291,6 +291,6 @@ Le commit `5f60370a78ac929bca20bd0d114a4e2f6ba8832d` a été validé par les deu
 | Moodle 5.3 | 11.5.56 | 11 tests, 50 assertions | 0 | 0 violation |
 | Iomad 5.2 | 11.5.55 | 11 tests, 50 assertions | 0 | 0 violation |
 
-Les trois contrôles de syntaxe PHP (8.1, 8.2 et 8.3) sont également réussis. Les logs confirment que l'option de diagnostic n'est plus transmise à PHPUnit 9 et que PHPUnit 11 ne signale plus les métadonnées de couverture en doc-comment. Les quatre audits axe-core affichent `no violations in the audited states`.
+Les logs des quatre jobs confirment l'absence de l'option inconnue sur PHPUnit 9, l'absence des messages `Metadata found in doc-comment` et de dépréciations PHPUnit sur PHPUnit 11, ainsi que `axe-core: no violations in the audited states`. Les trois contrôles de syntaxe PHP (8.1, 8.2 et 8.3) sont également réussis.
 
-**Conclusion :** la correction est validée sur les quatre environnements de référence. La matrice complète planifiée/manuelle (Moodle 5.0–5.2 et Iomad 5.0–5.1) n'était pas concernée par ce run et apparaît comme ignorée, conformément au déclenchement pull request.
+**Conclusion :** la correction est validée sur les quatre environnements de référence. La matrice complète planifiée/manuelle (Moodle 5.0–5.2 et Iomad 5.0–5.1) est ignorée sur ce déclenchement pull request ; elle n'est donc pas déclarée validée par cette exécution.
