@@ -16,12 +16,13 @@ use theme_projectn\output\global_navigation;
  * @package theme_projectn
  * @coversDefaultClass \theme_projectn\output\global_navigation
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(global_navigation::class)]
 final class global_navigation_test extends \advanced_testcase {
     /**
      * The courses destination is marked current on the user's course list.
      *
-     * @covers ::get_template_context
-     */
+      */
+    #[\PHPUnit\Framework\Attributes\CoversMethod(global_navigation::class, 'get_template_context')]
     public function test_courses_destination_is_current(): void {
         global $PAGE;
 
@@ -39,8 +40,8 @@ final class global_navigation_test extends \advanced_testcase {
     /**
      * The home destination is marked current on the site root.
      *
-     * @covers ::get_template_context
-     */
+      */
+    #[\PHPUnit\Framework\Attributes\CoversMethod(global_navigation::class, 'get_template_context')]
     public function test_home_destination_is_current(): void {
         global $PAGE;
 
@@ -57,8 +58,8 @@ final class global_navigation_test extends \advanced_testcase {
     /**
      * The personal dashboard is treated as the user's home workspace.
      *
-     * @covers ::get_template_context
-     */
+      */
+    #[\PHPUnit\Framework\Attributes\CoversMethod(global_navigation::class, 'get_template_context')]
     public function test_home_destination_is_current_on_dashboard(): void {
         global $PAGE;
 
@@ -74,8 +75,8 @@ final class global_navigation_test extends \advanced_testcase {
     /**
      * A different page does not incorrectly mark a global destination current.
      *
-     * @covers ::get_template_context
-     */
+      */
+    #[\PHPUnit\Framework\Attributes\CoversMethod(global_navigation::class, 'get_template_context')]
     public function test_unrelated_page_has_no_current_global_destination(): void {
         global $PAGE;
 
