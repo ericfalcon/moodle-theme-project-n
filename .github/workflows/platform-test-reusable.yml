@@ -153,11 +153,17 @@ jobs:
           set -euo pipefail
           # Moodle test files use the *_test.php suffix, not PHPUnit's default *Test.php.
           # Fail the job if discovery ever returns an empty suite.
-          vendor/bin/phpunit \
-            --test-suffix _test.php \
-            --fail-on-empty-test-suite \
-            --display-phpunit-deprecations \
-            "$PROJECTN_PLUGIN_DIR/tests"
+          # PHPUnit 11 supports this diagnostic option; PHPUnit 9 (Moodle/Iomad 4.5) does not.
+          PHPUNIT_VERSION="$(vendor/bin/phpunit --version)"
+          PHPUNIT_MAJOR="$(printf '%s' "$PHPUNIT_VERSION" | sed -E 's/.* ([0-9]+)\\..*/\\1/')"
+          PHPUNIT_ARGS=(
+            --test-suffix _test.php
+            --fail-on-empty-test-suite
+          )
+          if [[ "$PHPUNIT_MAJOR" -ge 11 ]]; then
+            PHPUNIT_ARGS+=(--display-phpunit-deprecations)
+          fi
+          vendor/bin/phpunit "${PHPUNIT_ARGS[@]}" "$PROJECTN_PLUGIN_DIR/tests"
 
       - name: Install Playwright and axe-core
         if: inputs.run_axe
