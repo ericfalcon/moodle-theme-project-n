@@ -235,6 +235,32 @@ final class learner_dashboard_test extends \advanced_testcase {
             'completion' => COMPLETION_TRACKING_AUTOMATIC,
             'completionview' => 1,
         ]);
+        $restrictedpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Support soumis à une restriction',
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+
+        // Make the fourth activity unavailable until a future date. The
+        // availability API must hide it from this learner and the dashboard.
+        $restrictedcm = get_coursemodule_from_instance('page', $restrictedpage->id, $course->id);
+        $availability = [
+            'op' => '&',
+            'c' => [[
+                'type' => 'date',
+                'd' => '>',
+                't' => time() + DAYSECS,
+            ]],
+            'showc' => false,
+        ];
+        $DB->set_field(
+            'course_modules',
+            'availability',
+            json_encode($availability),
+            ['id' => $restrictedcm->id]
+        );
+        rebuild_course_cache($course->id, true);
 
         // Mark the first activity complete to verify that the dashboard
         // calculates a partial percentage and points to the next incomplete one.
@@ -260,6 +286,8 @@ final class learner_dashboard_test extends \advanced_testcase {
         // Hidden activities must not affect the learner's percentage or become
         // the next activity, even though they have completion tracking enabled.
         $this->assertFalse($hiddenmodinfo->uservisible);
+        $restrictedmodinfo = get_fast_modinfo($course, $user->id)->get_cm($restrictedcm->id);
+        $this->assertFalse($restrictedmodinfo->uservisible);
         $this->assertSame(50, $context['learnercourses'][0]['progresspercent']);
         $this->assertSame(
             get_fast_modinfo($course, $user->id)->get_cm($secondcm->id)->url->out(false),
