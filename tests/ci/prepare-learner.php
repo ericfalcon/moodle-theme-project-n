@@ -170,8 +170,78 @@ if (!$hasPageActivity) {
     rebuild_course_cache($course->id, true);
 }
 
+// Exercise the native weekly format as a second, genuinely enrolled learner course.
+$weeklyshortname = 'projectn-learner-weekly-ci';
+if ($DB->record_exists('course', ['shortname' => $weeklyshortname])) {
+    $weeklycourse = $DB->get_record('course', ['shortname' => $weeklyshortname], '*', MUST_EXIST);
+} else {
+    $weeklycourse = create_course((object)[
+        'category' => $categoryid,
+        'fullname' => 'Project N weekly learner validation',
+        'shortname' => $weeklyshortname,
+        'format' => 'weeks',
+        'numsections' => 2,
+        'visible' => 1,
+        'enablecompletion' => 1,
+    ]);
+}
+if ($company) {
+    $company->add_course($weeklycourse);
+}
+$weeklyinstanceid = null;
+foreach (enrol_get_instances($weeklycourse->id, true) as $candidate) {
+    if ($candidate->enrol === 'manual') {
+        $weeklyinstanceid = $candidate->id;
+        break;
+    }
+}
+if (!$weeklyinstanceid) {
+    $weeklyinstanceid = $manual->add_instance($weeklycourse, ['status' => ENROL_INSTANCE_ENABLED]);
+}
+$weeklyinstance = $DB->get_record('enrol', ['id' => $weeklyinstanceid], '*', MUST_EXIST);
+$manual->enrol_user($weeklyinstance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
+if ($company) {
+    if (class_exists('local_iomad\\company_user')) {
+        \\local_iomad\\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
+    } else if (class_exists('company_user')) {
+        \\company_user::enrol($learner, $weeklycourse->id, $company->id, $studentrole->id);
+    }
+}
+if (!$DB->record_exists('course_modules', ['course' => $weeklycourse->id, 'module' => $pageModuleId])) {
+    $weeklypage = (object)[
+        'modulename' => 'page',
+        'module' => $pageModuleId,
+        'course' => $weeklycourse->id,
+        'section' => 1,
+        'name' => 'Weekly format learner resource',
+        'intro' => '',
+        'introformat' => FORMAT_HTML,
+        'content' => '<p>Visible learning content in the native weekly format.</p>',
+        'contentformat' => FORMAT_HTML,
+        'display' => RESOURCELIB_DISPLAY_AUTO,
+        'printintro' => 0,
+        'printlastmodified' => 1,
+        'visible' => 1,
+        'visibleoncoursepage' => 1,
+        'groupmode' => 0,
+        'groupingid' => 0,
+        'completion' => COMPLETION_TRACKING_AUTOMATIC,
+        'completionview' => 1,
+        'completionexpected' => 0,
+        'completionpassgrade' => 0,
+        'availability' => null,
+        'showdescription' => 0,
+        'conditiongradegroup' => [],
+        'conditionfieldgroup' => [],
+        'conditioncompletiongroup' => [],
+        'cmidnumber' => '',
+    ];
+    add_moduleinfo($weeklypage, $weeklycourse);
+    rebuild_course_cache($weeklycourse->id, true);
+}
+
 $githubenv = getenv('GITHUB_ENV');
 if ($githubenv) {
-    file_put_contents($githubenv, "LEARNER_USERNAME={$username}\nLEARNER_PASSWORD={$password}\nLEARNER_COURSE_ID={$course->id}\n", FILE_APPEND);
+    file_put_contents($githubenv, "LEARNER_USERNAME={$username}\nLEARNER_PASSWORD={$password}\nLEARNER_COURSE_ID={$course->id}\nLEARNER_WEEKLY_COURSE_ID={$weeklycourse->id}\n", FILE_APPEND);
 }
 echo "Prepared learner {$username}, enrolled in course {$course->id}.\n";
