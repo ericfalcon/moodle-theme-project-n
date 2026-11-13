@@ -178,7 +178,7 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
             .length,
         invalidAriaHidden: document.querySelectorAll('[aria-hidden="1"]').length,
         brokenAriaControls: [...document.querySelectorAll('[aria-controls]')].filter(element =>
-            element.getAttribute('aria-controls').split(/\\s+/).some(id => !document.getElementById(id))
+            element.getAttribute('aria-controls').split(/\s+/).some(id => !document.getElementById(id))
         ).length,
     }));
     if (ariaRepairs.unnamedMoremenus || ariaRepairs.invalidAriaHidden || ariaRepairs.brokenAriaControls) {
