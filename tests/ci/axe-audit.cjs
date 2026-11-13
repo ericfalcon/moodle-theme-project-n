@@ -167,6 +167,24 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
         throw new Error('Project N mobile navigation is not fixed to the viewport bottom.');
     }
 
+    await page.waitForFunction(() => {
+        const menus = [...document.querySelectorAll('nav.moremenu')];
+        return menus.every(menu => menu.getAttribute('aria-label')?.trim() || menu.getAttribute('aria-labelledby'));
+    }, null, { timeout: 5000 });
+
+    const ariaRepairs = await page.evaluate(() => ({
+        unnamedMoremenus: [...document.querySelectorAll('nav.moremenu')]
+            .filter(menu => !menu.getAttribute('aria-label')?.trim() && !menu.getAttribute('aria-labelledby'))
+            .length,
+        invalidAriaHidden: document.querySelectorAll('[aria-hidden="1"]').length,
+        brokenAriaControls: [...document.querySelectorAll('[aria-controls]')].filter(element =>
+            element.getAttribute('aria-controls').split(/\\s+/).some(id => !document.getElementById(id))
+        ).length,
+    }));
+    if (ariaRepairs.unnamedMoremenus || ariaRepairs.invalidAriaHidden || ariaRepairs.brokenAriaControls) {
+        throw new Error('Project N ARIA repairs are incomplete on ' + pageName + ': ' + JSON.stringify(ariaRepairs));
+    }
+
     const userMenuToggle = page.locator('#user-menu-toggle').first();
     if (await userMenuToggle.count() !== 1) {
         throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
