@@ -6,7 +6,7 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-namespace theme_projectn\\output;
+namespace theme_projectn\output;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -27,11 +27,11 @@ class global_navigation {
     public static function get_template_context(): array {
         global $PAGE, $USER;
 
-        $currentpath = $PAGE->url instanceof \\moodle_url ? $PAGE->url->get_path() : '';
-        $homeurl = new \\moodle_url('/');
-        $coursesurl = new \\moodle_url('/my/courses.php');
-        $calendarurl = new \\moodle_url('/calendar/view.php');
-        $profileurl = new \\moodle_url('/user/profile.php', ['id' => $USER->id]);
+        $currentpath = $PAGE->url instanceof \moodle_url ? $PAGE->url->get_path() : '';
+        $homeurl = new \moodle_url('/');
+        $coursesurl = new \moodle_url('/my/courses.php');
+        $calendarurl = new \moodle_url('/calendar/view.php');
+        $profileurl = new \moodle_url('/user/profile.php', ['id' => $USER->id]);
 
         // moodle_url stores the site-root path as an empty string and may retain
         // a trailing slash for directory URLs. Normalise before comparing paths.
@@ -42,8 +42,8 @@ class global_navigation {
         $currentpath = $normalisepath($currentpath);
         $homepath = $normalisepath($homeurl->get_path());
         $dashboardpaths = [
-            $normalisepath((new \\moodle_url('/my/'))->get_path()),
-            $normalisepath((new \\moodle_url('/my/index.php'))->get_path()),
+            $normalisepath((new \moodle_url('/my/'))->get_path()),
+            $normalisepath((new \moodle_url('/my/index.php'))->get_path()),
         ];
 
         // Treat the personal dashboard as the user's home workspace as well.
