@@ -142,6 +142,27 @@ async function main() {
         } else {
             console.log('axe-core: no Project N/theme violations. ' + platformCoreExclusions.length + ' known platform-core violation instance(s) are reported separately.');
         }
+    } catch (error) {
+        // Preserve the partial axe report when a browser interaction aborts the run.
+        // Without this, only screenshots survive and the violations already collected
+        // before the failing interaction cannot be inspected.
+        const partialReport = {
+            platform: platform,
+            version: version,
+            baseUrl: baseUrl,
+            generatedAt: new Date().toISOString(),
+            viewportWidths: [320, 390, 768, 1280],
+            tags: tags,
+            results: results,
+            blockingViolations: blockingViolations,
+            platformCoreExclusions: platformCoreExclusions,
+            fatalError: error.message,
+        };
+        fs.writeFileSync(
+            path.join(outputDirectory, 'axe-' + platform.toLowerCase() + '-' + version + '-partial.json'),
+            JSON.stringify(partialReport, null, 2),
+        );
+        throw error;
     } finally {
         await browser.close();
     }
@@ -190,6 +211,24 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
         throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
     }
 
+    // Boost loads its Bootstrap integration asynchronously from the native drawers
+    // template. DOMContentLoaded and the ARIA repair hook do not guarantee that the
+    // dropdown data API is ready. Wait for both native AMD modules before interacting.
+    await page.waitForFunction(() => {
+        const requirejs = window.requirejs;
+        return Boolean(requirejs && requirejs.defined('theme_boost/loader') &&
+            requirejs.defined('core/usermenu'));
+    }, null, { timeout: 15000 }).catch(async () => {
+        const state = await page.evaluate(() => ({
+            boostLoaderDefined: window.requirejs?.defined?.('theme_boost/loader') ?? null,
+            userMenuDefined: window.requirejs?.defined?.('core/usermenu') ?? null,
+            jqueryDefined: window.requirejs?.defined?.('jquery') ?? null,
+            bootstrapDefined: window.requirejs?.defined?.('bootstrap') ?? null,
+        }));
+        throw new Error('Native Boost/user-menu AMD modules are not ready on ' + pageName +
+            ' at ' + width + ' px: ' + JSON.stringify(state));
+    });
+
     const runtime = await page.evaluate(() => ({
         bootstrapGlobal: typeof window.bootstrap,
         bootstrapDropdownVersion: window.bootstrap?.Dropdown?.VERSION || null,
@@ -197,6 +236,8 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
         jqueryDropdown: typeof window.jQuery?.fn?.dropdown,
         requirejs: typeof window.requirejs,
         userMenuModuleDefined: window.requirejs?.defined?.('core/usermenu') ?? null,
+        boostLoaderDefined: window.requirejs?.defined?.('theme_boost/loader') ?? null,
+        bootstrapModuleDefined: window.requirejs?.defined?.('bootstrap') ?? null,
         scripts: [...document.scripts].map(script => script.src).filter(Boolean),
     }));
     const dropdownEvents = [];
