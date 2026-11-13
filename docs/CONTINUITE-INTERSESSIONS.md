@@ -54,6 +54,13 @@ Règles d'analyse :
 
 Ne pas clore cet inventaire tant que les forks pertinents n'ont pas été identifiés ou que les limites d'accès GitHub ne sont pas explicitement consignées.
 
+**Vérification effectuée le 13 novembre 2026 :** l'action GitHub « lister les dépôts accessibles » a retourné 32 dépôts du compte `ericfalcon`. Parmi eux, les seuls dépôts explicitement identifiés comme thèmes sont :
+- `ericfalcon/moodle-theme_epure` : thème Épure indépendant ;
+- `ericfalcon/moodle-theme-iomad` : ancien dépôt contenant `theme/epure`, d'après son README ;
+- `ericfalcon/moodle-theme-project-n` : dépôt cible.
+
+Aucun autre fork de thème Moodle distinct n'apparaît dans cette liste accessible. En revanche, plusieurs dépôts de formats de cours existent (`moodle-format_tiles`, `moodle-format_flexsections`, `moodle-format_remuiformat`, `moodle-format_trail`) : ce ne sont pas des thèmes, mais leurs DOM/CSS peuvent avoir des effets sur la présentation des cours et ils méritent une analyse séparée dans P2.2. Cette vérification ne prouve pas l'absence d'autres dépôts privés ou non accessibles par la connexion GitHub active. Ne pas les confondre avec les forks de thèmes recherchés.
+
 ## 4. Principes techniques non négociables
 
 - Thème Moodle-first, compatible Iomad ; Boost comme parent.
@@ -76,6 +83,14 @@ Ne pas clore cet inventaire tant que les forks pertinents n'ont pas été identi
 - Ne jamais annoncer « tous les tests passent » tant que tous les jobs requis sont terminés avec succès.
 
 ## 6. État de reprise — 13 novembre 2026
+
+**Mise à jour après diagnostic CI :**
+- Dernier commit de code connu : `fb980051188b982eca7b286299f9fee65a565b10` sur `feature/p2-learner-workspace`. Revalider le SHA sur GitHub avant toute action.
+- Le run précédent `43422808668` (SHA `da284fd...`) a bien terminé avec des échecs navigateur : PHPUnit réussi sur les quatre plateformes ; l'étape « Run axe-core browser audit » a échoué sur Moodle 4.5, Moodle 5.3 et Iomad 4.5 ; Iomad 5.2 a été annulé. L'échec réel est l'ouverture du menu utilisateur natif, pas une erreur PHPUnit.
+- Le run `43423643084` sur `ac292f8...` reproduit les échecs Moodle 4.5 et 5.3 ; Iomad 4.5 et Iomad 5.2 étaient encore en cours lors de la dernière consultation. Ne pas le considérer comme validé.
+- Les captures `axe-Moodle-4.5` et `axe-Moodle-5.3` de `43422808668` contiennent des captures d'écran des violations relevées avant l'échec du menu, mais aucun rapport JSON complet n'a été conservé : le script s'arrêtait avant l'écriture du rapport.
+- Correctif du script de test committé : `fb980051188b982eca7b286299f9fee65a565b10`. Il attend maintenant les modules AMD natifs `theme_boost/loader` et `core/usermenu` avant de cliquer, et conserve un rapport JSON partiel en cas d'exception. Ce changement améliore le diagnostic ; il ne constitue pas encore une correction du menu.
+- Runs sur le SHA courant à suivre : qualité `43424395068`, plateforme/accessibilité `43424395033`.
 
 - Branche de travail connue : `feature/p2-learner-workspace`.
 - PR connue : [#4](https://github.com/ericfalcon/moodle-theme-project-n/pull/4).
