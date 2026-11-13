@@ -173,3 +173,27 @@ Sur les écrans de moins de 768 CSS px, la barre est fixe en bas, avec cibles ta
 Le menu utilisateur natif Boost est conservé : Project N ne surcharge ni `core/user_menu` ni `navbar.mustache`. Les templates Moodle 4.5 et 5.3 utilisent des attributs Bootstrap différents (`data-toggle` / `data-bs-toggle`) et chargent tous deux le module AMD `core/usermenu`. Le test Playwright vérifie désormais, sur les pages auditées et à chaque largeur 320/390/768/1280, que le clic ouvre réellement `#user-action-menu`. En cas d'échec, le rapport fournit le HTML du déclencheur et du menu pour identifier la cause avant tout correctif spécifique.
 
 **État :** barre basse implémentée dans le code ; tests PHPUnit et navigateur ajoutés. La fonctionnalité n'est pas déclarée validée tant que les tests de la tête courante ne sont pas terminés sur Moodle 4.5/5.3 et Iomad 4.5/5.2. Le défaut signalé sur le menu utilisateur reste à reproduire dans la CI avant de choisir un correctif.
+
+
+## 11. Réutilisation des correctifs d'accessibilité d'Épure — 13 novembre 2026
+
+Le dépôt de référence est `ericfalcon/moodle-theme_epure`, branche `main`, version 1.17.0 au moment de l'examen. Son pré-audit `docs/Pré-audit-d’accessibilité.md` recense les défauts observés sur les pages Moodle et Iomad, les critères WCAG/RGAA concernés, les correctifs apportés et les limites qui restent du ressort du cœur ou des contenus pédagogiques.
+
+Le module `amd/src/aria_repair.js` d'Épure est porté dans Project N sous le nom `theme_projectn/aria_repair`, avec son fichier AMD compilé. Il traite les défauts de sémantique suivants, sans remplacer les composants ni leurs interactions natives :
+- normalisation de `aria-hidden="1"` en valeur ARIA booléenne valide ;
+- nettoyage des références inexistantes dans `aria-controls` ;
+- nommage distinct des navigations `.moremenu` du site et de la page ;
+- retrait du parcours clavier du bouton « Effacer mon choix » tant qu'il est masqué ;
+- masquage aux technologies d'assistance du texte indicatif « Aucune sélection » dans une listebox d'autocomplétion vide ;
+- rôle `separator` et valeur `aria-valuenow` pour la poignée de redimensionnement TinyMCE qui en est dépourvue.
+
+Le renderer Project N charge le module via `full_header()`. Les chaînes « Menu du site » et « Menu de la page » sont disponibles en français et en anglais. L'audit Playwright contrôle les noms des navigations, les valeurs `aria-hidden` et les références `aria-controls` sur les pages et les quatre largeurs testées.
+
+**Limite importante :** ce module ne répare pas le fonctionnement du menu utilisateur. Épure ne surcharge pas non plus le template natif `core/user_menu` ni le menu Boost pour en corriger l'ouverture ; il conserve l'initialisation native. Le défaut d'ouverture observé dans les tests Project N doit donc être diagnostiqué séparément, à partir des versions exactes de Bootstrap, des attributs de déclenchement et de l'initialisation AMD. Aucun correctif de menu ne doit être déduit du seul portage ARIA.
+
+Références :
+- Épure : `amd/src/aria_repair.js`, commit `89f89631de34abf862127f58af276ca90c75bf38` ;
+- Épure : `docs/Pré-audit-d’accessibilité.md` ;
+- Project N : `amd/src/aria_repair.js`, `amd/build/aria_repair.min.js`, `classes/output/core_renderer.php`.
+
+Les résultats de la CI sur la tête courante restent requis avant de considérer ce portage comme validé sur les quatre plateformes.
