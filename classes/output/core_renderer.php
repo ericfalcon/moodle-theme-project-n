@@ -17,6 +17,25 @@ defined('MOODLE_INTERNAL') || die();
  */
 class core_renderer extends \theme_boost\output\core_renderer {
     /**
+     * Repair known ARIA defects in native Moodle/Iomad components.
+     *
+     * This only adjusts page semantics. Native controls and their JavaScript
+     * behavior remain owned by Moodle and Bootstrap.
+     *
+     * @return string
+     */
+    public function full_header() {
+        $header = parent::full_header();
+        $menus = [
+            'site' => get_string('menusite', 'theme_projectn'),
+            'page' => get_string('menupage', 'theme_projectn'),
+        ];
+        $this->page->requires->js_call_amd('theme_projectn/aria_repair', 'init', [[], $menus]);
+
+        return $header;
+    }
+
+    /**
      * Render the native page content, adding the course dashboard on /my/.
      *
      * The dashboard is prepended inside the main content placeholder, after
