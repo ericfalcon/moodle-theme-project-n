@@ -599,7 +599,7 @@ summary:focus-visible,
         text-decoration: none;
     }
 
-    body {
+    body:has(.projectn-global-navigation) {
         padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px));
     }
 
