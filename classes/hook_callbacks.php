@@ -22,10 +22,10 @@ class hook_callbacks {
      * Moodle remains responsible for contextual navigation, access checks,
      * course navigation, breadcrumbs and administration menus.
      *
-     * @param \\core\\hook\\output\\before_standard_top_of_body_html_generation $hook
+     * @param \core\hook\output\before_standard_top_of_body_html_generation $hook
      */
     public static function before_standard_top_of_body_html_generation(
-        \\core\\hook\\output\\before_standard_top_of_body_html_generation $hook
+        \core\hook\output\before_standard_top_of_body_html_generation $hook
     ): void {
         global $PAGE;
 
@@ -58,7 +58,7 @@ class hook_callbacks {
             return;
         }
 
-        $context = \\theme_projectn\\output\\global_navigation::get_template_context();
+        $context = \theme_projectn\output\global_navigation::get_template_context();
         $html = $hook->renderer->render_from_template('theme_projectn/global_navigation', $context);
 
         // The learner/teacher dashboard must be inserted in the main content,
