@@ -197,3 +197,16 @@ Références :
 - Project N : `amd/src/aria_repair.js`, `amd/build/aria_repair.min.js`, `classes/output/core_renderer.php`.
 
 Les résultats de la CI sur la tête courante restent requis avant de considérer ce portage comme validé sur les quatre plateformes.
+
+
+## 12. Diagnostic du menu utilisateur et correction — 13 novembre 2026
+
+Le run CI `43421421311` a terminé en échec sur les quatre environnements de référence. PHPUnit réussit sur les quatre ; l'étape navigateur échoue avant la production des rapports axe-core, car le menu utilisateur natif ne s'ouvre pas.
+
+La cause est l'override local `templates/core/user_menu.mustache` : il imposait `data-bs-toggle` et l'API statique `Dropdown.getOrCreateInstance()` de Bootstrap 5 à tous les environnements. Moodle/Iomad 4.5 utilisent Bootstrap 4.6.2, dont le déclencheur est `data-toggle="dropdown"` et dont le module AMD ne fournit pas `getOrCreateInstance()`. L'initialisation personnalisée empêchait donc l'ouverture du menu. En outre, le template natif de chaque version porte déjà les attributs Bootstrap adaptés à sa génération.
+
+**Correction appliquée :** suppression de l'override `templates/core/user_menu.mustache`. Project N revient au template natif Moodle/Boost de la version installée, qui conserve l'identifiant `user-menu-toggle`, les attributs Bootstrap corrects et l'initialisation `core/usermenu`. Le thème ne duplique plus l'initialisation du dropdown.
+
+Commit : `84d864bd7eddf69fee4c64db2011b25752dc4f85` — `Restore native Moodle user menu across Bootstrap generations`.
+
+**Validation attendue :** nouvelle exécution CI sur les quatre environnements ; vérifier l'ouverture et la fermeture du menu, l'état `aria-expanded`, les sous-menus, puis obtenir les rapports axe-core. Cette correction statique n'est pas encore considérée comme validée tant que ces jobs ne sont pas terminés.
