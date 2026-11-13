@@ -314,3 +314,8 @@ La feuille de route est mise à jour à chaque évolution significative. Chaque 
 ## Mise à jour P2 — 12 novembre 2026
 
 La branche `feature/p2-learner-workspace` est créée depuis le commit `7eab6f880364dc5f689ecaca09cc6b4a7831fb17` de `main`. Le document `docs/P2-ESPACE-APPRENANT.md` fixe les incréments P2.1 à P2.5, les règles de sécurité Moodle, les parcours apprenant, les exigences mobile-first et la matrice minimale de validation. Aucun état fonctionnel nouveau n'est déclaré terminé par cette seule documentation. La prochaine réalisation est P2.2 : analyser les points d'extension de la page de cours Boost/Moodle sur la matrice 4.5–5.3, puis implémenter une adaptation ciblée sans remplacer le moteur natif de format de cours.
+
+
+## Mise à jour navigation mobile — 13 novembre 2026
+
+La branche `feature/p2-learner-workspace` reçoit une première barre de navigation basse à quatre destinations natives (accueil, formations, calendrier, profil), fixe sous 768 CSS px et dans le flux sur les écrans plus larges. Elle prévoit les zones de sécurité mobiles et se masque au focus d'un champ de saisie. Un contrôle Playwright du clic sur le menu utilisateur natif est ajouté sur les pages apprenant/administrateur et aux quatre largeurs de référence. Ces évolutions restent en attente de validation CI sur les quatre environnements ; elles ne clôturent ni P2.2 ni P2.5.
