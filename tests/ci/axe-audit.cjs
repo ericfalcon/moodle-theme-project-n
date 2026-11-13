@@ -172,6 +172,34 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
         throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
     }
 
+    const runtime = await page.evaluate(() => ({
+        bootstrapGlobal: typeof window.bootstrap,
+        bootstrapDropdownVersion: window.bootstrap?.Dropdown?.VERSION || null,
+        jqueryVersion: window.jQuery?.fn?.jquery || null,
+        jqueryDropdown: typeof window.jQuery?.fn?.dropdown,
+        requirejs: typeof window.requirejs,
+        userMenuModuleDefined: window.requirejs?.defined?.('core/usermenu') ?? null,
+        scripts: [...document.scripts].map(script => script.src).filter(Boolean),
+    }));
+    const dropdownEvents = [];
+    await page.evaluate(() => {
+        const toggle = document.querySelector('#user-menu-toggle');
+        const parent = toggle?.closest('.dropdown');
+        if (!parent) {
+            return;
+        }
+        parent.addEventListener('show.bs.dropdown', () => {
+            window.__projectnDropdownEvents = (window.__projectnDropdownEvents || []).concat('native-show');
+        });
+        parent.addEventListener('shown.bs.dropdown', () => {
+            window.__projectnDropdownEvents = (window.__projectnDropdownEvents || []).concat('native-shown');
+        });
+        if (window.jQuery) {
+            window.jQuery(parent).on('show.bs.dropdown shown.bs.dropdown', event => {
+                window.__projectnDropdownEvents = (window.__projectnDropdownEvents || []).concat('jquery-' + event.type);
+            });
+        }
+    });
     await userMenuToggle.click();
     await page.waitForFunction(() => {
         const menu = document.querySelector('#user-action-menu');
@@ -186,10 +214,12 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
             html: element.outerHTML,
             expanded: element.getAttribute('aria-expanded'),
             menu: document.querySelector('#user-action-menu')?.outerHTML || null,
+            menuDisplay: document.querySelector('#user-action-menu') ? getComputedStyle(document.querySelector('#user-action-menu')).display : null,
             dropdown: element.closest('.dropdown')?.outerHTML || null,
+            dropdownEvents: window.__projectnDropdownEvents || [],
         }));
         throw new Error('Native Moodle user menu did not open on ' + pageName + ' at ' + width +
-            ' px. Diagnostic: ' + JSON.stringify(diagnostic));
+            ' px. Runtime: ' + JSON.stringify(runtime) + '. Diagnostic: ' + JSON.stringify(diagnostic));
     });
 
     // Close the menu again so the accessibility audit starts from a stable page state.
