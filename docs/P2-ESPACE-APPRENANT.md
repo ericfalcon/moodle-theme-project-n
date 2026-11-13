@@ -162,3 +162,14 @@ Une surcharge du template wrapper `core_courseformat/local/content/section` ne s
 - Iomad 5.2 — `ericfalcon/iomad@88a9a3e9997916a049048db536048918cbdc1e56` (`IOMAD_502_STABLE`).
 
 Cette analyse est statique. Elle ne démontre pas encore le rendu effectif dans un navigateur, la compatibilité de tous les formats tiers, ni l'accessibilité de la page de cours. Ces points restent des critères de validation P2.2.
+
+
+## 10. Navigation mobile et menu utilisateur — 13 novembre 2026
+
+Une première barre de navigation basse est ajoutée à la navigation globale existante. Elle propose quatre destinations natives : accueil, formations, calendrier et profil. Les liens sont calculés côté serveur avec `moodle_url`; l'entrée courante est signalée par `aria-current="page"`. Le menu ne crée aucun contrôle d'accès : les pages natives restent responsables des autorisations.
+
+Sur les écrans de moins de 768 CSS px, la barre est fixe en bas, avec cibles tactiles d'au moins 44 CSS px, prise en compte de `safe-area-inset-bottom` et espace réservé dans le document. Elle revient dans le flux normal sur tablette et ordinateur. Elle se masque lorsque le focus est placé dans un champ de formulaire afin de ne pas recouvrir le clavier virtuel ou la saisie. Le comportement doit encore être confirmé sur appareils réels et avec lecteurs d'écran.
+
+Le menu utilisateur natif Boost est conservé : Project N ne surcharge ni `core/user_menu` ni `navbar.mustache`. Les templates Moodle 4.5 et 5.3 utilisent des attributs Bootstrap différents (`data-toggle` / `data-bs-toggle`) et chargent tous deux le module AMD `core/usermenu`. Le test Playwright vérifie désormais, sur les pages auditées et à chaque largeur 320/390/768/1280, que le clic ouvre réellement `#user-action-menu`. En cas d'échec, le rapport fournit le HTML du déclencheur et du menu pour identifier la cause avant tout correctif spécifique.
+
+**État :** barre basse implémentée dans le code ; tests PHPUnit et navigateur ajoutés. La fonctionnalité n'est pas déclarée validée tant que les tests de la tête courante ne sont pas terminés sur Moodle 4.5/5.3 et Iomad 4.5/5.2. Le défaut signalé sur le menu utilisateur reste à reproduire dans la CI avant de choisir un correctif.
