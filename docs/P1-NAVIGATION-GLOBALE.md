@@ -135,4 +135,4 @@ Les réparations reprises sont :
 - [ ] Vérifier qu'aucune réparation ne crée de régression clavier ou lecteur d'écran.
 - [ ] Compléter axe-core par des tests clavier et lecteur d'écran ; un passage axe sans violation ne valide pas à lui seul ces comportements.
 
-**Commit d'intégration :** à renseigner après commit. La simple présence du fichier et son chargement demandé ne valent pas validation runtime.
+**Commit d'intégration du callback :** voir le commit de correction syntaxique qui suit. La simple présence du fichier et son chargement demandé ne valent pas validation runtime.
