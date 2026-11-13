@@ -94,6 +94,15 @@ Chaque incrément fournit :
 
 La validation du tableau de bord ne vaut pas validation de la page de cours ni des notifications. Les parcours non couverts restent explicitement « à valider ».
 
+### 7.1 Diagnostic du menu natif et fiabilité de l'audit navigateur — 13 novembre 2026
+
+Le run GitHub Actions `43422808668` a exécuté PHPUnit avec succès sur Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2. Les trois premiers audits navigateur ont ensuite échoué lors du clic sur `#user-menu-toggle` ; Iomad 5.2 a été annulé. Le DOM confirme que Moodle rend le template natif attendu (attribut `data-toggle` sur Bootstrap 4.6, `data-bs-toggle` sur Bootstrap 5), mais le menu ne reçoit pas l'état d'ouverture. La cause précise de l'absence d'initialisation Bootstrap reste à établir.
+
+Le premier script d'audit ne sauvegardait son JSON qu'à la fin de tous les parcours : une exception de menu faisait perdre le rapport détaillé des audits précédents. Le commit `fb980051188b982eca7b286299f9fee65a565b10` corrige cette faiblesse et attend les modules AMD natifs `theme_boost/loader` et `core/usermenu` avant le clic. Le nouveau run `43424395033` doit confirmer si le problème provenait d'une course de chargement ou d'une initialisation réellement absente. **Ne pas déclarer le menu corrigé avant réussite du clic dans les quatre environnements.**
+
+Les captures d'écran précédentes montrent aussi des violations `label-content-name-mismatch` détectées avant l'échec du menu. Elles doivent être examinées dans les rapports JSON partiels du nouveau run et attribuées précisément à un composant Project N ou Moodle/Iomad natif avant toute correction ou exclusion.
+
+
 ## 8. Suivi des incréments
 
 | Incrément | État initial | Critère de clôture |
