@@ -59,7 +59,8 @@ async function main() {
             }
             for (const width of [320, 390, 768, 1280]) {
                 await page.setViewportSize({ width: width, height: 844 });
-                if (target.name === 'dashboard' && platform === 'Moodle' && version === '5.3') {
+                await verifyNavigationAndUserMenu(page, width, target.name);
+                if (target.name === 'dashboard' && platform === 'Moodle' && version === '5.3')
                     await waitForMoodle53TimelineReady(page);
                 }
                 await auditPage(page, target.name, width, results, blockingViolations, platformCoreExclusions);
@@ -100,7 +101,8 @@ async function main() {
                 }
                 for (const width of [320, 390, 768, 1280]) {
                     await learnerPage.setViewportSize({ width: width, height: 844 });
-                    if (target.name === 'learner-dashboard' && platform === 'Moodle' && version === '5.3') {
+                    await verifyNavigationAndUserMenu(learnerPage, width, target.name);
+                    if (target.name === 'learner-dashboard' && platform === 'Moodle' && version === '5.3')
                         await waitForMoodle53TimelineReady(learnerPage);
                     }
                     await auditPage(learnerPage, target.name, width, results, blockingViolations, platformCoreExclusions);
@@ -143,6 +145,55 @@ async function main() {
     } finally {
         await browser.close();
     }
+}
+
+async function verifyNavigationAndUserMenu(page, width, pageName) {
+    const navigation = page.locator('.projectn-global-navigation');
+    if (await navigation.count() !== 1) {
+        throw new Error('Project N global navigation is missing or duplicated on ' + pageName + '.');
+    }
+
+    const navigationLinks = navigation.locator('.projectn-global-navigation__link');
+    if (await navigationLinks.count() !== 4) {
+        throw new Error('Project N mobile toolbar must expose four destinations on ' + pageName + '.');
+    }
+
+    const bounds = await navigation.boundingBox();
+    if (!bounds || bounds.x < 0 || bounds.x + bounds.width > width + 1) {
+        throw new Error('Project N navigation exceeds the viewport on ' + pageName + ' at ' + width + ' px.');
+    }
+
+    if (width < 768 && (await navigation.evaluate(element => getComputedStyle(element).position)) !== 'fixed') {
+        throw new Error('Project N mobile navigation is not fixed to the viewport bottom.');
+    }
+
+    const userMenuToggle = page.locator('#user-menu-toggle').first();
+    if (await userMenuToggle.count() !== 1) {
+        throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
+    }
+
+    await userMenuToggle.click();
+    await page.waitForFunction(() => {
+        const menu = document.querySelector('#user-action-menu');
+        if (!menu) {
+            return false;
+        }
+        const style = getComputedStyle(menu);
+        const rect = menu.getBoundingClientRect();
+        return menu.classList.contains('show') && style.display !== 'none' && rect.width > 0 && rect.height > 0;
+    }, null, { timeout: 5000 }).catch(async () => {
+        const diagnostic = await page.locator('#user-menu-toggle').evaluate(element => ({
+            html: element.outerHTML,
+            expanded: element.getAttribute('aria-expanded'),
+            menu: document.querySelector('#user-action-menu')?.outerHTML || null,
+            dropdown: element.closest('.dropdown')?.outerHTML || null,
+        }));
+        throw new Error('Native Moodle user menu did not open on ' + pageName + ' at ' + width +
+            ' px. Diagnostic: ' + JSON.stringify(diagnostic));
+    });
+
+    // Close the menu again so the accessibility audit starts from a stable page state.
+    await userMenuToggle.click();
 }
 
 async function waitForMoodle53TimelineReady(page) {
