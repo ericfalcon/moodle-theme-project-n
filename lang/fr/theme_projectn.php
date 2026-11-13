@@ -15,6 +15,7 @@ $string['secondarynavigation'] = 'Navigation secondaire de Moodle';
 $string['navigationlandmark'] = 'Navigation Moodle : {$a}';
 $string['home'] = 'Accueil';
 $string['courses'] = 'Formations';
+$string['calendar'] = 'Calendrier';
 
 $string['learnerdashboardheading'] = 'Mes formations en tant qu’apprenant';
 $string['learnerdashboarddescription'] = 'Retrouvez les formations auxquelles vous participez en tant qu’apprenant.';
