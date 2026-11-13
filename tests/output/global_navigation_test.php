@@ -93,13 +93,13 @@ final class global_navigation_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
-        $PAGE->set_url(new \\moodle_url('/calendar/view.php'));
+        $PAGE->set_url(new \moodle_url('/calendar/view.php'));
 
         $context = global_navigation::get_template_context();
 
         $this->assertCount(4, $context['items']);
-        $this->assertSame((new \\moodle_url('/calendar/view.php'))->out(false), $context['items'][2]['url']);
+        $this->assertSame((new \moodle_url('/calendar/view.php'))->out(false), $context['items'][2]['url']);
         $this->assertTrue($context['items'][2]['current']);
-        $this->assertSame((new \\moodle_url('/user/profile.php', ['id' => $USER->id]))->out(false), $context['items'][3]['url']);
+        $this->assertSame((new \moodle_url('/user/profile.php', ['id' => $USER->id]))->out(false), $context['items'][3]['url']);
     }
 }
