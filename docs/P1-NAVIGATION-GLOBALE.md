@@ -83,3 +83,19 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 ## 6. Tableau de bord apprenant et enseignant
 
 Le composant est maintenant inséré dans la zone de contenu principale par le renderer Project N, qui étend le renderer Boost et surcharge uniquement `main_content()`. L'insertion est limitée aux pages personnelles `/my/` et `/my/index.php`, pour les utilisateurs connectés non invités. Le rendu natif est conservé par appel à `parent::main_content()`. Le fournisseur classe les cours inscrits dans deux sections selon les rôles et capacités effectifs au niveau des cours : un même utilisateur peut donc avoir des cours dans les deux sections. Le hook pré-layout n'est pas utilisé pour cette insertion. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le rendu doit encore être contrôlé en installation réelle ; les tests ne sont pas exécutés.
+
+
+## 7. Correctif du menu utilisateur (13 novembre 2026)
+
+La surcharge `templates/core/user_menu.mustache` utilisait un lien `href="#"` et ne chargeait explicitement que `core/usermenu`. Or ce module gère le carrousel des sous-menus ; il ne constitue pas à lui seul le contrat d'initialisation du déclencheur Bootstrap Dropdown.
+
+Correctif appliqué sur `feature/p2-learner-workspace` :
+- remplacement du lien par un bouton natif `type="button"`, sans navigation parasite vers `#` ;
+- ajout de `aria-expanded="false"` pour exposer l'état initial du menu ;
+- chargement explicite de `theme_boost/bootstrap/dropdown` avant `core/usermenu` ;
+- création/récupération explicite de l'instance Bootstrap avec `Dropdown.getOrCreateInstance()` ;
+- conservation du module `core/usermenu` pour le focus et le carrousel des sous-menus natifs.
+
+**Commit :** `dddb38c46b78e61d3fca7ca3ee38fc948b1b58f4`.
+
+**Validation runtime à confirmer :** ouverture/fermeture au clic et au clavier (Entrée, Espace, Échap), fermeture par clic extérieur, navigation des sous-menus, absence d'erreur JavaScript et tests sur Moodle 4.5/5.3 et Iomad 4.5/5.2. Le correctif est commité mais ne doit pas être considéré comme validé en runtime avant le résultat de la CI et un contrôle navigateur.
