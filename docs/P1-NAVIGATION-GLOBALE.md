@@ -83,3 +83,19 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 ## 6. Tableau de bord apprenant et enseignant
 
 Le composant est maintenant inséré dans la zone de contenu principale par le renderer Project N, qui étend le renderer Boost et surcharge uniquement `main_content()`. L'insertion est limitée aux pages personnelles `/my/` et `/my/index.php`, pour les utilisateurs connectés non invités. Le rendu natif est conservé par appel à `parent::main_content()`. Le fournisseur classe les cours inscrits dans deux sections selon les rôles et capacités effectifs au niveau des cours : un même utilisateur peut donc avoir des cours dans les deux sections. Le hook pré-layout n'est pas utilisé pour cette insertion. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le rendu doit encore être contrôlé en installation réelle ; les tests ne sont pas exécutés.
+
+
+## 7. Correctif du menu utilisateur (13 novembre 2026)
+
+Le template `templates/core/user_menu.mustache` est une surcharge du template natif Moodle. La comparaison avec le template du cœur Moodle 5.0 a montré que le déclencheur utilisait un lien `href="#"` et dépendait de l'enregistrement global du composant Bootstrap Dropdown, alors que `core/usermenu` ne gère que les événements du carrousel des sous-menus.
+
+Correctif appliqué sur `feature/p1-foundation` :
+- le déclencheur est désormais un véritable bouton `type="button"`, sans navigation parasite vers `#` ;
+- `aria-expanded="false"` expose l'état initial et sera mis à jour par Bootstrap ;
+- le module `theme_boost/bootstrap/dropdown` est chargé explicitement avant l'initialisation du composant ;
+- `Dropdown.getOrCreateInstance()` garantit l'instance du menu ;
+- `core/usermenu` reste chargé pour préserver le fonctionnement natif du carrousel et des sous-menus.
+
+**Commit :** `e041a4fa5d53e1709a50ebacce11c1342fa1e8aa`.
+
+**Validation restante :** la modification est enregistrée dans le dépôt, mais son fonctionnement réel doit encore être confirmé par la CI et par un test navigateur sur Moodle/Iomad. Vérifier ouverture/fermeture au clic et au clavier (Entrée/Espace/Échap), clic extérieur, navigation dans les sous-menus, ainsi que l'absence d'erreur JavaScript. Ne pas déclarer le problème résolu en runtime avant ces contrôles.
