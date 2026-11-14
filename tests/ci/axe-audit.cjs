@@ -210,6 +210,13 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
     if (await userMenuToggle.count() !== 1) {
         throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
     }
+    await page.waitForFunction(() => {
+        const toggle = document.querySelector('#user-menu-toggle');
+        const visibleText = toggle?.querySelector('.userbutton')?.innerText?.replace(/\s+/g, ' ').trim();
+        const accessibleName = toggle?.getAttribute('aria-label') || '';
+        return !visibleText || accessibleName.toLocaleLowerCase().includes(visibleText.toLocaleLowerCase());
+    }, null, { timeout: 5000 });
+
     const userMenuName = await userMenuToggle.evaluate(element => ({
         visibleText: element.querySelector('.userbutton')?.innerText?.replace(/\s+/g, ' ').trim() || '',
         accessibleName: element.getAttribute('aria-label') || '',
