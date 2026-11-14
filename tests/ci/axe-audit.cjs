@@ -210,6 +210,15 @@ async function verifyNavigationAndUserMenu(page, width, pageName) {
     if (await userMenuToggle.count() !== 1) {
         throw new Error('Native Moodle user-menu toggle is missing on ' + pageName + '.');
     }
+    const userMenuName = await userMenuToggle.evaluate(element => ({
+        visibleText: element.querySelector('.userbutton')?.innerText?.replace(/\s+/g, ' ').trim() || '',
+        accessibleName: element.getAttribute('aria-label') || '',
+    }));
+    if (userMenuName.visibleText &&
+        !userMenuName.accessibleName.toLocaleLowerCase().includes(userMenuName.visibleText.toLocaleLowerCase())) {
+        throw new Error('User-menu accessible name omits its visible label on ' + pageName +
+            ' at ' + width + ' px: ' + JSON.stringify(userMenuName));
+    }
 
     // Boost loads its Bootstrap integration asynchronously from the native drawers
     // template. DOMContentLoaded and the ARIA repair hook do not guarantee that the
