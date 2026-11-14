@@ -126,10 +126,29 @@ const resizeHandles = () => document.querySelectorAll('.tox-statusbar__resize-ha
 });
 
 /**
+ * Includes the visible user identity in the accessible name of Moodle's user-menu trigger.
+ *
+ * Moodle supplies a generic aria-label while the visible trigger may show the user's initials or name.
+ * The accessible name must retain that visible text (WCAG 2.5.3).
+ */
+const repairUserMenuName = () => {
+    const toggle = document.querySelector('#user-menu-toggle');
+    const visibleText = toggle?.querySelector('.userbutton')?.innerText?.replace(/\s+/g, ' ').trim();
+    if (!toggle || !visibleText) {
+        return;
+    }
+
+    const currentName = toggle.getAttribute('aria-label') || '';
+    if (!currentName.toLocaleLowerCase().includes(visibleText.toLocaleLowerCase())) {
+        toggle.setAttribute('aria-label', (visibleText + ' ' + currentName).trim());
+    }
+};
+/**
  * The repairs of what Moodle draws after the page: now, and each time something is added to the page.
  */
 const later = () => {
     const run = () => {
+        repairUserMenuName();
         emptySelections();
         resizeHandles();
     };
@@ -150,10 +169,12 @@ const later = () => {
 export const init = (names = {}, menus = {site: '', page: ''}) => {
     repair(document, names);
     nameMenus(menus);
+    repairUserMenuName();
     clearChoices();
     later();
     window.addEventListener('load', () => {
         repair(document, names);
         nameMenus(menus);
+        repairUserMenuName();
     });
 };
