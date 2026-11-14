@@ -219,3 +219,16 @@ La cause est l'override local `templates/core/user_menu.mustache` : il imposait 
 Commit : `84d864bd7eddf69fee4c64db2011b25752dc4f85` — `Restore native Moodle user menu across Bootstrap generations`.
 
 **Validation attendue :** nouvelle exécution CI sur les quatre environnements ; vérifier l'ouverture et la fermeture du menu, l'état `aria-expanded`, les sous-menus, puis obtenir les rapports axe-core. Cette correction statique n'est pas encore considérée comme validée tant que ces jobs ne sont pas terminés.
+
+## 7. Correctif du menu utilisateur — 14 novembre 2026
+
+L'audit axe-core du commit `fed645c` a identifié `label-content-name-mismatch` sur `#user-menu-toggle`, sur les cinq parcours et les quatre largeurs. Le nom accessible générique « User menu » ne reprenait pas le texte visible du bouton (initiales ou nom du compte).
+
+Correctifs appliqués sur `feature/p2-learner-workspace` :
+- `amd/src/aria_repair.js` inclut désormais le texte visible de `.userbutton` dans le `aria-label` existant du déclencheur, sans remplacer le libellé traduit ;
+- `amd/build/aria_repair.min.js` est synchronisé avec le module source ;
+- la double initialisation du module depuis `core_renderer::full_header()` et le hook de sortie a été supprimée ; le hook reste le point d'entrée unique ;
+- le test Playwright vérifie que le nom accessible contient le texte visible et attend la réparation avant l'assertion ;
+- la version de développement est passée à `2026111400`.
+
+**État de validation : non confirmé.** Le run antérieur `43424584187` exécutait bien PHPUnit sur les quatre plateformes, mais axe-core échouait sur le défaut du menu. Les runs déclenchés après le correctif (`43639565637`, `43639724706` et leurs contrôles qualité) se sont terminés avant la première étape de chaque job : aucun log d'exécution ou résultat PHPUnit/axe-core n'est disponible. Le correctif est donc présent dans la branche, mais il ne doit pas être déclaré validé tant qu'une exécution réelle de la matrice n'a pas terminé.
