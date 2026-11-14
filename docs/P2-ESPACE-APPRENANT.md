@@ -232,3 +232,42 @@ Correctifs appliqués sur `feature/p2-learner-workspace` :
 - la version de développement est passée à `2026111400`.
 
 **État de validation : non confirmé.** Le run antérieur `43424584187` exécutait bien PHPUnit sur les quatre plateformes, mais axe-core échouait sur le défaut du menu. Les runs déclenchés après le correctif (`43639565637`, `43639724706` et leurs contrôles qualité) se sont terminés avant la première étape de chaque job : aucun log d'exécution ou résultat PHPUnit/axe-core n'est disponible. Le correctif est donc présent dans la branche, mais il ne doit pas être déclaré validé tant qu'une exécution réelle de la matrice n'a pas terminé.
+
+## 8. Formats de cours natifs — comparaison Moodle 4.5 / 5.3
+
+Inspection des forks `ericfalcon/moodle`, branches `MOODLE_405_STABLE` et `MOODLE_503_STABLE`, le 14 novembre 2026.
+
+### 8.1 Formats à sections
+
+Le premier style P2.2 cible les structures natives `.course-section`, `.section-item` et `.activity-item`, sans remplacer les templates de format. Les listes `topics`, `weeks` et `ctopics` sont neutralisées visuellement uniquement pour éviter la double présentation des puces ; leur ordre DOM et les contrôles natifs sont conservés.
+
+Les tests doivent vérifier au minimum :
+- format thématique (`topics`) ;
+- format hebdomadaire (`weeks`) ;
+- sections masquées et activités masquées ;
+- sections restreintes par disponibilité, pour un apprenant qui ne remplit pas les conditions puis pour un apprenant qui les remplit ;
+- édition activée, afin de vérifier les menus d'action et le sélecteur d'activité.
+
+Le CSS ne doit jamais rendre visibles des éléments que Moodle ne rend pas visibles au profil courant, ni neutraliser les états d'indisponibilité.
+
+### 8.2 Format activité unique
+
+Le format natif `singleactivity` ne doit pas être traité comme un format à sections ordinaire :
+- sur Moodle 4.5, `format_singleactivity` expose son activité par sa logique interne `get_activity()` et ne possède pas de page de cours classique (`has_view_page() === false`) ;
+- sur Moodle 5.3, la classe implémente en plus `core_courseformat\main_activity_interface` et expose `get_main_activity(): ?\cm_info`. Elle indique également `uses_sections() === false` et `get_sectionnum() === 0`.
+
+Conséquence pour Project N : ne pas ajouter de renderer ou de template spécifique au thème pour ce format. Le format et Moodle doivent conserver la responsabilité de l'activité principale, de la redirection et de ses contrôles d'accès. Les styles `.path-course-view .course-content .course-section` ne doivent pas imposer de structure ni masquer le contenu de l'activité principale.
+
+Test d'intégration à ajouter : créer un cours `singleactivity` configuré avec une activité principale de type Page, l'inscrire à un apprenant, puis vérifier que `/course/view.php?id=…` aboutit au parcours natif attendu sur Moodle 4.5 et 5.3. Contrôler aussi le comportement lorsque l'activité principale est absente ou inaccessible. Ne pas fabriquer artificiellement une page de cours si Moodle redirige vers l'activité.
+
+### 8.3 Différence d'API à ne pas masquer
+
+Le contrat `core_courseformat\main_activity_interface` est présent dans la classe du format activité unique Moodle 5.3 mais pas dans la version 4.5 examinée. Toute détection de l'activité principale dans le thème doit donc passer par les API de format disponibles dans la version installée, et non appeler directement cette interface sur Moodle 4.5.
+
+### 8.4 État
+
+- [x] Comparaison statique des implémentations `singleactivity` Moodle 4.5 et 5.3.
+- [x] Décision de conserver le renderer et la navigation natifs.
+- [ ] Ajouter un scénario d'installation et de parcours `singleactivity` à la CI.
+- [ ] Ajouter les scénarios d'apprenant avec et sans disponibilité de section.
+- [ ] Vérifier les formats supplémentaires éventuellement utilisés par les clients Iomad, sans les supposer présents dans Moodle standard.
