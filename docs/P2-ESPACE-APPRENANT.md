@@ -296,3 +296,16 @@ Le workflow `.github/workflows/platform-test-reusable.yml` exécute ce contrôle
 - les parcours d'édition formateur ne font pas partie de cette validation apprenant.
 
 **État :** le script et le workflow sont enregistrés sur `feature/p2-learner-workspace`. Ils ne sont pas déclarés validés avant la réussite d'une nouvelle exécution CI sur les quatre environnements de référence.
+
+
+## 13. Extension des fixtures apprenant — 15 novembre 2026
+
+La préparation CI est étendue pour créer, sur les installations Moodle/Iomad de référence :
+- deux sections de cours avec restriction de disponibilité par date, l'une dont la condition n'est pas remplie et l'autre dont la condition est remplie ;
+- un cours natif `singleactivity` configuré pour une activité Page principale, inscrit au même compte apprenant.
+
+Le scénario Playwright vérifie que la section et l'activité indisponibles ne sont pas exposées, que la section et l'activité devenues disponibles sont visibles, et que l'accès au cours `singleactivity` redirige vers l'activité Page native attendue. Le contrôle responsive est également rejoué aux largeurs 320, 390, 768 et 1280 CSS px.
+
+La fixture réutilise le modèle de ressource Page même lorsque le cours existe déjà, afin de permettre des réexécutions CI idempotentes. Les restrictions sont enregistrées dans le champ natif `availability` avec une condition `availability_date` ; aucune logique d'accès parallèle n'est ajoutée au thème.
+
+**État :** code ajouté sur `feature/p2-learner-workspace`. Le résultat fonctionnel n'est pas validé avant exécution complète des jobs Moodle 4.5/5.3 et Iomad 4.5/5.2. Le scénario n'a pas encore été exécuté en environnement réel dans cette session.
