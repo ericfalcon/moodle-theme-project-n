@@ -6,6 +6,7 @@ const required = [
     'LEARNER_PASSWORD',
     'LEARNER_COURSE_ID',
     'LEARNER_WEEKLY_COURSE_ID',
+    'LEARNER_SINGLEACTIVITY_COURSE_ID',
 ];
 for (const name of required) {
     if (!process.env[name]) {
@@ -43,6 +44,32 @@ async function main() {
                 visibleActivity: 'Weekly format learner resource',
             },
         ];
+
+        // The singleactivity format deliberately redirects the course URL to its
+        // configured main activity. Do not require a conventional course-content
+        // wrapper: Moodle owns this format's navigation and access behaviour.
+        const singleActivityUrl = new URL('/course/view.php', process.env.BASE_URL);
+        singleActivityUrl.searchParams.set('id', process.env.LEARNER_SINGLEACTIVITY_COURSE_ID);
+        await page.goto(singleActivityUrl.toString(), {waitUntil: 'domcontentloaded'});
+        await page.waitForURL(url => url.pathname === '/mod/page/view.php', {timeout: 15000});
+        if (!(await page.getByText('Native single activity format content for learner testing.', {exact: false}).isVisible())) {
+            throw new Error('The native singleactivity course did not open its configured Page activity.');
+        }
+        for (const width of [320, 390, 768, 1280]) {
+            await page.setViewportSize({width, height: 844});
+            await page.waitForTimeout(100);
+            const dimensions = await page.evaluate(() => ({
+                viewport: document.documentElement.clientWidth,
+                document: document.documentElement.scrollWidth,
+            }));
+            if (dimensions.document > dimensions.viewport + 1) {
+                throw new Error(
+                    'Horizontal page overflow in singleactivity format at ' + width +
+                    'px: ' + JSON.stringify(dimensions),
+                );
+            }
+        }
+        console.log('Learner singleactivity check passed (#' + process.env.LEARNER_SINGLEACTIVITY_COURSE_ID + ').');
 
         for (const course of courses) {
             const url = new URL('/course/view.php', process.env.BASE_URL);
