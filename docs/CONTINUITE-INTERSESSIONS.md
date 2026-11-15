@@ -197,3 +197,16 @@ Cette anomalie ne suffit pas à expliquer les échecs des trois jobs de syntaxe 
 Les workflows de la tête `3a5d6c1a0c51ef0db80fc9bc8311d57f175f839e` sont `43769167853` (plateformes) et `43769167847` (qualité). Pour les 7 jobs en échec, l'API GitHub renvoie `steps: []` ou aucun détail de job ; les logs renvoient `BlobNotFound` et les deux runs n'ont aucun artefact. Il n'y a donc aucune étape PHP, installation Moodle/Iomad, PHPUnit ou Playwright dont l'échec puisse être imputé au code : les jobs ne fournissent aucun indice d'exécution. Cela pointe vers un échec de démarrage/initialisation des jobs GitHub Actions, mais la cause infrastructure exacte n'est pas exposée.
 
 Les jobs en échec ont été relancés. Sur la relance, les quatre jobs plateformes sont déjà retombés en échec avec `steps: []` ; les trois jobs qualité étaient encore `queued` lors de la dernière lecture. Vérifier leur état avant toute conclusion. Ne pas multiplier les modifications de code tant que GitHub ne fournit pas d'étapes ou de logs. La correction PHPUnit 9 reste une mesure de compatibilité préventive, pas une cause démontrée des échecs actuels.
+
+
+## Vérification complémentaire CI — 15 novembre 2026, 22:27 UTC
+
+- **Branche / SHA :** `feature/p2-learner-workspace` / `0d1a5c88b5176d342dbadd32a0b8abe1893719ac`.
+- **PR #4 :** ouverte, draft, non fusionnée, `mergeable:true`.
+- **Nouveaux runs sur le SHA courant :** qualité `43769234522` (run 179), plateformes `43769234551` (run 174). Les deux sont terminés en échec.
+- **Jobs qualité :** PHP 8.1 `132981173692`, PHP 8.2 `132981173923`, PHP 8.3 `132981173943` — tous en échec.
+- **Jobs plateformes :** Iomad 5.2 `132981173913`, Moodle 4.5 `132981174063`, Moodle 5.3 `132981174095`, Iomad 4.5 `132981174190` — tous en échec ; matrice complète ignorée.
+- **Diagnostic :** pour les sept jobs en échec, l'API renvoie un tableau d'étapes vide et le téléchargement de logs renvoie `BlobNotFound` (404). Aucun artefact récupérable. Le problème se reproduit donc sur deux nouveaux runs déclenchés par le SHA final, y compris les jobs PHP de syntaxe indépendants des plateformes.
+- **Inspection statique des workflows :** les deux workflows utilisent `runs-on: ubuntu-latest`, avec des étapes explicites ; aucune erreur YAML manifeste n'a été identifiée lors de cette lecture. Le workflow qualité expose également `workflow_dispatch`, mais aucun outil connecté ne permet ici de le déclencher. Le connecteur ne donne pas accès aux détails d'état des runners GitHub hébergés.
+- **Conclusion prudente :** aucun élément ne permet d'attribuer ces échecs au code PHP, aux tests Moodle ou à axe-core, puisque aucune étape de job n'est exposée. L'hypothèse d'un problème d'exécution/initialisation GitHub Actions reste plausible mais non démontrée. Ne pas multiplier les modifications de code à l'aveugle.
+- **Action suivante :** vérifier dans l'interface Actions GitHub les détails de ces runs (notamment les annotations système et la raison de fin des jobs), puis relancer depuis GitHub si nécessaire. Une fois les logs accessibles, corriger le premier défaut réel. Aucun test n'est validé par ces exécutions et aucune fusion ne doit être faite.
