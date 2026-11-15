@@ -324,3 +324,10 @@ La branche `feature/p2-learner-workspace` reçoit une première barre de navigat
 ## Mise à jour P2 — 15 novembre 2026
 
 Ajout de `tests/ci/learner-course-check.cjs` et de son étape dédiée dans le workflow réutilisable. Le contrôle utilise un véritable compte apprenant inscrit à deux cours (formats `topics` et `weeks`), vérifie l'accès natif, l'activité visible, l'absence d'activité masquée et le reflow horizontal à 320/390/768/1280 CSS px. Voir `docs/P2-ESPACE-APPRENANT.md`, section 12. Cette évolution est codée mais non validée tant que la CI du dernier SHA n'a pas terminé avec succès.
+
+
+## Mise à jour P2.2 — 15 novembre 2026 (en cours)
+
+Les fixtures de CI couvrent maintenant, en plus de `topics` et `weeks` : le format natif `singleactivity` avec redirection vers une activité Page principale, et deux sections à disponibilité conditionnelle (condition de date satisfaite / non satisfaite). Le script Playwright vérifie l'accès apprenant et le reflow aux quatre largeurs de référence.
+
+**Statut :** tests codés, non exécutés/validés sur les environnements de référence après ces derniers commits. La PR #4 reste en brouillon ; la CI précédemment observée sur la tête antérieure était en échec avec journaux indisponibles. P2.2 n'est pas terminée.
