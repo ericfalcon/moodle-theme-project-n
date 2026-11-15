@@ -157,3 +157,18 @@ Les commits de ce lot sont `107363e`, `d01c819`, `a554d1f` et `2de9d12` (prépar
 3. Corriger les défauts révélés, puis vérifier les quatre jobs de référence et les rapports axe-core.
 4. Si les journaux restent indisponibles, ajouter un diagnostic explicite au workflow sans désactiver les contrôles.
 5. Ne fusionner dans `main` qu'après réussite réelle de tous les jobs requis et revue des parcours P2.2.
+
+
+## État après ajout des scénarios P2.2 — 15 novembre 2026, 18:43 UTC
+
+Tête de PR #4 vérifiée : `7ad63f21ab690410da3a1de49fedf3c373111530`. PR ouverte, brouillon, non fusionnée, base `main`, `mergeable:true`, `merged:false`.
+
+Les commits de cette reprise couvrent : `107363e` (fixtures disponibilité + singleactivity), `d01c819` (parcours Playwright singleactivity), `a554d1f` (assertions disponibilité remplie/non remplie), `2de9d12` (idempotence du modèle Page), `df064d1`, `a96abfc`, `35d0924` (documentation), `f86aa10` et `7ad63f2` (diagnostics syntaxe PHP).
+
+### CI du SHA courant
+
+GitHub Actions a créé les runs : qualité `43748266551` (run 171), échec sur PHP 8.1, 8.2 et 8.3 ; plateformes `43748266547` (run 166), échec sur Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2 ; matrice complète ignorée.
+
+Les résumés d'étapes sont vides via l'API connectée. Le téléchargement des journaux renvoie `BlobNotFound` pour chaque job ; aucun artefact de diagnostic PHP n'est retourné. La cause des échecs n'est donc pas démontrée. Ne pas conclure à un défaut de syntaxe du code sans le journal correspondant.
+
+**Décision :** ne pas fusionner. Les nouveaux scénarios sont codés, mais leur exécution réelle n'est pas prouvée. Prochaine action : récupérer les logs/artefacts directement dans l'interface GitHub Actions ou réexécuter les jobs lorsque le stockage des logs est disponible ; corriger la première étape en échec puis relancer la matrice.
