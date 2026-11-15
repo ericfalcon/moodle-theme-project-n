@@ -198,10 +198,6 @@ jobs:
         if: inputs.run_axe
         env:
           BASE_URL: ${{ env.MOODLE_URL }}
-          LEARNER_USERNAME: ${{ env.LEARNER_USERNAME }}
-          LEARNER_PASSWORD: ${{ env.LEARNER_PASSWORD }}
-          LEARNER_COURSE_ID: ${{ env.LEARNER_COURSE_ID }}
-          LEARNER_WEEKLY_COURSE_ID: ${{ env.LEARNER_WEEKLY_COURSE_ID }}
         run: node tests/ci/learner-course-check.cjs
 
       - name: Run axe-core browser audit
