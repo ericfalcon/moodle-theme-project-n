@@ -309,3 +309,10 @@ Le scénario Playwright vérifie que la section et l'activité indisponibles ne 
 La fixture réutilise le modèle de ressource Page même lorsque le cours existe déjà, afin de permettre des réexécutions CI idempotentes. Les restrictions sont enregistrées dans le champ natif `availability` avec une condition `availability_date` ; aucune logique d'accès parallèle n'est ajoutée au thème.
 
 **État :** code ajouté sur `feature/p2-learner-workspace`. Le résultat fonctionnel n'est pas validé avant exécution complète des jobs Moodle 4.5/5.3 et Iomad 4.5/5.2. Le scénario n'a pas encore été exécuté en environnement réel dans cette session.
+
+
+## 14. Résultat CI après ajout des scénarios — 15 novembre 2026
+
+La tête `7ad63f21ab690410da3a1de49fedf3c373111530` a déclenché les runs qualité `43748266551` et plateformes `43748266547`. Les trois jobs PHP (8.1/8.2/8.3) et les quatre environnements de référence (Moodle 4.5/5.3, Iomad 4.5/5.2) sont en échec. Les journaux renvoient `BlobNotFound` et les étapes détaillées ne sont pas accessibles via l’API disponible. Aucun diagnostic fiable de la cause ne peut être posé.
+
+Le contrôle syntaxe PHP conserve désormais un journal `php-syntax.log` en artefact même en cas d'échec ; aucun artefact n'est remonté pour ce run. Les scénarios `singleactivity` et disponibilité sont donc codés mais non validés. Ne pas fusionner tant que des journaux exploitables et une matrice verte ne sont pas obtenus.
