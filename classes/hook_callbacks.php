@@ -17,7 +17,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 class hook_callbacks {
     /**
-     * Add the global navigation before the main page layout.
+     * Add global accessibility repairs and the global navigation.
      *
      * Moodle remains responsible for contextual navigation, access checks,
      * course navigation, breadcrumbs and administration menus.
@@ -32,6 +32,19 @@ class hook_callbacks {
         // A theme hook can be dispatched while another theme is active.
         if ($PAGE->theme->name !== 'projectn') {
             return;
+        }
+
+        // Apply the shared ARIA repairs on every Project N page, including
+        // guest-facing pages. The module only changes known, narrowly scoped
+        // Moodle/IOMAD markup and uses translated names for the two moremenus.
+        if (!during_initial_install()) {
+            $PAGE->requires->js_call_amd('theme_projectn/aria_repair', 'init', [
+                [],
+                [
+                    'site' => get_string('menusite', 'theme_projectn'),
+                    'page' => get_string('menupage', 'theme_projectn'),
+                ],
+            ]);
         }
 
         // The global navigation is intended for authenticated, non-guest users.

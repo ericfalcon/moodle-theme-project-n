@@ -216,22 +216,82 @@ final class learner_dashboard_test extends \advanced_testcase {
         $studentrole = reset($studentroles);
         $this->getDataGenerator()->enrol_user($user->id, $course->id, $studentrole->id);
 
-        $this->getDataGenerator()->create_module('page', [
+        $firstpage = $this->getDataGenerator()->create_module('page', [
             'course' => $course->id,
-            'name' => 'Lire le support',
+            'name' => 'Lire le support initial',
             'completion' => COMPLETION_TRACKING_AUTOMATIC,
             'completionview' => 1,
         ]);
+        $secondpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Consulter le second support',
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+        $hiddenpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Support masqué',
+            'visible' => 0,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+        $restrictedpage = $this->getDataGenerator()->create_module('page', [
+            'course' => $course->id,
+            'name' => 'Support soumis à une restriction',
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => 1,
+        ]);
+
+        // Make the fourth activity unavailable until a future date. The
+        // availability API must hide it from this learner and the dashboard.
+        $restrictedcm = get_coursemodule_from_instance('page', $restrictedpage->id, $course->id);
+        global $DB;
+        $availability = [
+            'op' => '&',
+            'c' => [[
+                'type' => 'date',
+                'd' => '>=',
+                't' => time() + DAYSECS,
+            ]],
+            'showc' => [false],
+        ];
+        $DB->set_field(
+            'course_modules',
+            'availability',
+            json_encode($availability),
+            ['id' => $restrictedcm->id]
+        );
+        rebuild_course_cache($course->id, true);
+
+        // Mark the first activity complete to verify that the dashboard
+        // calculates a partial percentage and points to the next incomplete one.
+        $completioninfo = new \completion_info($course);
+        $firstcm = get_coursemodule_from_instance('page', $firstpage->id, $course->id);
+        $completioninfo->set_module_viewed($firstcm, $user->id);
 
         $context = learner_dashboard::get_template_context();
 
         $this->assertTrue($context['haslearnercourses']);
         $this->assertTrue($context['learnercourses'][0]['hasprogress']);
-        $this->assertSame(0, $context['learnercourses'][0]['progresspercent']);
+        $this->assertSame(50, $context['learnercourses'][0]['progresspercent']);
         $this->assertTrue($context['learnercourses'][0]['hasnextactivity']);
-        $this->assertSame('Lire le support', $context['learnercourses'][0]['nextactivityname']);
-        $this->assertStringContainsString(
-            '/mod/page/view.php?id=',
+        $this->assertSame(
+            'Consulter le second support',
+            $context['learnercourses'][0]['nextactivityname']
+        );
+        $secondcm = get_coursemodule_from_instance('page', $secondpage->id, $course->id);
+        $hiddenmodinfo = get_fast_modinfo($course, $user->id)->get_cm(
+            get_coursemodule_from_instance('page', $hiddenpage->id, $course->id)->id
+        );
+
+        // Hidden activities must not affect the learner's percentage or become
+        // the next activity, even though they have completion tracking enabled.
+        $this->assertFalse($hiddenmodinfo->uservisible);
+        $restrictedmodinfo = get_fast_modinfo($course, $user->id)->get_cm($restrictedcm->id);
+        $this->assertFalse($restrictedmodinfo->uservisible);
+        $this->assertSame(50, $context['learnercourses'][0]['progresspercent']);
+        $this->assertSame(
+            get_fast_modinfo($course, $user->id)->get_cm($secondcm->id)->url->out(false),
             $context['learnercourses'][0]['nextactivityurl']
         );
     }

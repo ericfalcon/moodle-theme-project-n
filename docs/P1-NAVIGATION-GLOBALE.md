@@ -83,3 +83,56 @@ Aucune de ces validations runtime n'est déclarée comme effectuée par le seul 
 ## 6. Tableau de bord apprenant et enseignant
 
 Le composant est maintenant inséré dans la zone de contenu principale par le renderer Project N, qui étend le renderer Boost et surcharge uniquement `main_content()`. L'insertion est limitée aux pages personnelles `/my/` et `/my/index.php`, pour les utilisateurs connectés non invités. Le rendu natif est conservé par appel à `parent::main_content()`. Le fournisseur classe les cours inscrits dans deux sections selon les rôles et capacités effectifs au niveau des cours : un même utilisateur peut donc avoir des cours dans les deux sections. Le hook pré-layout n'est pas utilisé pour cette insertion. Voir [P1-ESPACE-APPRENANT.md](P1-ESPACE-APPRENANT.md). Le rendu doit encore être contrôlé en installation réelle ; les tests ne sont pas exécutés.
+
+
+## 7. Correctif du menu utilisateur (13 novembre 2026)
+
+La surcharge `templates/core/user_menu.mustache` utilisait un lien `href="#"` et ne chargeait explicitement que `core/usermenu`. Or ce module gère le carrousel des sous-menus ; il ne constitue pas à lui seul le contrat d'initialisation du déclencheur Bootstrap Dropdown.
+
+Correctif appliqué sur `feature/p2-learner-workspace` :
+- remplacement du lien par un bouton natif `type="button"`, sans navigation parasite vers `#` ;
+- ajout de `aria-expanded="false"` pour exposer l'état initial du menu ;
+- chargement explicite de `theme_boost/bootstrap/dropdown` avant `core/usermenu` ;
+- création/récupération explicite de l'instance Bootstrap avec `Dropdown.getOrCreateInstance()` ;
+- conservation du module `core/usermenu` pour le focus et le carrousel des sous-menus natifs.
+
+**Commit :** `dddb38c46b78e61d3fca7ca3ee38fc948b1b58f4`.
+
+**Validation runtime à confirmer :** ouverture/fermeture au clic et au clavier (Entrée, Espace, Échap), fermeture par clic extérieur, navigation des sous-menus, absence d'erreur JavaScript et tests sur Moodle 4.5/5.3 et Iomad 4.5/5.2. Le correctif est commité mais ne doit pas être considéré comme validé en runtime avant le résultat de la CI et un contrôle navigateur.
+
+
+## 8. Réutilisation du module de réparations ARIA d'Épure
+
+Le module `amd/src/aria_repair.js` était déjà présent dans la branche Project N, avec son artefact compilé `amd/build/aria_repair.min.js`, mais il n'était pas appelé par le thème. Il reprend le correctif éprouvé dans Épure ([source Épure](https://github.com/ericfalcon/moodle-theme_epure/blob/main/amd/src/aria_repair.js)).
+
+### Intégration
+
+Depuis le 13 novembre 2026, `hook_callbacks::before_standard_top_of_body_html_generation()` demande son initialisation AMD sur chaque page où Project N est le thème actif, avant le retour anticipé réservé aux utilisateurs non connectés. Le module reçoit les libellés traduits de navigation du site et de la page (`menusite` et `menupage`), déjà définis dans les packs français et anglais.
+
+Les réparations reprises sont :
+- normalisation de `aria-hidden="1"` en `aria-hidden="true"` ;
+- nettoyage des références inexistantes dans `aria-controls` ;
+- ajout d'un nom aux champs Iomad explicitement fournis sans nom accessible ;
+- distinction des noms accessibles des deux navigations `nav.moremenu` ;
+- retrait du parcours clavier du contrôle « Clear my choice » tant qu'il est masqué ;
+- masquage aux technologies d'assistance du texte indicatif « No selection » dans une listbox autocomplete vide ;
+- ajout du rôle et de la valeur du séparateur de redimensionnement TinyMCE lorsque la version utilisée ne les fournit pas.
+
+### Garde-fous et limites
+
+- Le module ne remplace pas les contrôles natifs Moodle/Bootstrap et ne doit pas être utilisé pour compenser un menu qui ne s'ouvre pas.
+- La liste des noms de champs Iomad est volontairement transmise vide (`[]`) : aucun champ n'est renommé sans inventaire vérifié du HTML des versions Iomad 4.5 à 5.2. Les noms de champs devront être ajoutés uniquement avec un sélecteur stable et un libellé traduit.
+- Les réparations sont locales au DOM rendu ; elles ne modifient ni les données Moodle/Iomad ni les templates du cœur.
+- Le module AMD compilé doit rester synchronisé avec sa source lors de toute modification future.
+
+### Validation à effectuer
+
+- [ ] Vérifier que le module AMD est demandé et chargé sur une page Project N, y compris avant connexion.
+- [ ] Vérifier les deux noms de navigation en français et en anglais.
+- [ ] Vérifier les réparations sur Moodle 4.5 et 5.3, Iomad 4.5 et 5.2.
+- [ ] Vérifier les champs Iomad sans label dans les formulaires réellement présents ; ne pas ajouter de mapping avant cette inspection.
+- [ ] Contrôler les questions multichoix, autocomplete et TinyMCE, y compris après insertion dynamique de contenu.
+- [ ] Vérifier qu'aucune réparation ne crée de régression clavier ou lecteur d'écran.
+- [ ] Compléter axe-core par des tests clavier et lecteur d'écran ; un passage axe sans violation ne valide pas à lui seul ces comportements.
+
+**Commit d'intégration du callback :** `4a6af9a810c4786dead4b7b867d2c8e6c3cedae5`. La simple présence du fichier et son chargement demandé ne valent pas validation runtime.

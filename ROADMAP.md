@@ -9,8 +9,8 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | Phase | Objet | Périmètre cible | État |
 |---|---|---|---|
 | P0 | Cadrage, spécifications et décisions | MVP | En cours |
-| P1 | Socle Boost, design system et premiers composants d'interface | MVP | En cours — navigation globale codée ; tableau de bord apprenant/enseignant intégré par surcharge ciblée de `main_content()` ; tests ajoutés mais non exécutés ; compilation et installation non vérifiées |
-| P2 | Espace apprenant | MVP | En cours — séparation apprenant/enseignant, progression, prochaine activité et premières échéances issues du calendrier natif ; notifications et page de cours à réaliser |
+| P1 | Socle Boost, design system et premiers composants d'interface | MVP | Socle et CI validés sur les quatre environnements de référence au 12/11/2026 ; clôture fonctionnelle globale à confirmer par revue des critères P1 |
+| P2 | Espace apprenant | MVP | En cours sur `feature/p2-learner-workspace` : barre mobile, navigation et réparations ARIA intégrées ; page de cours native stylée sans surcharge core ; fixture apprenant et contrôles navigateur des formats topics/weeks ajoutés, validation CI de la tête courante en attente ; singleactivity, sections restreintes, formats additionnels et notifications restent à couvrir |
 | P3 | Espace formateur | MVP progressif | À réaliser |
 | P4 | Espace administrateur | Version 1.x, après cadrage de la valeur ajoutée | À réaliser |
 | P5 | Adaptation Iomad | Fondations et cloisonnement dans le MVP | À réaliser |
@@ -18,7 +18,7 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 | P7 | Documentation et publication | Version 1.0 | À réaliser |
 | CI | GitHub Actions : contrôles PHP, PHPUnit Moodle, validation plugin, compilation SCSS et axe-core sur navigateur ; compléter progressivement | En cours |
 
-Aucune phase n'est déclarée terminée à ce stade.
+P1 dispose désormais d'une validation CI réussie sur les quatre environnements de référence (11 tests, 50 assertions par environnement, zéro violation axe-core sur les états audités). La validation reste limitée aux états réellement couverts par le workflow. P2 est engagée ; P2.2 dispose d'une première couche CSS responsive limitée au DOM natif des sections et activités, sans surcharge de renderer ni de template. Le workflow axe-core inclut désormais la page de cours native (cours système 1) aux quatre largeurs de référence. La validation du rendu, des cours réellement suivis par un apprenant et des formats additionnels reste à effectuer ; P2.1 doit également être fiabilisée et P2.3 intégrer les notifications natives.
 
 **Avancement au 10 novembre 2026 :** le squelette du plugin et une première couche de tokens/primitives SCSS sont enregistrés sur `feature/p1-foundation`. Voir [docs/P1-SOCLE-TECHNIQUE.md](docs/P1-SOCLE-TECHNIQUE.md) et [docs/P1-DESIGN-SYSTEM.md](docs/P1-DESIGN-SYSTEM.md). La compilation SCSS, l'installation Moodle et les tests multi-versions restent à effectuer. La palette de marque et la navigation ne sont pas figées. La première navigation globale est maintenant codée sur `feature/p1-foundation` : hook de sortie, callback, fournisseur de données, template Mustache, chaînes EN/FR et styles responsive. Voir [docs/P1-NAVIGATION-GLOBALE.md](docs/P1-NAVIGATION-GLOBALE.md). Elle propose provisoirement Accueil et Formations aux utilisateurs connectés non invités. Le tableau de bord personnel distingue maintenant les formations apprenant et enseignant dans deux sections, à partir des rôles et capacités effectifs au niveau des cours. Il affiche également les cinq prochaines actions issues du calendrier Moodle sur une fenêtre de 30 jours, sous réserve des événements d'action fournis par les modules. Son insertion passe par une surcharge ciblée du renderer Boost `main_content()`, sans copie du layout. Voir [docs/P1-ESPACE-APPRENANT.md](docs/P1-ESPACE-APPRENANT.md). Le code et les tests PHPUnit sont présents mais non exécutés ; l'installation, le rendu effectif et les tests multi-versions restent à faire. Le premier workflow GitHub Actions contrôle la syntaxe PHP sur plusieurs versions ; le workflow de tests installe désormais Moodle et Iomad depuis les forks GitHub, exécute PHPUnit et axe-core à chaque push sur Moodle 4.5/5.3 et Iomad 4.5/5.2 ; la matrice complète des autres versions reste planifiée/manuelle, est décrite dans [docs/P1-CI-TESTS.md](docs/P1-CI-TESTS.md).
 
@@ -309,3 +309,30 @@ Les tâches types sont rejouées aux jalons majeurs et comparées, lorsque cela 
 ## Règle de mise à jour
 
 La feuille de route est mise à jour à chaque évolution significative. Chaque tranche de cartographie validée doit être intégrée au dépôt avant de poursuivre l'analyse ; le numéro de section et son périmètre sont reportés ici lorsque cela modifie l'état ou l'ordre des travaux. Une phase ne passe à « Terminée » qu'après vérification de tous ses livrables et critères d'acceptation. Les éléments partiellement réalisés sont signalés comme tels, avec les preuves ou tests associés. Toute décision structurante est datée et justifiée.
+
+
+## Mise à jour P2 — 12 novembre 2026
+
+La branche `feature/p2-learner-workspace` est créée depuis le commit `7eab6f880364dc5f689ecaca09cc6b4a7831fb17` de `main`. Le document `docs/P2-ESPACE-APPRENANT.md` fixe les incréments P2.1 à P2.5, les règles de sécurité Moodle, les parcours apprenant, les exigences mobile-first et la matrice minimale de validation. Aucun état fonctionnel nouveau n'est déclaré terminé par cette seule documentation. La prochaine réalisation est P2.2 : analyser les points d'extension de la page de cours Boost/Moodle sur la matrice 4.5–5.3, puis implémenter une adaptation ciblée sans remplacer le moteur natif de format de cours.
+
+
+## Mise à jour navigation mobile — 13 novembre 2026
+
+La branche `feature/p2-learner-workspace` reçoit une première barre de navigation basse à quatre destinations natives (accueil, formations, calendrier, profil), fixe sous 768 CSS px et dans le flux sur les écrans plus larges. Elle prévoit les zones de sécurité mobiles et se masque au focus d'un champ de saisie. Un contrôle Playwright du clic sur le menu utilisateur natif est ajouté sur les pages apprenant/administrateur et aux quatre largeurs de référence. Ces évolutions restent en attente de validation CI sur les quatre environnements ; elles ne clôturent ni P2.2 ni P2.5.
+
+
+## Mise à jour P2 — 15 novembre 2026
+
+Ajout de `tests/ci/learner-course-check.cjs` et de son étape dédiée dans le workflow réutilisable. Le contrôle utilise un véritable compte apprenant inscrit à deux cours (formats `topics` et `weeks`), vérifie l'accès natif, l'activité visible, l'absence d'activité masquée et le reflow horizontal à 320/390/768/1280 CSS px. Voir `docs/P2-ESPACE-APPRENANT.md`, section 12. Cette évolution est codée mais non validée tant que la CI du dernier SHA n'a pas terminé avec succès.
+
+
+## Mise à jour P2.2 — 15 novembre 2026 (en cours)
+
+Les fixtures de CI couvrent maintenant, en plus de `topics` et `weeks` : le format natif `singleactivity` avec redirection vers une activité Page principale, et deux sections à disponibilité conditionnelle (condition de date satisfaite / non satisfaite). Le script Playwright vérifie l'accès apprenant et le reflow aux quatre largeurs de référence.
+
+**Statut :** tests codés, non exécutés/validés sur les environnements de référence après ces derniers commits. La PR #4 reste en brouillon ; la CI précédemment observée sur la tête antérieure était en échec avec journaux indisponibles. P2.2 n'est pas terminée.
+
+
+## Suivi CI P2.2 — 15 novembre 2026
+
+Les scénarios `singleactivity` et disponibilité de section sont ajoutés au code et à la documentation, mais leur validation est bloquée par les runs `43748266551` (qualité) et `43748266547` (plateformes), tous deux en échec. Les logs sont indisponibles (`BlobNotFound`) et aucun artefact de diagnostic n'est retourné. P2.2 reste **en cours**, sans fusion.

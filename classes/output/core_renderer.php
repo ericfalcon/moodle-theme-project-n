@@ -16,6 +16,7 @@ defined('MOODLE_INTERNAL') || die();
  * @package theme_projectn
  */
 class core_renderer extends \theme_boost\output\core_renderer {
+
     /**
      * Render the native page content, adding the course dashboard on /my/.
      *

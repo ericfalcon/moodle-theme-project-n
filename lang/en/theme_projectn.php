@@ -15,6 +15,10 @@ $string['secondarynavigation'] = 'Moodle secondary navigation';
 $string['navigationlandmark'] = 'Moodle navigation: {$a}';
 $string['home'] = 'Home';
 $string['courses'] = 'Courses';
+$string['calendar'] = 'Calendar';
+$string['menusite'] = 'Site menu';
+$string['menupage'] = 'Page menu';
+
 
 $string['learnerdashboardheading'] = 'My courses as a learner';
 $string['learnerdashboarddescription'] = 'Find the courses you attend as a learner.';

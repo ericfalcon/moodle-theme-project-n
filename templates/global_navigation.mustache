@@ -9,7 +9,8 @@
                 <li class="projectn-global-navigation__item">
                     <a class="projectn-global-navigation__link{{#current}} is-current{{/current}}"
                        href="{{url}}"{{#current}} aria-current="page"{{/current}}>
-                        {{label}}
+                        <span class="projectn-global-navigation__icon" aria-hidden="true">{{#pix}}{{icon}}, core{{/pix}}</span>
+                        <span class="projectn-global-navigation__label">{{label}}</span>
                     </a>
                 </li>
             {{/items}}

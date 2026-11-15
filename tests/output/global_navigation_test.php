@@ -28,7 +28,7 @@ final class global_navigation_test extends \advanced_testcase {
 
         $context = global_navigation::get_template_context();
 
-        $this->assertCount(2, $context['items']);
+        $this->assertCount(4, $context['items']);
         $this->assertFalse($context['items'][0]['current']);
         $this->assertTrue($context['items'][1]['current']);
         $this->assertSame(get_string('courses', 'theme_projectn'), $context['items'][1]['label']);
@@ -63,6 +63,8 @@ final class global_navigation_test extends \advanced_testcase {
 
         $this->assertTrue($context['items'][0]['current']);
         $this->assertFalse($context['items'][1]['current']);
+        $this->assertFalse($context['items'][2]['current']);
+        $this->assertFalse($context['items'][3]['current']);
     }
 
     /**
@@ -78,5 +80,26 @@ final class global_navigation_test extends \advanced_testcase {
 
         $this->assertFalse($context['items'][0]['current']);
         $this->assertFalse($context['items'][1]['current']);
+        $this->assertFalse($context['items'][2]['current']);
+        $this->assertFalse($context['items'][3]['current']);
+    }
+
+    /**
+     * Calendar and profile destinations are included for the mobile toolbar.
+     */
+    public function test_calendar_and_profile_destinations_are_available(): void {
+        global $PAGE, $USER;
+
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        $PAGE->set_url(new \moodle_url('/calendar/view.php'));
+
+        $context = global_navigation::get_template_context();
+
+        $this->assertCount(4, $context['items']);
+        $this->assertSame((new \moodle_url('/calendar/view.php'))->out(false), $context['items'][2]['url']);
+        $this->assertTrue($context['items'][2]['current']);
+        $this->assertSame((new \moodle_url('/user/profile.php', ['id' => $USER->id]))->out(false), $context['items'][3]['url']);
     }
 }

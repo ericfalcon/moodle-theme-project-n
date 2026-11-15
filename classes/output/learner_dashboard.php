@@ -185,17 +185,16 @@ class learner_dashboard {
                 );
             }
 
-            if ($nextactivity !== null) {
-                $activityurl = new \moodle_url('/mod/' . $nextactivity->modname . '/view.php', [
-                    'id' => $nextactivity->id,
-                ]);
+            if ($nextactivity !== null && $nextactivity->url instanceof \moodle_url) {
+                // Use the URL supplied by Moodle's course-module information.
+                // Module endpoints are not assumed to share a universal view.php route.
                 $card['hasnextactivity'] = true;
                 $card['nextactivitylabel'] = get_string(
                     'learnerdashboardnextactivity',
                     'theme_projectn'
                 );
                 $card['nextactivityname'] = format_string($nextactivity->name);
-                $card['nextactivityurl'] = $activityurl->out(false);
+                $card['nextactivityurl'] = $nextactivity->url->out(false);
             }
         }
         unset($card);
