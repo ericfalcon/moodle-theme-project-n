@@ -331,3 +331,8 @@ Ajout de `tests/ci/learner-course-check.cjs` et de son étape dédiée dans le w
 Les fixtures de CI couvrent maintenant, en plus de `topics` et `weeks` : le format natif `singleactivity` avec redirection vers une activité Page principale, et deux sections à disponibilité conditionnelle (condition de date satisfaite / non satisfaite). Le script Playwright vérifie l'accès apprenant et le reflow aux quatre largeurs de référence.
 
 **Statut :** tests codés, non exécutés/validés sur les environnements de référence après ces derniers commits. La PR #4 reste en brouillon ; la CI précédemment observée sur la tête antérieure était en échec avec journaux indisponibles. P2.2 n'est pas terminée.
+
+
+## Suivi CI P2.2 — 15 novembre 2026
+
+Les scénarios `singleactivity` et disponibilité de section sont ajoutés au code et à la documentation, mais leur validation est bloquée par les runs `43748266551` (qualité) et `43748266547` (plateformes), tous deux en échec. Les logs sont indisponibles (`BlobNotFound`) et aucun artefact de diagnostic n'est retourné. P2.2 reste **en cours**, sans fusion.
