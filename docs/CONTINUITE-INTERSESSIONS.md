@@ -120,3 +120,16 @@ Pour chaque reprise importante, ajouter une entrée datée :
 - **Résultats observés (avec liens de runs) :**
 - **Anomalies restantes :**
 - **Prochaine action :**
+
+
+## 9. Reprise du 15 novembre 2026
+
+- **Branche / SHA de départ :** `feature/p2-learner-workspace` / `9907607070b13b4e2242e89886d1be07954fff98`.
+- **PR :** [#4](https://github.com/ericfalcon/moodle-theme-project-n/pull/4), toujours en brouillon et non fusionnée au début de la reprise.
+- **Runs constatés sur le SHA de départ :** `43640443069` (plateforme/accessibilité) et `43640443074` (qualité) sont signalés en échec par GitHub ; les API de jobs ne retournent toutefois aucune étape ni log exploitable. Les jobs ont été relancés pour obtenir une exécution diagnostiquable ; ces tentatives concernent le SHA antérieur.
+- **Travail ajouté :** `tests/ci/learner-course-check.cjs` valide un parcours apprenant authentifié sur les cours `topics` et `weeks`, la visibilité des activités et l'absence de débordement horizontal aux quatre largeurs de référence.
+- **Workflow :** une étape dédiée lance ce contrôle après le démarrage du serveur. Les variables écrites par `prepare-learner.php` dans `GITHUB_ENV` sont héritées par le processus Node ; elles ne sont pas réinjectées via les expressions `${{ env.* }}`.
+- **Documentation :** `docs/P2-ESPACE-APPRENANT.md` section 12 et `ROADMAP.md` mis à jour.
+- **Tests :** aucune nouvelle validation runtime n'est revendiquée à ce stade. La CI doit être lue sur le SHA final après les commits de cette reprise.
+- **Limites restantes :** format `singleactivity`, sections à disponibilité conditionnelle, formats tiers, notifications natives et tests manuels clavier/lecteurs d'écran.
+- **Prochaine action :** vérifier les nouveaux runs de la tête de branche, corriger chaque échec à partir des logs, puis compléter le scénario `singleactivity` et les restrictions de section.
