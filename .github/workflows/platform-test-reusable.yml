@@ -164,7 +164,7 @@ jobs:
             # PHPUnit 9 (Moodle/Iomad 4.5) has no --fail-on-empty-test-suite.
             # Verify discovery explicitly rather than passing an unsupported option.
             vendor/bin/phpunit --test-suffix _test.php --list-tests "$PROJECTN_PLUGIN_DIR/tests" | tee "$RUNNER_TEMP/phpunit-discovery.log"
-            grep -qE '^[[:space:]]*[0-9]+ tests?($|[[:space:]])' "$RUNNER_TEMP/phpunit-discovery.log" || {
+            grep -q '::test' "$RUNNER_TEMP/phpunit-discovery.log" || {
               echo "::error::PHPUnit discovered no Project N tests."
               exit 1
             }
