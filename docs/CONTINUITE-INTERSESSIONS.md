@@ -133,3 +133,27 @@ Pour chaque reprise importante, ajouter une entrée datée :
 - **Tests :** aucune nouvelle validation runtime n'est revendiquée à ce stade. La CI doit être lue sur le SHA final après les commits de cette reprise.
 - **Limites restantes :** format `singleactivity`, sections à disponibilité conditionnelle, formats tiers, notifications natives et tests manuels clavier/lecteurs d'écran.
 - **Prochaine action :** vérifier les nouveaux runs de la tête de branche, corriger chaque échec à partir des logs, puis compléter le scénario `singleactivity` et les restrictions de section.
+
+
+## Reprise du 15 novembre 2026 — ajout des scénarios P2.2
+
+La PR #4 reste ouverte en brouillon, non fusionnée, sur `feature/p2-learner-workspace`. La tête vérifiée avant les nouveaux changements était `262a5202d6a99d77bbb4d8ad30dc1a8cc7111aeb` ; PR toujours `mergeable:true` et `merged:false`.
+
+### État CI constaté
+
+Les exécutions associées à cette tête (`43745963514`, qualité ; `43745963487`, plateformes) sont terminées en échec. Les trois contrôles de syntaxe PHP 8.1/8.2/8.3 sont en échec ; les quatre jobs de référence Moodle 4.5, Moodle 5.3, Iomad 4.5 et Iomad 5.2 sont également en échec. La matrice complète planifiée/manuelle est ignorée, conformément au déclenchement. Les endpoints de journaux GitHub renvoient `BlobNotFound` et les étapes ne sont pas disponibles via l'API utilisée : la cause précise n'est donc pas établie. Le statut combiné de la tête ne retourne aucun check exploitable.
+
+### Modifications depuis la tête vérifiée
+
+- `tests/ci/prepare-learner.php` : ajout de deux sections soumises à disponibilité par date et d'un cours `singleactivity` avec activité Page principale ; réutilisation idempotente du modèle de ressource Page.
+- `tests/ci/learner-course-check.cjs` : vérification des deux états de disponibilité, du parcours natif de redirection `singleactivity` et du reflow responsive.
+
+Les commits de ce lot sont `107363e`, `d01c819`, `a554d1f` et `2de9d12` (préparation de la fixture, contrôle singleactivity, contrôle des restrictions et idempotence). La tête actuelle doit être relue sur GitHub avant tout nouveau changement ; aucune exécution CI postérieure à ces commits n'a encore été vérifiée ici.
+
+### Prochaine étape obligatoire
+
+1. Vérifier la tête exacte et les nouveaux workflows déclenchés par la PR.
+2. Obtenir les journaux de syntaxe PHP et de chaque plateforme ; ne pas déduire la cause de l'échec à partir du seul statut.
+3. Corriger les défauts révélés, puis vérifier les quatre jobs de référence et les rapports axe-core.
+4. Si les journaux restent indisponibles, ajouter un diagnostic explicite au workflow sans désactiver les contrôles.
+5. Ne fusionner dans `main` qu'après réussite réelle de tous les jobs requis et revue des parcours P2.2.
