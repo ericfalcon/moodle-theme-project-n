@@ -238,8 +238,83 @@ if (!$DB->record_exists('course_modules', ['course' => $weeklycourse->id, 'modul
     rebuild_course_cache($weeklycourse->id, true);
 }
 
+// Add date-restricted sections to exercise both inaccessible and accessible states.
+course_create_sections_if_missing($course->id, [2, 3]);
+$restrictedsections = [
+    2 => [
+        'name' => 'Section hidden by availability',
+        'availability' => ['op' => '&', 'c' => [['type' => 'date', 'd' => '>=', 't' => time() + (2 * DAYSECS)]], 'showc' => [false]],
+        'activityname' => 'Activity in unavailable section',
+    ],
+    3 => [
+        'name' => 'Section available by date',
+        'availability' => ['op' => '&', 'c' => [['type' => 'date', 'd' => '>=', 't' => time() - (2 * DAYSECS)]], 'showc' => [false]],
+        'activityname' => 'Activity in available section',
+    ],
+];
+foreach ($restrictedsections as $sectionnum => $definition) {
+    $section = $DB->get_record('course_sections', ['course' => $course->id, 'section' => $sectionnum], '*', MUST_EXIST);
+    $DB->update_record('course_sections', (object)[
+        'id' => $section->id,
+        'name' => $definition['name'],
+        'availability' => json_encode($definition['availability']),
+    ]);
+    if (!$DB->record_exists('page', ['course' => $course->id, 'name' => $definition['activityname']])) {
+        $restrictedpage = clone $visiblepage;
+        $restrictedpage->section = $sectionnum;
+        $restrictedpage->name = $definition['activityname'];
+        $restrictedpage->content = '<p>Availability-restricted learner content.</p>';
+        add_moduleinfo($restrictedpage, $course);
+    }
+}
+rebuild_course_cache($course->id, true);
+
+// Configure the native singleactivity format before adding its selected Page module.
+$singleactivityshortname = 'projectn-learner-singleactivity-ci';
+if ($DB->record_exists('course', ['shortname' => $singleactivityshortname])) {
+    $singleactivitycourse = $DB->get_record('course', ['shortname' => $singleactivityshortname], '*', MUST_EXIST);
+} else {
+    $singleactivitycourse = create_course((object)[
+        'category' => $categoryid,
+        'fullname' => 'Project N single activity learner validation',
+        'shortname' => $singleactivityshortname,
+        'format' => 'singleactivity',
+        'numsections' => 1,
+        'visible' => 1,
+        'enablecompletion' => 0,
+    ]);
+}
+course_get_format($singleactivitycourse)->update_course_format_options(['activitytype' => 'page']);
+if ($company) {
+    $company->add_course($singleactivitycourse);
+}
+$singleinstanceid = null;
+foreach (enrol_get_instances($singleactivitycourse->id, true) as $candidate) {
+    if ($candidate->enrol === 'manual') {
+        $singleinstanceid = $candidate->id;
+        break;
+    }
+}
+if (!$singleinstanceid) {
+    $singleinstanceid = $manual->add_instance($singleactivitycourse, ['status' => ENROL_INSTANCE_ENABLED]);
+}
+$singleinstance = $DB->get_record('enrol', ['id' => $singleinstanceid], '*', MUST_EXIST);
+$manual->enrol_user($singleinstance, $learner->id, $studentrole->id, 0, 0, ENROL_USER_ACTIVE);
+if ($company) {
+    call_user_func([$companyuserclass, 'enrol'], $learner, $singleactivitycourse->id, $company->id, $studentrole->id);
+}
+if (!$DB->record_exists('page', ['course' => $singleactivitycourse->id, 'name' => 'Single activity learner resource'])) {
+    $singlepage = clone $visiblepage;
+    $singlepage->course = $singleactivitycourse->id;
+    $singlepage->section = 0;
+    $singlepage->name = 'Single activity learner resource';
+    $singlepage->content = '<p>Native single activity format content for learner testing.</p>';
+    add_moduleinfo($singlepage, $singleactivitycourse);
+}
+rebuild_course_cache($singleactivitycourse->id, true);
+
 $githubenv = getenv('GITHUB_ENV');
 if ($githubenv) {
-    file_put_contents($githubenv, "LEARNER_USERNAME={$username}\nLEARNER_PASSWORD={$password}\nLEARNER_COURSE_ID={$course->id}\nLEARNER_WEEKLY_COURSE_ID={$weeklycourse->id}\n", FILE_APPEND);
+    file_put_contents($githubenv, "LEARNER_USERNAME={$username}\nLEARNER_PASSWORD={$password}\nLEARNER_COURSE_ID={$course->id}\nLEARNER_WEEKLY_COURSE_ID={$weeklycourse->id}\nLEARNER_SINGLEACTIVITY_COURSE_ID={$singleactivitycourse->id}\n", FILE_APPEND);
 }
 echo "Prepared learner {$username}, enrolled in course {$course->id}.\n";
