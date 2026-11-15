@@ -91,6 +91,20 @@ async function main() {
                 throw new Error('The expected visible activity is missing from the ' + course.name + ' course.');
             }
 
+            if (course.name === 'topics') {
+                const unavailableSection = page.getByText('Section hidden by availability', {exact: true});
+                const unavailableActivity = page.locator('.activity-item').filter({hasText: 'Activity in unavailable section'});
+                if (await unavailableSection.count() !== 0 || await unavailableActivity.count() !== 0) {
+                    throw new Error('A section/activity with an unmet availability condition is exposed to the learner.');
+                }
+                const availableSection = page.getByText('Section available by date', {exact: true});
+                const availableActivity = page.locator('.activity-item').filter({hasText: 'Activity in available section'});
+                if (await availableSection.count() !== 1 || !(await availableSection.isVisible()) ||
+                    await availableActivity.count() !== 1 || !(await availableActivity.isVisible())) {
+                    throw new Error('A section/activity whose availability condition is met is not visible to the learner.');
+                }
+            }
+
             if (course.hiddenActivity) {
                 const hidden = page.locator('.activity-item').filter({hasText: course.hiddenActivity});
                 if (await hidden.count() !== 0) {
