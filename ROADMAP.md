@@ -10,7 +10,7 @@ Une phase n'est considérée comme terminée que lorsque ses livrables et critè
 |---|---|---|---|
 | P0 | Cadrage, spécifications et décisions | MVP | En cours |
 | P1 | Socle Boost, design system et premiers composants d'interface | MVP | Socle et CI validés sur les quatre environnements de référence au 12/11/2026 ; clôture fonctionnelle globale à confirmer par revue des critères P1 |
-| P2 | Espace apprenant | MVP | Démarrée sur `feature/p2-learner-workspace` ; spécification et critères d'acceptation enregistrés dans `docs/P2-ESPACE-APPRENANT.md`. P2.1 à fiabiliser, P2.2 page de cours à développer, P2.3 notifications natives à intégrer |
+| P2 | Espace apprenant | MVP | En cours sur `feature/p2-learner-workspace` : barre mobile, navigation et réparations ARIA intégrées ; page de cours native stylée sans surcharge core ; fixture apprenant et contrôles navigateur des formats topics/weeks ajoutés, validation CI de la tête courante en attente ; singleactivity, sections restreintes, formats additionnels et notifications restent à couvrir |
 | P3 | Espace formateur | MVP progressif | À réaliser |
 | P4 | Espace administrateur | Version 1.x, après cadrage de la valeur ajoutée | À réaliser |
 | P5 | Adaptation Iomad | Fondations et cloisonnement dans le MVP | À réaliser |
@@ -319,3 +319,8 @@ La branche `feature/p2-learner-workspace` est créée depuis le commit `7eab6f88
 ## Mise à jour navigation mobile — 13 novembre 2026
 
 La branche `feature/p2-learner-workspace` reçoit une première barre de navigation basse à quatre destinations natives (accueil, formations, calendrier, profil), fixe sous 768 CSS px et dans le flux sur les écrans plus larges. Elle prévoit les zones de sécurité mobiles et se masque au focus d'un champ de saisie. Un contrôle Playwright du clic sur le menu utilisateur natif est ajouté sur les pages apprenant/administrateur et aux quatre largeurs de référence. Ces évolutions restent en attente de validation CI sur les quatre environnements ; elles ne clôturent ni P2.2 ni P2.5.
+
+
+## Mise à jour P2 — 15 novembre 2026
+
+Ajout de `tests/ci/learner-course-check.cjs` et de son étape dédiée dans le workflow réutilisable. Le contrôle utilise un véritable compte apprenant inscrit à deux cours (formats `topics` et `weeks`), vérifie l'accès natif, l'activité visible, l'absence d'activité masquée et le reflow horizontal à 320/390/768/1280 CSS px. Voir `docs/P2-ESPACE-APPRENANT.md`, section 12. Cette évolution est codée mais non validée tant que la CI du dernier SHA n'a pas terminé avec succès.
