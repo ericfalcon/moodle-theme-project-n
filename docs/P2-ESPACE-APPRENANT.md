@@ -271,3 +271,28 @@ Le contrat `core_courseformat\main_activity_interface` est présent dans la clas
 - [ ] Ajouter un scénario d'installation et de parcours `singleactivity` à la CI.
 - [ ] Ajouter les scénarios d'apprenant avec et sans disponibilité de section.
 - [ ] Vérifier les formats supplémentaires éventuellement utilisés par les clients Iomad, sans les supposer présents dans Moodle standard.
+
+
+## 12. Validation du parcours apprenant réel — 15 novembre 2026
+
+La préparation CI crée désormais deux cours réellement inscrits au compte apprenant dédié :
+- un cours au format natif thématique (`topics`), contenant une activité Page visible et une activité Page masquée ;
+- un cours au format natif hebdomadaire (`weeks`), contenant une activité Page visible.
+
+Le nouveau script `tests/ci/learner-course-check.cjs` vérifie, avec une session Playwright distincte de celle de l'administrateur :
+- la connexion du compte apprenant non privilégié ;
+- l'accès effectif aux deux pages de cours, sans redirection vers la connexion ;
+- la présence du conteneur natif `.course-content` ;
+- la présence de l'activité visible attendue ;
+- l'absence de l'activité masquée dans le DOM présenté à l'apprenant ;
+- l'absence de débordement horizontal global aux largeurs 320, 390, 768 et 1280 CSS px.
+
+Le workflow `.github/workflows/platform-test-reusable.yml` exécute ce contrôle après le démarrage du serveur web et avant l'audit axe-core. Les identifiants et identifiants de cours sont transmis entre étapes via `GITHUB_ENV`, sans les exposer dans les journaux.
+
+**Limites restantes P2.2 :**
+- le format activité unique (`singleactivity`) n'est pas encore créé ni parcouru dans la CI ;
+- les sections soumises à restriction de disponibilité ne sont pas encore couvertes par un scénario apprenant avec/sans condition remplie ;
+- les formats additionnels des forks clients doivent être inventoriés et testés séparément ;
+- les parcours d'édition formateur ne font pas partie de cette validation apprenant.
+
+**État :** le script et le workflow sont enregistrés sur `feature/p2-learner-workspace`. Ils ne sont pas déclarés validés avant la réussite d'une nouvelle exécution CI sur les quatre environnements de référence.
