@@ -190,3 +190,10 @@ Après inspection du workflow réutilisable `.github/workflows/platform-test-reu
 Un artefact `platform-diagnostics-*` est désormais téléversé avec `if: always()` pour conserver les sorties PHPUnit et le journal du serveur même si les tests échouent. Modifications : commits `a1deeb146e88f573041fe6026b2b6f21a5fd6cda` puis `20d1c31760582de4a94a1d081bb7015befd14285`.
 
 Cette anomalie ne suffit pas à expliquer les échecs des trois jobs de syntaxe PHP ; ceux-ci restent à diagnostiquer. Les runs précédents échouent tous avant qu'on puisse obtenir leurs étapes ou journaux via le connecteur (`BlobNotFound`). La tête actuelle `20d1c31760582de4a94a1d081bb7015befd14285` doit encore être exécutée : aucun run PR n'était remonté immédiatement après le push. Aucun test n'est déclaré vert et aucune fusion n'est autorisée à ce stade.
+
+
+## Confirmation du défaut d'exécution GitHub Actions — 15 novembre 2026, 22:26 UTC
+
+Les workflows de la tête `3a5d6c1a0c51ef0db80fc9bc8311d57f175f839e` sont `43769167853` (plateformes) et `43769167847` (qualité). Pour les 7 jobs en échec, l'API GitHub renvoie `steps: []` ou aucun détail de job ; les logs renvoient `BlobNotFound` et les deux runs n'ont aucun artefact. Il n'y a donc aucune étape PHP, installation Moodle/Iomad, PHPUnit ou Playwright dont l'échec puisse être imputé au code : les jobs ne fournissent aucun indice d'exécution. Cela pointe vers un échec de démarrage/initialisation des jobs GitHub Actions, mais la cause infrastructure exacte n'est pas exposée.
+
+Les jobs en échec ont été relancés. Sur la relance, les quatre jobs plateformes sont déjà retombés en échec avec `steps: []` ; les trois jobs qualité étaient encore `queued` lors de la dernière lecture. Vérifier leur état avant toute conclusion. Ne pas multiplier les modifications de code tant que GitHub ne fournit pas d'étapes ou de logs. La correction PHPUnit 9 reste une mesure de compatibilité préventive, pas une cause démontrée des échecs actuels.
