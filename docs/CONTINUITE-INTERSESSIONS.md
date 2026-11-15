@@ -210,3 +210,17 @@ Les jobs en échec ont été relancés. Sur la relance, les quatre jobs platefor
 - **Inspection statique des workflows :** les deux workflows utilisent `runs-on: ubuntu-latest`, avec des étapes explicites ; aucune erreur YAML manifeste n'a été identifiée lors de cette lecture. Le workflow qualité expose également `workflow_dispatch`, mais aucun outil connecté ne permet ici de le déclencher. Le connecteur ne donne pas accès aux détails d'état des runners GitHub hébergés.
 - **Conclusion prudente :** aucun élément ne permet d'attribuer ces échecs au code PHP, aux tests Moodle ou à axe-core, puisque aucune étape de job n'est exposée. L'hypothèse d'un problème d'exécution/initialisation GitHub Actions reste plausible mais non démontrée. Ne pas multiplier les modifications de code à l'aveugle.
 - **Action suivante :** vérifier dans l'interface Actions GitHub les détails de ces runs (notamment les annotations système et la raison de fin des jobs), puis relancer depuis GitHub si nécessaire. Une fois les logs accessibles, corriger le premier défaut réel. Aucun test n'est validé par ces exécutions et aucune fusion ne doit être faite.
+
+
+## Diagnostic approfondi des jobs GitHub Actions — 15 novembre 2026
+
+L'inspection directe des réponses REST GitHub des runs `43769355760` (qualité) et `43769355921` (plateformes), sur le SHA `746da4e25f5ebb3d5e060e1047e86c7e0efc7cf4`, apporte un élément déterminant :
+
+- Les sept jobs échoués ont tous `steps: []`.
+- Les sept jobs ont `runner_id: 0`, `runner_name: ""`, `runner_group_id: 0` et `runner_group_name: ""`.
+- Chaque job a été créé, démarré et terminé en environ deux secondes (22:27:05–22:27:08 UTC).
+- Les jobs ne sont donc pas arrivés à une exécution sur un runner GitHub Actions identifié. Ce constat est beaucoup plus précis qu'une simple absence de logs : aucun runner n'a été attribué dans les données renvoyées par GitHub.
+- Les deux workflows ont été relancés une nouvelle fois avec succès via l'API (requêtes de relance acceptées). Il faut contrôler les nouvelles tentatives avant toute conclusion définitive.
+- La PR #4 est toujours en draft et non fusionnée. Aucun changement du code applicatif n'est justifié par ces échecs pré-runner.
+
+**Conclusion opérationnelle :** le blocage observé se situe au niveau de l'attribution/initialisation des runners GitHub Actions, et non dans une étape PHP, PHPUnit, Moodle ou axe-core. La cause racine du refus d'attribution reste à déterminer côté GitHub. Si la nouvelle tentative reproduit `runner_id: 0`, escalader vers l'état du service GitHub Actions ou les limites/paramètres d'exécution du dépôt ; ne pas retoucher le thème pour traiter ce symptôme.
