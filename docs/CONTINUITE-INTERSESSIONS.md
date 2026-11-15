@@ -181,3 +181,12 @@ La tête de PR #4 a été vérifiée : `170c5eaa17b666251f47e0efde73e3b34e76d76d
 L'inspection du workflow a néanmoins révélé une régression certaine dans le contrôle de locale : l'expression grep avait deux antislashs (`^en_AU\\.utf8$`) au lieu d'un (`^en_AU\.utf8$`). Correction appliquée dans `.github/workflows/platform-test-reusable.yml`, commit `eca9a36a4ae3bcd5f0ff3e4fea549dc3e3465a4d`.
 
 Les nouveaux runs sur ce commit (`43768859851` plateformes et `43768859847` qualité) échouent également ; leurs journaux sont encore inaccessibles. Les jobs ont été relancés via GitHub Actions ; vérifier leur nouvel état et récupérer les logs dès qu'ils sont disponibles. La correction de locale ne suffit donc pas à expliquer les échecs de tous les jobs. Ne pas fusionner avant diagnostic et CI verte.
+
+
+## Correctif de compatibilité PHPUnit et conservation des diagnostics — 15 novembre 2026
+
+Après inspection du workflow réutilisable `.github/workflows/platform-test-reusable.yml`, un risque de compatibilité certain a été corrigé : `--fail-on-empty-test-suite` était transmis sans condition, alors que la cible Moodle/Iomad 4.5 utilise PHPUnit 9. Cette option n'est pas disponible sur PHPUnit 9. Le workflow n'ajoute désormais cette option qu'à partir de PHPUnit 10 ; pour PHPUnit 9, il exécute d'abord `--list-tests` et vérifie qu'au moins un test Project N est découvert. La sortie de découverte et d'exécution est conservée dans des fichiers de diagnostic.
+
+Un artefact `platform-diagnostics-*` est désormais téléversé avec `if: always()` pour conserver les sorties PHPUnit et le journal du serveur même si les tests échouent. Modifications : commits `a1deeb146e88f573041fe6026b2b6f21a5fd6cda` puis `20d1c31760582de4a94a1d081bb7015befd14285`.
+
+Cette anomalie ne suffit pas à expliquer les échecs des trois jobs de syntaxe PHP ; ceux-ci restent à diagnostiquer. Les runs précédents échouent tous avant qu'on puisse obtenir leurs étapes ou journaux via le connecteur (`BlobNotFound`). La tête actuelle `20d1c31760582de4a94a1d081bb7015befd14285` doit encore être exécutée : aucun run PR n'était remonté immédiatement après le push. Aucun test n'est déclaré vert et aucune fusion n'est autorisée à ce stade.
