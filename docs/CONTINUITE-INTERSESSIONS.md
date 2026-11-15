@@ -172,3 +172,12 @@ GitHub Actions a créé les runs : qualité `43748266551` (run 171), échec sur 
 Les résumés d'étapes sont vides via l'API connectée. Le téléchargement des journaux renvoie `BlobNotFound` pour chaque job ; aucun artefact de diagnostic PHP n'est retourné. La cause des échecs n'est donc pas démontrée. Ne pas conclure à un défaut de syntaxe du code sans le journal correspondant.
 
 **Décision :** ne pas fusionner. Les nouveaux scénarios sont codés, mais leur exécution réelle n'est pas prouvée. Prochaine action : récupérer les logs/artefacts directement dans l'interface GitHub Actions ou réexécuter les jobs lorsque le stockage des logs est disponible ; corriger la première étape en échec puis relancer la matrice.
+
+
+## Reprise CI P2.2 — 15 novembre 2026 (soir)
+
+La tête de PR #4 a été vérifiée : `170c5eaa17b666251f47e0efde73e3b34e76d76d`. Les workflows associés (runs `43748347207` et `43748347132`) échouaient sur les trois versions PHP et les quatre plateformes. Les API GitHub renvoient `BlobNotFound` pour les journaux de jobs, `steps` vides et aucun artefact de diagnostic ; la cause ne peut donc pas être attribuée avec certitude.
+
+L'inspection du workflow a néanmoins révélé une régression certaine dans le contrôle de locale : l'expression grep avait deux antislashs (`^en_AU\\.utf8$`) au lieu d'un (`^en_AU\.utf8$`). Correction appliquée dans `.github/workflows/platform-test-reusable.yml`, commit `eca9a36a4ae3bcd5f0ff3e4fea549dc3e3465a4d`.
+
+Les nouveaux runs sur ce commit (`43768859851` plateformes et `43768859847` qualité) échouent également ; leurs journaux sont encore inaccessibles. Les jobs ont été relancés via GitHub Actions ; vérifier leur nouvel état et récupérer les logs dès qu'ils sont disponibles. La correction de locale ne suffit donc pas à expliquer les échecs de tous les jobs. Ne pas fusionner avant diagnostic et CI verte.
